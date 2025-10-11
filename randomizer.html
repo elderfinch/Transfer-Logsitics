@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Missionary Transfer Randomizer</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/papaparse/5.3.2/papaparse.min.js"></script>
+    <title>Missionary Transfer Tool (Excel)</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -151,14 +151,14 @@
 
     <div class="container">
         <h1>Missionary Transfer Tool 🔄</h1>
-        <p>Upload your roster, choose a transfer percentage, and get a new randomized assignment list.</p>
+        <p>Upload your Excel roster, choose a transfer percentage, and get a new randomized assignment list.</p>
 
         <div class="control-group">
-            <label for="csvFileInput">1. Upload Roster CSV</label>
-            <label for="csvFileInput" class="file-upload-label">
+            <label for="excelFileInput">1. Upload Roster (.xlsx)</label>
+            <label for="excelFileInput" class="file-upload-label">
                 Choose File
             </label>
-            <input type="file" id="csvFileInput" accept=".csv">
+            <input type="file" id="excelFileInput" accept=".xlsx, .xls">
             <div id="fileName">No file selected</div>
         </div>
 
@@ -174,18 +174,20 @@
         
         <div id="status"></div>
         
-        <a id="downloadLink" href="#" download="transferred_roster.csv">Download New Roster</a>
+        <a id="downloadLink" href="#" download="transferred_roster.xlsx">Download New Roster</a>
     </div>
 
     <script>
-        const fileInput = document.getElementById('csvFileInput');
+        const fileInput = document.getElementById('excelFileInput');
         const fileNameDisplay = document.getElementById('fileName');
         const slider = document.getElementById('transferSlider');
         const sliderValue = document.getElementById('sliderValue');
         const processButton = document.getElementById('processButton');
         const downloadLink = document.getElementById('downloadLink');
         const statusDisplay = document.getElementById('status');
+        
         let parsedData = [];
+        let originalHeaders = [];
 
         // Update slider value display
         slider.addEventListener('input', (event) => {
@@ -195,75 +197,82 @@
         // Handle file selection
         fileInput.addEventListener('change', (event) => {
             const file = event.target.files[0];
-            if (file) {
-                fileNameDisplay.textContent = file.name;
-                processButton.disabled = false;
-                statusDisplay.textContent = '';
-                downloadLink.style.display = 'none';
-                Papa.parse(file, {
-                    header: true,
-                    skipEmptyLines: true,
-                    complete: (results) => {
-                        parsedData = results.data;
-                    },
-                    error: (err) => {
-                        statusDisplay.textContent = `Error parsing file: ${err.message}`;
-                        processButton.disabled = true;
-                    }
-                });
-            } else {
+            if (!file) {
                 fileNameDisplay.textContent = 'No file selected';
                 processButton.disabled = true;
+                return;
             }
+
+            fileNameDisplay.textContent = file.name;
+            statusDisplay.textContent = '';
+            downloadLink.style.display = 'none';
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const sheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[sheetName];
+                    parsedData = XLSX.utils.sheet_to_json(worksheet, { defval: "" }); // Use defval to handle empty cells gracefully
+                    
+                    if (parsedData.length > 0) {
+                        originalHeaders = Object.keys(parsedData[0]);
+                        processButton.disabled = false;
+                    } else {
+                        statusDisplay.textContent = 'Excel file is empty or invalid.';
+                        processButton.disabled = true;
+                    }
+                } catch (err) {
+                    statusDisplay.textContent = `Error reading file: ${err.message}`;
+                    processButton.disabled = true;
+                }
+            };
+            reader.readAsArrayBuffer(file);
         });
 
         // Handle button click
         processButton.addEventListener('click', () => {
             if (parsedData.length === 0) {
-                statusDisplay.textContent = 'No data to process. Please upload a valid CSV file.';
+                statusDisplay.textContent = 'No data to process. Please upload a valid Excel file.';
                 return;
             }
             try {
                 const percentage = parseInt(slider.value, 10);
                 const companionships = groupIntoCompanionships(parsedData);
                 const newAssignments = performTransfers(companionships, percentage);
-                const csvString = unwindToCsvString(newAssignments);
-                generateDownload(csvString);
+                
+                const finalData = unwindAssignments(newAssignments);
+                const excelBuffer = createExcelFile(finalData, originalHeaders);
+
+                generateDownload(excelBuffer);
                 statusDisplay.textContent = `✅ Success! Your file is ready for download.`;
             } catch (error) {
                 statusDisplay.textContent = `An error occurred: ${error.message}`;
                 console.error(error);
             }
         });
-
-        /**
-         * Groups individual missionary rows into companionship units.
-         * A companionship is defined by a unique combination of Zone, District, and Area.
-         */
+        
         function groupIntoCompanionships(rows) {
             const groups = new Map();
-            const headers = Object.keys(rows[0] || {});
-            
-            // Define location-specific keys from the headers
-            const locationKeys = headers.filter(h => 
-                ['Zone', 'District', 'Area', 'Area Phone', 'Area Address'].includes(h)
-            );
+            const locationKeys = ['Zone', 'District', 'Area', 'Area Phone', 'Area Address'];
 
             rows.forEach(row => {
+                // Create a consistent key for grouping
                 const key = `${row.Zone || ''}-${row.District || ''}-${row.Area || ''}`.trim();
+                
                 if (!groups.has(key)) {
                     const location = {};
-                    locationKeys.forEach(k => location[k] = row[k]);
-                    groups.set(key, { location: location, missionaries: [] });
+                    locationKeys.forEach(k => {
+                        if (row.hasOwnProperty(k)) location[k] = row[k];
+                    });
+                    groups.set(key, { location, missionaries: [] });
                 }
                 groups.get(key).missionaries.push(row);
             });
             return Array.from(groups.values());
         }
 
-        /**
-         * Fisher-Yates shuffle algorithm to randomize an array.
-         */
         function shuffleArray(array) {
             for (let i = array.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
@@ -271,25 +280,18 @@
             }
         }
         
-        /**
-         * Randomly selects a percentage of companionships, shuffles their locations, and returns the full list.
-         */
         function performTransfers(allCompanionships, percentage) {
             shuffleArray(allCompanionships);
             const numToTransfer = Math.round(allCompanionships.length * (percentage / 100));
             
-            if (numToTransfer < 2) { // Shuffling 0 or 1 items has no effect
-                return allCompanionships;
-            }
+            if (numToTransfer < 2) return allCompanionships;
 
             const transferring = allCompanionships.slice(0, numToTransfer);
             const staying = allCompanionships.slice(numToTransfer);
             
-            // Extract the locations from the companionships selected for transfer
             const locationsToShuffle = transferring.map(comp => comp.location);
             shuffleArray(locationsToShuffle);
             
-            // Re-assign the shuffled locations back to the transferring companionships
             transferring.forEach((comp, index) => {
                 comp.location = locationsToShuffle[index];
             });
@@ -297,41 +299,33 @@
             return staying.concat(transferring);
         }
 
-        /**
-         * Converts the final list of companionships back into a CSV string.
-         */
-        function unwindToCsvString(finalCompanionships) {
+        function unwindAssignments(finalCompanionships) {
             const newRows = [];
-            if (parsedData.length === 0) return '';
-            const headers = Object.keys(parsedData[0]);
-
             finalCompanionships.forEach(comp => {
                 comp.missionaries.forEach(missionary => {
-                    const newRow = { ...missionary }; // Start with original missionary data
-                    // Overwrite location data with the new (or old) location
-                    for (const key in comp.location) {
-                        newRow[key] = comp.location[key];
-                    }
+                    const newRow = { ...missionary };
+                    Object.assign(newRow, comp.location);
                     newRows.push(newRow);
                 });
             });
-            
-            // Ensure original header order is maintained
-            return Papa.unparse(newRows, {
-                columns: headers
-            });
+            return newRows;
         }
 
-        /**
-         * Creates a downloadable link for the generated CSV string.
-         */
-        function generateDownload(csvString) {
-            const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+        function createExcelFile(data, headers) {
+            const worksheet = XLSX.utils.json_to_sheet(data, { header: headers });
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'Transferred Roster');
+            return XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+        }
+
+        function generateDownload(excelBuffer) {
+            const blob = new Blob([excelBuffer], { 
+                type: 'application/vnd.openxmlformats-officedocument.spreadsheet.sheet' 
+            });
             const url = URL.createObjectURL(blob);
-            downloadLink.setAttribute('href', url);
+            downloadLink.href = url;
             downloadLink.style.display = 'inline-block';
         }
-
     </script>
 </body>
 </html>
