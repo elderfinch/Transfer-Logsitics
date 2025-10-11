@@ -28,6 +28,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const transportModal = new bootstrap.Modal(document.getElementById('transportation-defaults-modal'));
     const exceptionsForm = document.getElementById('add-exception-form');
     const exceptionsList = document.getElementById('city-exceptions-list');
+    const continueToTransportBtn = document.getElementById('continue-to-transport');
+    const finishProcessingBtn = document.getElementById('finish-processing');
     
     // --- INITIALIZATION ---
     loadState();
@@ -39,45 +41,53 @@ document.addEventListener('DOMContentLoaded', () => {
     updateUIText();
 
     // --- FILE PROCESSING & MODAL FLOW ---
-    processFilesBtn.addEventListener('click', () => {
-        const oldFile = oldBoardInput.files[0]; const newFile = newBoardInput.files[0];
-        if (!oldFile || !newFile) { alert('Please upload both Excel files.'); return; }
-        Promise.all([readExcelFile(oldFile), readExcelFile(newFile)])
-            .then(([oldData, newData]) => {
-                appState.tempData = { oldData, newData };
-                populateExceptionsModal(newData);
-                exceptionsModal.show();
-            }).catch(error => console.error("Error reading files:", error));
-    });
+    if (processFilesBtn) {
+        processFilesBtn.addEventListener('click', () => {
+            const oldFile = oldBoardInput.files[0]; const newFile = newBoardInput.files[0];
+            if (!oldFile || !newFile) { alert('Please upload both Excel files.'); return; }
+            Promise.all([readExcelFile(oldFile), readExcelFile(newFile)])
+                .then(([oldData, newData]) => {
+                    appState.tempData = { oldData, newData };
+                    populateExceptionsModal(newData);
+                    exceptionsModal.show();
+                }).catch(error => console.error("Error reading files:", error));
+        });
+    }
     
-    document.getElementById('continue-to-transport').addEventListener('click', () => {
-        populateTransportModal();
-        exceptionsModal.hide();
-        transportModal.show();
-    });
+    if (continueToTransportBtn) {
+        continueToTransportBtn.addEventListener('click', () => {
+            populateTransportModal();
+            exceptionsModal.hide();
+            transportModal.show();
+        });
+    }
 
-    document.getElementById('finish-processing').addEventListener('click', () => {
-        if (appState.tempData) {
-            processData(appState.tempData.oldData, appState.tempData.newData);
-            appState.tempData = null;
-            uploadSection.style.display = 'none';
-            mainContent.style.display = 'block';
-            renderTables();
-            transportModal.hide();
-        }
-    });
+    if (finishProcessingBtn) {
+        finishProcessingBtn.addEventListener('click', () => {
+            if (appState.tempData) {
+                processData(appState.tempData.oldData, appState.tempData.newData);
+                appState.tempData = null;
+                uploadSection.style.display = 'none';
+                mainContent.style.display = 'block';
+                renderTables();
+                transportModal.hide();
+            }
+        });
+    }
 
-    exceptionsForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const city = e.target.elements['new-city-name'].value; const type = e.target.elements['exception-type'].value; const name = e.target.elements['exception-name'].value;
-        if(city && type && name){
-            appState.cityExceptions.push({ city, type, name });
-            if(!appState.cities.includes(city)) appState.cities.push(city);
-            saveState();
-            populateExceptionsModal(appState.tempData.newData);
-            e.target.reset();
-        }
-    });
+    if (exceptionsForm) {
+        exceptionsForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const city = e.target.elements['new-city-name'].value; const type = e.target.elements['exception-type'].value; const name = e.target.elements['exception-name'].value;
+            if(city && type && name){
+                appState.cityExceptions.push({ city, type, name });
+                if(!appState.cities.includes(city)) appState.cities.push(city);
+                saveState();
+                populateExceptionsModal(appState.tempData.newData);
+                e.target.reset();
+            }
+        });
+    }
 
     function readExcelFile(file) {
         return new Promise((resolve, reject) => {
@@ -190,7 +200,7 @@ document.addEventListener('DOMContentLoaded', () => {
             groups[groupName].forEach(m => {
                 const row = document.createElement('tr');
                 row.dataset.id = m.id;
-                row.style.backgroundColor = 'white'; // Or apply zone colors here too if desired
+                row.style.backgroundColor = 'white';
                 row.innerHTML = `
                     <td>${createDropdown(['Elder', 'Sister'], m.type, 'type')}</td>
                     <td><input type="text" class="form-control form-control-sm" data-field="name" value="${m.name}"></td>
@@ -211,20 +221,18 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    masterTableHead.addEventListener('click', (e) => {
-        const th = e.target.closest('th');
-        if (th && th.dataset.sort) {
-            const key = th.dataset.sort;
-            if (appState.sort.key === key) {
-                appState.sort.asc = !appState.sort.asc;
-            } else {
+    if (masterTableHead) {
+        masterTableHead.addEventListener('click', (e) => {
+            const th = e.target.closest('th');
+            if (th && th.dataset.sort) {
+                const key = th.dataset.sort;
                 appState.sort.key = key;
-                appState.sort.asc = true;
+                appState.sort.asc = !appState.sort.asc;
+                sortMissionaries();
+                renderTables();
             }
-            sortMissionaries();
-            renderTables();
-        }
-    });
+        });
+    }
 
     function sortMissionaries() {
         const { key, asc } = appState.sort;
@@ -236,6 +244,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateSortIndicator() {
+        if (!masterTableHead) return;
         masterTableHead.querySelectorAll('th').forEach(th => {
             th.classList.remove('sort-asc', 'sort-desc');
             if (th.dataset.sort === appState.sort.key) {
@@ -267,12 +276,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function populateTransportModal() {
         const routes = new Set();
-        const tempData = appState.tempData;
-        const tempMissionaries = [];
-
-        // Temporarily process missionaries to find routes
-        const oldDataMap = new Map(tempData.oldData.map(m => [m['Missionary Name'], m]));
-        tempData.newData.forEach(newM => {
+        const oldDataMap = new Map(appState.tempData.oldData.map(m => [m['Missionary Name'], m]));
+        appState.tempData.newData.forEach(newM => {
             const oldM = oldDataMap.get(newM['Missionary Name']);
             if (oldM && (oldM.Area !== newM.Area || oldM.Zone !== newM.Zone)) {
                 const from = getCity(oldM.Zone, oldM.District, oldM.Area);
@@ -287,12 +292,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const [from, to] = route.split('->');
             const defaultTransport = getDefaultTransport(from, to);
             appState.transportDefaults[route] = defaultTransport;
-            tableHTML += `
-                <tr>
-                    <td>${from}</td>
-                    <td>${to}</td>
-                    <td>${createDropdown(['Bus', 'Airplane', 'Chapa', 'Txopela/Taxi', 'Ride', 'Boleia'], defaultTransport, route, 'transport-default')}</td>
-                </tr>`;
+            tableHTML += `<tr><td>${from}</td><td>${to}</td><td>${createDropdown(['Bus', 'Airplane', 'Chapa', 'Txopela/Taxi', 'Ride', 'Boleia'], defaultTransport, route, 'transport-default')}</td></tr>`;
         });
         tableHTML += '</tbody></table>';
         document.getElementById('transportation-defaults-list').innerHTML = tableHTML;
@@ -300,33 +300,34 @@ document.addEventListener('DOMContentLoaded', () => {
     
     document.getElementById('transportation-defaults-list').addEventListener('change', (e) => {
         if(e.target.classList.contains('transport-default')){
-            const route = e.target.dataset.field;
-            appState.transportDefaults[route] = e.target.value;
+            appState.transportDefaults[e.target.dataset.field] = e.target.value;
         }
     });
 
     // --- EVENT LISTENERS & UI ---
-    languageSelect.addEventListener('change', (e) => { appState.settings.language = e.target.value; saveState(); renderTables(); });
-    deleteAllBtn.addEventListener('click', () => { if (confirm(getText("delete_confirmation"))) { localStorage.removeItem('missionaryTransferState'); window.location.reload(); } });
+    if (languageSelect) languageSelect.addEventListener('change', (e) => { appState.settings.language = e.target.value; saveState(); renderTables(); });
+    if (deleteAllBtn) deleteAllBtn.addEventListener('click', () => { if (confirm(getText("delete_confirmation"))) { localStorage.removeItem('missionaryTransferState'); window.location.reload(); } });
     
-    mainContent.addEventListener('change', (e) => {
-        const target = e.target; const row = target.closest('tr'); if (!row) return;
-        const id = parseFloat(row.dataset.id); const missionary = appState.missionaries.find(m => m.id === id); if (!missionary) return;
-        if (target.matches('.tbd-checkbox')) missionary.tbd = target.checked;
-        else if (target.matches('.leader-checkbox')) missionary.leader = target.checked;
-        else if (target.dataset.field) missionary[target.dataset.field] = target.value;
-        saveState();
-        renderTables();
-    });
+    if (mainContent) {
+        mainContent.addEventListener('change', (e) => {
+            const target = e.target; const row = target.closest('tr'); if (!row) return;
+            const id = parseFloat(row.dataset.id); const missionary = appState.missionaries.find(m => m.id === id); if (!missionary) return;
+            if (target.matches('.tbd-checkbox')) missionary.tbd = target.checked;
+            else if (target.matches('.leader-checkbox')) missionary.leader = target.checked;
+            else if (target.dataset.field) missionary[target.dataset.field] = target.value;
+            saveState();
+            renderTables();
+        });
 
-    mainContent.addEventListener('click', (e) => {
-         if (e.target.closest('.trash-btn')) {
-            const row = e.target.closest('tr'); const id = parseFloat(row.dataset.id);
-            if (confirm(getText("remove_confirmation"))) {
-                appState.missionaries = appState.missionaries.filter(m => m.id !== id); saveState(); renderTables();
+        mainContent.addEventListener('click', (e) => {
+             if (e.target.closest('.trash-btn')) {
+                const row = e.target.closest('tr'); const id = parseFloat(row.dataset.id);
+                if (confirm(getText("remove_confirmation"))) {
+                    appState.missionaries = appState.missionaries.filter(m => m.id !== id); saveState(); renderTables();
+                }
             }
-        }
-    });
+        });
+    }
 
     // --- DATA EXPORT ---
     document.getElementById('download-master-pdf').addEventListener('click', () => exportToPdf('master-table'));
@@ -362,7 +363,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateUIText() {
         const lang = appState.settings.language; languageSelect.value = lang;
         document.querySelectorAll("[data-translate-key]").forEach(el => { if (translations[lang]?.[el.dataset.translateKey]) el.innerText = translations[lang][el.dataset.translateKey]; });
-        masterTableHead.querySelectorAll("th").forEach((th, i) => {
+        if(masterTableHead) masterTableHead.querySelectorAll("th").forEach((th, i) => {
             const keys = ["type", "name", "origin_city", "destination_city", "destination_area", "transportation", "date_of_travel", "departure_time", "instructions", "travel_leader", "actions"];
             if (keys[i]) th.innerText = getText(keys[i]);
         });
