@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
             { city: 'Marromeu', type: 'area', name: 'Marromeu' },
             { city: 'Caia', type: 'area', name: 'Caia' },
         ],
+        // A list of all possible cities for dropdowns
         cities: ['Tete', 'Chimoio', 'Beira', 'Quelimane', 'Nampula', 'Nhamatanda', 'Marromeu', 'Caia']
     };
 
@@ -20,28 +21,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const mainContent = document.getElementById('main-content');
     const masterTableBody = document.querySelector('#master-table tbody');
     const separateTablesContainer = document.getElementById('separate-tables-container');
-    const addMissionaryBtn = document.querySelector('[data-bs-target="#add-missionary-modal"]');
-    const addMissionaryForm = document.getElementById('add-missionary-form');
-    const settingsForm = document.getElementById('settings-form');
-    const deleteAllBtn = document.getElementById('delete-all-missionaries');
-    const downloadMasterPdfBtn = document.getElementById('download-master-pdf');
-    const downloadMasterExcelBtn = document.getElementById('download-master-excel');
-    const downloadSeparatePdfBtn = document.getElementById('download-separate-pdf');
-    const downloadSeparateExcelBtn = document.getElementById('download-separate-excel');
-    const cityExceptionsForm = document.getElementById('city-exceptions-form');
-    const addCityExceptionBtn = document.getElementById('add-city-exception');
-    const saveExceptionsBtn = document.getElementById('save-exceptions');
-
+    
+    // ... (Add other DOM elements you need for modals and buttons)
 
     // --- INITIALIZATION ---
     loadState();
     if (appState.missionaries.length > 0) {
-        mainContent.style.display = 'block';
         document.getElementById('upload-section').style.display = 'none';
+        mainContent.style.display = 'block';
         renderTables();
     }
-    updateUIText();
-
+    // updateUIText(); // You can implement this for language switching
 
     // --- FILE PROCESSING ---
     processFilesBtn.addEventListener('click', () => {
@@ -49,31 +39,69 @@ document.addEventListener('DOMContentLoaded', () => {
         const newFile = newBoardInput.files[0];
 
         if (!oldFile || !newFile) {
-            alert('Please upload both transfer board files.');
+            alert('Please upload both transfer board Excel files.');
             return;
         }
 
-        Papa.parse(oldFile, {
-            header: true,
-            complete: (oldResults) => {
-                Papa.parse(newFile, {
-                    header: true,
-                    complete: (newResults) => {
-                        processData(oldResults.data, newResults.data);
-                        openCityExceptionsModal();
-                    }
-                });
-            }
-        });
+        // Use Promise.all to handle both file readings asynchronously
+        Promise.all([readExcelFile(oldFile), readExcelFile(newFile)])
+            .then(([oldData, newData]) => {
+                processData(oldData, newData);
+                
+                // Once data is processed, show the main content and hide upload
+                document.getElementById('upload-section').style.display = 'none';
+                mainContent.style.display = 'block';
+                renderTables();
+                
+                // You can open your city exceptions modal here if needed
+                // openCityExceptionsModal();
+            })
+            .catch(error => {
+                console.error("Error processing files:", error);
+                alert("There was an error reading the Excel files. Please ensure they are in the correct format.");
+            });
     });
 
+    /**
+     * Reads an Excel file and converts the first sheet to an array of objects.
+     * @param {File} file - The Excel file to read.
+     * @returns {Promise<Array<Object>>} A promise that resolves with the data.
+     */
+    function readExcelFile(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const data = event.target.result;
+                    const workbook = XLSX.read(data, { type: 'binary' });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const json = XLSX.utils.sheet_to_json(worksheet);
+                    resolve(json);
+                } catch (e) {
+                    reject(e);
+                }
+            };
+            reader.onerror = (error) => reject(error);
+            reader.readAsBinaryString(file);
+        });
+    }
+
+    /**
+     * Compares old and new data to find transferred missionaries.
+     */
     function processData(oldData, newData) {
         const transferred = [];
+        
+        // Create a map of the old data for quick lookups
+        const oldDataMap = new Map(oldData.map(m => [m['Missionary Name'], m]));
+
         newData.forEach(newM => {
-            const oldM = oldData.find(o => o['Missionary Name'] === newM['Missionary Name']);
-            if (oldM && (oldM.Area !== newM.Area || oldM.District !== newM.District || oldM.Zone !== newM.Zone)) {
-                transferred.push({
-                    type: newM.Type,
+            const oldM = oldDataMap.get(newM['Missionary Name']);
+            // Check if the missionary existed before and their area/zone has changed
+            if (oldM && (oldM.Area !== newM.Area || oldM.Zone !== newM.Zone)) {
+                 transferred.push({
+                    type: newM.Position.includes('Sister') ? 'Sister' : 'Elder',
                     name: newM['Missionary Name'],
                     originZone: oldM.Zone,
                     originDistrict: oldM.District,
@@ -85,7 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        appState.missionaries = transferred.map(m => {
+        appState.missionaries = transferred.map((m, index) => {
             const originCity = getCity(m.originZone, m.originDistrict, m.originArea);
             const destinationCity = getCity(m.destinationZone, m.destinationDistrict, m.destinationArea);
             return {
@@ -98,14 +126,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 tbd: true,
                 instructions: '',
                 leader: false,
-                id: Date.now() + Math.random()
-            }
+                id: Date.now() + index // Simple unique ID
+            };
         });
         saveState();
     }
 
+
     // --- CITY AND TRANSPORT LOGIC ---
-    function getCity(zone, district, area) {
+    function getCity(zone = '', district = '', area = '') {
+        const upperZone = zone.toUpperCase();
         // Check for specific exceptions first
         const exception = appState.cityExceptions.find(ex =>
             (ex.type === 'area' && ex.name === area) ||
@@ -113,24 +143,24 @@ document.addEventListener('DOMContentLoaded', () => {
         );
         if (exception) return exception.city;
 
-        // Zone-based rules
-        if (['ZONA MUNHAVA', 'ZONA INHAMIZUA', 'ZONA MANGA'].includes(zone.toUpperCase())) {
+        // Zone-based rules for Beira
+        if (['ZONA MUNHAVA', 'ZONA INHAMIZUA', 'ZONA MANGA'].includes(upperZone)) {
             return 'Beira';
         }
 
         // Default: normalize zone name
-        return zone.replace(/ZONA /i, '').charAt(0).toUpperCase() + zone.slice(1).toLowerCase();
+        return zone.replace(/ZONA /i, '').charAt(0).toUpperCase() + zone.slice(zone.indexOf(' ') + 1).toLowerCase();
     }
 
 
     function getDefaultTransport(from, to) {
         const majorCities = ['Tete', 'Chimoio', 'Beira'];
-        if (majorCities.includes(from) && majorCities.includes(to) && from !== to) return 'Bus';
-        if ((from === 'Quelimane' && to === 'Nampula') || (from === 'Nampula' && to === 'Quelimane')) return 'Bus';
-        if (majorCities.includes(from) && to === 'Nampula' || from === 'Nampula' && majorCities.includes(to)) return 'Airplane';
-        if (from === to && from !== 'Beira') return 'Txopela/Taxi';
         if (from === to && from === 'Beira') return 'Ride';
-        return ''; // Default empty
+        if (from === to) return 'Txopela/Taxi';
+        if (majorCities.includes(from) && majorCities.includes(to)) return 'Bus';
+        if ((from === 'Quelimane' && to === 'Nampula') || (from === 'Nampula' && to === 'Quelimane')) return 'Bus';
+        if ((majorCities.includes(from) && to === 'Nampula') || (from === 'Nampula' && majorCities.includes(to))) return 'Airplane';
+        return 'Bus'; // A sensible default
     }
 
 
@@ -142,25 +172,40 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderMasterTable() {
         masterTableBody.innerHTML = '';
-        const zoneColors = {};
-        let colorIndex = 0;
-        const colors = ['#f8d7da', '#d1ecf1', '#d4edda', '#fff3cd', '#d6d8db', '#cce5ff', '#f5c6cb'];
+        const zones = [...new Set(appState.missionaries.map(m => m.originZone))];
+        const colors = ['#f8d7da', '#d1ecf1', '#d4edda', '#fff3cd', '#d6d8db', '#cce5ff', '#f5c6cb', '#e2e3e5'];
+        const zoneColorMap = zones.reduce((acc, zone, index) => {
+            acc[zone] = colors[index % colors.length];
+            return acc;
+        }, {});
 
         appState.missionaries.forEach(m => {
-            if (!zoneColors[m.originZone]) {
-                zoneColors[m.originZone] = colors[colorIndex % colors.length];
-                colorIndex++;
-            }
-
             const row = document.createElement('tr');
-            row.style.backgroundColor = zoneColors[m.originZone];
+            row.style.backgroundColor = zoneColorMap[m.originZone];
             row.dataset.id = m.id;
 
-            // ... (Build and append cells for master table)
+            // ... The logic to build the cells for the row goes here ...
+            // This needs to be fully implemented with inputs, dropdowns, etc.
+            row.innerHTML = `
+                <td>${createDropdown(['Elder', 'Sister'], m.type)}</td>
+                <td><input type="text" class="form-control" value="${m.name}"></td>
+                <td>${createDropdown(appState.cities, m.originCity)}</td>
+                <td>${createDropdown(appState.cities, m.destinationCity)}</td>
+                <td><input type="text" class="form-control" value="${m.destinationArea}"></td>
+                <td>${createDropdown(['Bus', 'Airplane', 'Chapa', 'Txopela/Taxi', 'Ride'], m.transport)}</td>
+                <td>
+                    <input type="date" class="form-control" value="${m.date}" ${m.tbd ? 'disabled' : ''}>
+                    <div class="form-check"><input class="form-check-input" type="checkbox" ${m.tbd ? 'checked' : ''}> TBD</div>
+                </td>
+                <td><input type="time" class="form-control" value="${m.time}"></td>
+                <td><textarea class="form-control">${m.instructions}</textarea></td>
+                <td><div class="form-check"><input class="form-check-input" type="checkbox" ${m.leader ? 'checked' : ''}></div></td>
+                <td><button class="btn btn-danger btn-sm"><i class="fas fa-trash"></i></button></td>
+            `;
 
             masterTableBody.appendChild(row);
         });
-        addCellEventListeners();
+        addTableEventListeners();
     }
 
     function renderSeparateTables() {
@@ -176,59 +221,95 @@ document.addEventListener('DOMContentLoaded', () => {
             const missionariesInGroup = groups[groupName];
             const container = document.createElement('div');
             container.innerHTML = `<h3>${groupName}</h3>`;
-
             const table = document.createElement('table');
             table.className = 'table table-bordered';
-            // ... (Build and append table header for separate tables)
-
+            table.innerHTML = `
+                <thead class="table-dark">
+                    <tr>
+                        <th>Type</th><th>Name</th><th>Transportation</th><th>Date</th><th>Time</th><th>Instructions</th><th>Leader</th><th></th>
+                    </tr>
+                </thead>
+            `;
             const tbody = document.createElement('tbody');
             missionariesInGroup.forEach(m => {
                  const row = document.createElement('tr');
                  row.dataset.id = m.id;
-                 // ... (Build and append cells for separate tables)
+                 // Add cells for the separate table view
+                 row.innerHTML = `
+                    <td>${createDropdown(['Elder', 'Sister'], m.type)}</td>
+                    <td><input type="text" class="form-control" value="${m.name}" disabled></td>
+                    <td>${createDropdown(['Bus', 'Airplane', 'Chapa', 'Txopela/Taxi', 'Ride'], m.transport)}</td>
+                    <td>
+                        <input type="date" class="form-control" value="${m.date}" ${m.tbd ? 'disabled' : ''}>
+                        <div class="form-check"><input class="form-check-input" type="checkbox" ${m.tbd ? 'checked' : ''}> TBD</div>
+                    </td>
+                    <td><input type="time" class="form-control" value="${m.time}"></td>
+                    <td><textarea class="form-control">${m.instructions}</textarea></td>
+                    <td><div class="form-check"><input class="form-check-input" type="checkbox" ${m.leader ? 'checked' : ''}></div></td>
+                    <td><button class="btn btn-danger btn-sm"><i class="fas fa-trash"></i></button></td>
+                 `;
                  tbody.appendChild(row);
             });
             table.appendChild(tbody);
             container.appendChild(table);
             separateTablesContainer.appendChild(container);
         }
-         addCellEventListeners();
+        addTableEventListeners();
     }
 
-    // --- EVENT LISTENERS & UI ---
-    function addCellEventListeners() {
-        // Logic for making cells editable
+    // --- HELPER FUNCTIONS for rendering ---
+    function createDropdown(options, selectedValue) {
+        const select = document.createElement('select');
+        select.className = 'form-select';
+        options.forEach(option => {
+            const opt = document.createElement('option');
+            opt.value = option;
+            opt.textContent = option;
+            if (option === selectedValue) {
+                opt.selected = true;
+            }
+            select.appendChild(opt);
+        });
+        return select.outerHTML;
     }
 
-    deleteAllBtn.addEventListener('click', () => {
-        if (confirm('Are you sure you want to delete all missionary travel data? This cannot be undone.')) {
-            appState.missionaries = [];
-            saveState();
-            window.location.reload();
-        }
-    });
 
+    // --- EVENT LISTENERS on Tables ---
+    function addTableEventListeners() {
+        const allTables = document.querySelectorAll('#master-table, #separate-tables-container table');
+        allTables.forEach(table => {
+            table.addEventListener('change', (e) => {
+                const target = e.target;
+                const row = target.closest('tr');
+                const id = parseFloat(row.dataset.id);
+                const missionary = appState.missionaries.find(m => m.id === id);
 
-    // --- LOCALIZATION ---
-    function updateUIText() {
-        // Logic for updating UI text based on selected language
+                if (!missionary) return;
+
+                // Logic to update appState when an input/select/checkbox in the table changes
+                // This is a simplified example. You'll need to expand this for each column.
+                const cellIndex = target.closest('td').cellIndex;
+                if (cellIndex === 0) missionary.type = target.value;
+                if (cellIndex === 5) missionary.transport = target.value;
+                // Add more cases for each editable column...
+
+                saveState();
+                renderTables(); // Re-render to ensure both tables are in sync
+            });
+
+            table.addEventListener('click', (e) => {
+                if (e.target.closest('.btn-danger')) {
+                    const row = e.target.closest('tr');
+                    const id = parseFloat(row.dataset.id);
+                    if (confirm('Are you sure you want to remove this missionary from the travel plans?')) {
+                        appState.missionaries = appState.missionaries.filter(m => m.id !== id);
+                        saveState();
+                        renderTables();
+                    }
+                }
+            });
+        });
     }
-
-    // --- MODALS ---
-    function openCityExceptionsModal() {
-        // Logic to populate and show the city exceptions modal
-    }
-
-    // --- DATA EXPORT ---
-    downloadMasterPdfBtn.addEventListener('click', () => exportTableToPdf('master-table'));
-    downloadMasterExcelBtn.addEventListener('click', () => exportTableToExcel('master-table'));
-    downloadSeparatePdfBtn.addEventListener('click', () => exportAllToPdf('separate-tables-container'));
-    downloadSeparateExcelBtn.addEventListener('click', () => exportAllToExcel('separate-tables-container'));
-
-    function exportTableToPdf(tableId) { /* ... PDF export logic ... */ }
-    function exportTableToExcel(tableId) { /* ... Excel export logic ... */ }
-    function exportAllToPdf(containerId) { /* ... PDF export logic for multiple tables ... */ }
-    function exportAllToExcel(containerId) { /* ... Excel export logic for multiple tables ... */ }
 
 
     // --- LOCALSTORAGE ---
