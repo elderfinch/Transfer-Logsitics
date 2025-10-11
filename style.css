@@ -1,11 +1,10 @@
+/* General Styles */
 body {
     padding-bottom: 60px; 
 }
-
 .table-responsive {
     margin-top: 20px;
 }
-
 #separate-tables-container h3 {
     margin-top: 2rem;
     border-bottom: 2px solid #dee2e6;
@@ -17,31 +16,38 @@ body {
     body * {
         visibility: hidden;
     }
-
     #main-content, #main-content * {
         visibility: visible;
     }
-    
     #main-content {
         position: absolute;
         left: 0;
         top: 0;
         width: 100%;
     }
-
     .no-print, .no-print * {
         display: none !important;
     }
-
     .table, .table-bordered, .table th, .table td {
         border: 1px solid #dee2e6 !important;
     }
-
     .table {
-        font-size: 12px;
+        font-size: 10px; /* Smaller font for printing */
     }
-    
-    h3 {
-        margin-top: 20px;
+    .form-control, .form-select {
+        border: none !important;
+        box-shadow: none !important;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        padding: 2px;
+        background-color: transparent;
+    }
+    textarea.form-control {
+        resize: none;
+        height: auto;
+    }
+    .form-check-input {
+        display: inline-block;
     }
 }

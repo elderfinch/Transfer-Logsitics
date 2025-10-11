@@ -20,7 +20,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const mainContent = document.getElementById('main-content');
     const uploadSection = document.getElementById('upload-section');
     const masterTableBody = document.querySelector('#master-table tbody');
-    const masterTableHead = document.querySelector('#master-table thead');
     const separateTablesContainer = document.getElementById('separate-tables-container');
     const deleteAllBtn = document.getElementById('delete-all-missionaries');
     const languageSelect = document.getElementById('language-select');
@@ -199,8 +198,7 @@ document.addEventListener('DOMContentLoaded', () => {
             groups[groupName].forEach(m => {
                 const row = document.createElement('tr');
                 row.dataset.id = m.id;
-                const zoneKey = m.originZone.trim().toUpperCase();
-                row.style.backgroundColor = 'white'; // Separate tables are not color-coded for clarity
+                row.style.backgroundColor = 'white';
                 row.innerHTML = `
                     <td>${createDropdown(['Elder', 'Sister'], m.type, 'type')}</td>
                     <td><input type="text" class="form-control form-control-sm" data-field="name" value="${m.name}"></td>
@@ -225,7 +223,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function populateExceptionsModal(data) {
         const uniqueAreas = [...new Set(data.map(item => item.Area).filter(Boolean))];
         const uniqueDistricts = [...new Set(data.map(item => item.District).filter(Boolean))];
-        exceptionsList.innerHTML = `<ul class="list-group mb-4">${appState.cityExceptions.map(ex => `<li class="list-group-item">${ex.type.charAt(0).toUpperCase() + ex.type.slice(1)} '${ex.name}' is in <strong>${ex.city}</strong></li>`).join('')}</ul>`;
+        exceptionsList.innerHTML = `<ul class="list-group mb-4">${appState.cityExceptions.map(ex => `<li class="list-group-item">${getText(ex.type)} '${ex.name}' is in <strong>${ex.city}</strong></li>`).join('')}</ul>`;
         const nameSelect = exceptionsForm.querySelector('#exception-name');
         const typeSelect = exceptionsForm.querySelector('#exception-type');
         if (nameSelect && typeSelect) {
@@ -282,7 +280,6 @@ document.addEventListener('DOMContentLoaded', () => {
             saveState();
             renderTables();
         });
-
         mainContent.addEventListener('click', (e) => {
              if (e.target.closest('.trash-btn')) {
                 const row = e.target.closest('tr'); const id = parseFloat(row.dataset.id);
@@ -294,25 +291,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- DATA EXPORT ---
-    document.getElementById('download-master-pdf').addEventListener('click', () => exportToPdf('master-table'));
-    document.getElementById('download-master-excel').addEventListener('click', () => exportToExcel('master-table', 'Master_Transfers.xlsx'));
-    document.getElementById('download-separate-pdf').addEventListener('click', () => exportToPdf('separate-tables-container'));
-    document.getElementById('download-separate-excel').addEventListener('click', () => exportToExcel('separate-tables-container', 'Separate_Transfers.xlsx'));
-
-    function exportToPdf(elementId) {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF({ orientation: 'landscape' });
-        const element = document.getElementById(elementId);
-        const tables = element.getElementsByTagName('table');
-        for (let i = 0; i < tables.length; i++) {
-            if (i > 0) doc.addPage();
-            const title = tables[i].previousElementSibling?.textContent || "Transfers";
-            doc.text(title, 14, 15);
-            doc.autoTable({ html: tables[i], startY: 20, theme: 'grid', styles: { fontSize: 8 }, headStyles: { fillColor: [41, 128, 185] } });
-        }
-        doc.save('transfers.pdf');
-    }
-
+    document.getElementById('print-btn').addEventListener('click', () => window.print());
+    document.getElementById('download-excel-btn').addEventListener('click', () => exportToExcel('master-table', 'Master_Transfers.xlsx'));
+    
     function exportToExcel(elementId, fileName) {
         const element = document.getElementById(elementId); const tables = element.getElementsByTagName('table'); const wb = XLSX.utils.book_new();
         for (let i = 0; i < tables.length; i++) {
@@ -327,9 +308,10 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateUIText() {
         const lang = appState.settings.language; languageSelect.value = lang;
         document.querySelectorAll("[data-translate-key]").forEach(el => { if (translations[lang]?.[el.dataset.translateKey]) el.innerText = translations[lang][el.dataset.translateKey]; });
-        if(masterTableHead) masterTableHead.querySelectorAll("th").forEach((th, i) => {
+        document.querySelectorAll("#master-table thead th, #separate-tables-container thead th").forEach((th, i) => {
             const keys = ["type", "name", "origin_city", "destination_city", "destination_area", "transportation", "date_of_travel", "departure_time", "instructions", "travel_leader", "actions"];
-            if (keys[i]) th.innerText = getText(keys[i]);
+            const key = th.parentElement.children[i % keys.length].innerText.toLowerCase().replace(' ', '_'); // Heuristic
+            if (keys.includes(key)) th.innerText = getText(key);
         });
     }
 
