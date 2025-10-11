@@ -9,90 +9,176 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container-fluid">
-        <h1 class="my-4">Missionary Transfer Logistics</h1>
+    <div class="container-fluid mt-4">
+        <header class="d-flex justify-content-between align-items-center mb-4">
+             <h1 class="mb-0">Missionary Transfer Logistics</h1>
+             <button class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#settings-modal">
+                <i class="fas fa-cog"></i> Settings
+            </button>
+        </header>
 
-        <div id="upload-section">
-            <h2>Upload Transfer Boards</h2>
-            <div class="mb-3">
-                <label for="old-transfer-board" class="form-label">Old Transfer Board (Excel)</label>
-                <input class="form-control" type="file" id="old-transfer-board" accept=".xlsx, .xls">
+        <div id="upload-section" class="card p-4 shadow-sm">
+            <div class="card-body">
+                <h2 class="card-title">Upload Transfer Boards</h2>
+                <p class="card-text text-muted">Please select the old and new transfer board Excel files to begin.</p>
+                <div class="mb-3">
+                    <label for="old-transfer-board" class="form-label"><strong>Old Transfer Board (Excel)</strong></label>
+                    <input class="form-control" type="file" id="old-transfer-board" accept=".xlsx, .xls">
+                </div>
+                <div class="mb-3">
+                    <label for="new-transfer-board" class="form-label"><strong>New Transfer Board (Excel)</strong></label>
+                    <input class="form-control" type="file" id="new-transfer-board" accept=".xlsx, .xls">
+                </div>
+                <button class="btn btn-primary w-100" id="process-files"><i class="fas fa-cogs"></i> Process Files</button>
             </div>
-            <div class="mb-3">
-                <label for="new-transfer-board" class="form-label">New Transfer Board (Excel)</label>
-                <input class="form-control" type="file" id="new-transfer-board" accept=".xlsx, .xls">
-            </div>
-            <button class="btn btn-primary" id="process-files">Process Files</button>
         </div>
 
         <div id="main-content" style="display: none;">
             <ul class="nav nav-tabs" id="myTab" role="tablist">
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link active" id="master-tab" data-bs-toggle="tab" data-bs-target="#master-table-view" type="button" role="tab">Master Table</button>
+                    <button class="nav-link active" id="master-tab" data-bs-toggle="tab" data-bs-target="#master-table-view" type="button" role="tab" aria-controls="master-table-view" aria-selected="true">Master Table</button>
                 </li>
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="separate-tab" data-bs-toggle="tab" data-bs-target="#separate-tables-view" type="button" role="tab">Separate Tables</button>
+                    <button class="nav-link" id="separate-tab" data-bs-toggle="tab" data-bs-target="#separate-tables-view" type="button" role="tab" aria-controls="separate-tables-view" aria-selected="false">Separate Tables</button>
                 </li>
             </ul>
 
             <div class="tab-content" id="myTabContent">
-                <div class="tab-pane fade show active" id="master-table-view" role="tabpanel">
-                    <div class="d-flex justify-content-between my-3">
+                <div class="tab-pane fade show active p-3" id="master-table-view" role="tabpanel" aria-labelledby="master-tab">
+                    <div class="d-flex justify-content-between align-items-center my-3 flex-wrap gap-2">
                         <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#add-missionary-modal"><i class="fas fa-plus"></i> Add Missionary</button>
                         <div>
-                            <button class="btn btn-info" id="download-master-pdf"><i class="fas fa-file-pdf"></i> Download PDF</button>
-                            <button class="btn btn-info" id="download-master-excel"><i class="fas fa-file-excel"></i> Download Excel</button>
+                            <button class="btn btn-info" id="download-master-pdf"><i class="fas fa-file-pdf"></i> PDF</button>
+                            <button class="btn btn-success" id="download-master-excel"><i class="fas fa-file-excel"></i> Excel</button>
                         </div>
                     </div>
-                    <table class="table table-bordered" id="master-table">
-                        <thead>
-                            <tr>
-                                <th>Type</th>
-                                <th>Name</th>
-                                <th>Origin City</th>
-                                <th>Destination City</th>
-                                <th>Destination Area</th>
-                                <th>Transportation</th>
-                                <th>Date of Travel</th>
-                                <th>Departure Time</th>
-                                <th>Instructions</th>
-                                <th>Travel Leader</th>
-                                <th></th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover" id="master-table">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Type</th>
+                                    <th>Name</th>
+                                    <th>Origin City</th>
+                                    <th>Destination City</th>
+                                    <th>Destination Area</th>
+                                    <th>Transportation</th>
+                                    <th>Date of Travel</th>
+                                    <th>Departure Time</th>
+                                    <th>Instructions</th>
+                                    <th>Travel Leader</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
                 </div>
-                <div class="tab-pane fade" id="separate-tables-view" role="tabpanel">
+                <div class="tab-pane fade p-3" id="separate-tables-view" role="tabpanel" aria-labelledby="separate-tab">
                     <div class="d-flex justify-content-end my-3">
-                         <button class="btn btn-info" id="download-separate-pdf"><i class="fas fa-file-pdf"></i> Download PDF</button>
-                         <button class="btn btn-info" id="download-separate-excel"><i class="fas fa-file-excel"></i> Download Excel</button>
+                         <button class="btn btn-info" id="download-separate-pdf"><i class="fas fa-file-pdf"></i> Download All as PDF</button>
+                         <button class="btn btn-success" id="download-separate-excel"><i class="fas fa-file-excel"></i> Download All as Excel</button>
                     </div>
                     <div id="separate-tables-container"></div>
                 </div>
             </div>
         </div>
-
-        <button class="btn btn-secondary position-fixed bottom-0 end-0 m-3" data-bs-toggle="modal" data-bs-target="#settings-modal">
-            <i class="fas fa-cog"></i> Settings
-        </button>
     </div>
 
-    <div class="modal fade" id="add-missionary-modal" tabindex="-1">
+    <div class="modal fade" id="add-missionary-modal" tabindex="-1" aria-labelledby="addMissionaryModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="addMissionaryModalLabel">Add New Missionary to Travel Plans</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <form id="add-missionary-form">
+              <p class="text-muted">This form can be used to manually add individuals to the travel plans.</p>
+              <div class="mb-3">
+                <label for="new-missionary-name" class="form-label">Missionary Name</label>
+                <input type="text" class="form-control" id="new-missionary-name" required>
+              </div>
+              <div class="mb-3">
+                <label for="new-missionary-type" class="form-label">Type</label>
+                <select class="form-select" id="new-missionary-type"><option>Elder</option><option>Sister</option></select>
+              </div>
+              <div class="mb-3">
+                <label for="new-missionary-origin" class="form-label">Origin City</label>
+                <select class="form-select" id="new-missionary-origin"></select>
+              </div>
+              <div class="mb-3">
+                <label for="new-missionary-destination" class="form-label">Destination City</label>
+                <select class="form-select" id="new-missionary-destination"></select>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <button type="submit" form="add-missionary-form" class="btn btn-primary">Add Missionary</button>
+          </div>
         </div>
+      </div>
+    </div>
 
-    <div class="modal fade" id="settings-modal" tabindex="-1">
+    <div class="modal fade" id="settings-modal" tabindex="-1" aria-labelledby="settingsModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="settingsModalLabel">Settings</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <form id="settings-form">
+              <div class="mb-3">
+                <label for="language-select" class="form-label">Language</label>
+                <select class="form-select" id="language-select">
+                  <option value="en">English</option>
+                  <option value="pt">Português</option>
+                </select>
+              </div>
+            </form>
+            <hr>
+            <h5>Danger Zone</h5>
+            <p>This will permanently delete all missionary travel data from your browser.</p>
+            <button class="btn btn-danger w-100" id="delete-all-missionaries">
+                <i class="fas fa-exclamation-triangle"></i> Delete All Travel Data
+            </button>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          </div>
         </div>
+      </div>
+    </div>
 
-    <div class="modal fade" id="city-exceptions-modal" tabindex="-1">
+    <div class="modal fade" id="city-exceptions-modal" tabindex="-1" aria-labelledby="cityExceptionsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="cityExceptionsModalLabel">Assign City Exceptions</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Assign areas or districts to a specific city if they are not in the main zone city.</p>
+                    <div id="city-exceptions-list">
+                        </div>
+                    <hr>
+                    <h5>Add New Exception</h5>
+                    <form id="add-exception-form" class="row g-3 align-items-end">
+                       </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="save-exceptions">Process with These Cities</button>
+                </div>
+            </div>
         </div>
-
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
