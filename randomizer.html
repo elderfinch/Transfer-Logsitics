@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Missionary Transfer Randomizer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/papaparse/5.3.2/papaparse.min.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f0f2f5;
+            color: #333;
+        }
+        .container {
+            background: #fff;
+            padding: 2rem 3rem;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+        }
+        h1 {
+            color: #1a73e8;
+            margin-bottom: 0.5rem;
+        }
+        p {
+            color: #5f6368;
+            margin-bottom: 2rem;
+        }
+        .control-group {
+            margin-bottom: 1.5rem;
+        }
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #3c4043;
+        }
+        input[type="file"] {
+            display: none;
+        }
+        .file-upload-label {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #e8f0fe;
+            color: #1967d2;
+            border: 1px solid #d2e3fc;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+        .file-upload-label:hover {
+            background: #d2e3fc;
+        }
+        #fileName {
+            margin-top: 10px;
+            font-style: italic;
+            color: #5f6368;
+        }
+        .slider-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+        }
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 70%;
+            height: 8px;
+            background: #d3d3d3;
+            outline: none;
+            border-radius: 4px;
+            opacity: 0.7;
+            transition: opacity .2s;
+        }
+        input[type="range"]:hover {
+            opacity: 1;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #1a73e8;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: #1a73e8;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+        #sliderValue {
+            font-weight: bold;
+            color: #1a73e8;
+            min-width: 50px;
+        }
+        .btn {
+            background-color: #1a73e8;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s, box-shadow 0.2s;
+            display: block;
+            width: 100%;
+            margin-top: 1rem;
+        }
+        .btn:disabled {
+            background-color: #d3d3d3;
+            cursor: not-allowed;
+        }
+        .btn:not(:disabled):hover {
+            background-color: #185abc;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        #downloadLink {
+            display: none;
+            margin-top: 1.5rem;
+            padding: 12px 24px;
+            background-color: #34a853;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+        #downloadLink:hover {
+            background-color: #2c9348;
+        }
+        #status {
+            margin-top: 1rem;
+            color: #d93025;
+            min-height: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Missionary Transfer Tool 🔄</h1>
+        <p>Upload your roster, choose a transfer percentage, and get a new randomized assignment list.</p>
+
+        <div class="control-group">
+            <label for="csvFileInput">1. Upload Roster CSV</label>
+            <label for="csvFileInput" class="file-upload-label">
+                Choose File
+            </label>
+            <input type="file" id="csvFileInput" accept=".csv">
+            <div id="fileName">No file selected</div>
+        </div>
+
+        <div class="control-group">
+            <label for="transferSlider">2. Select Transfer Percentage</label>
+            <div class="slider-container">
+                <input type="range" id="transferSlider" min="0" max="100" value="20">
+                <span id="sliderValue">20%</span>
+            </div>
+        </div>
+        
+        <button id="processButton" class="btn" disabled>Generate Transfers</button>
+        
+        <div id="status"></div>
+        
+        <a id="downloadLink" href="#" download="transferred_roster.csv">Download New Roster</a>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('csvFileInput');
+        const fileNameDisplay = document.getElementById('fileName');
+        const slider = document.getElementById('transferSlider');
+        const sliderValue = document.getElementById('sliderValue');
+        const processButton = document.getElementById('processButton');
+        const downloadLink = document.getElementById('downloadLink');
+        const statusDisplay = document.getElementById('status');
+        let parsedData = [];
+
+        // Update slider value display
+        slider.addEventListener('input', (event) => {
+            sliderValue.textContent = `${event.target.value}%`;
+        });
+
+        // Handle file selection
+        fileInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                fileNameDisplay.textContent = file.name;
+                processButton.disabled = false;
+                statusDisplay.textContent = '';
+                downloadLink.style.display = 'none';
+                Papa.parse(file, {
+                    header: true,
+                    skipEmptyLines: true,
+                    complete: (results) => {
+                        parsedData = results.data;
+                    },
+                    error: (err) => {
+                        statusDisplay.textContent = `Error parsing file: ${err.message}`;
+                        processButton.disabled = true;
+                    }
+                });
+            } else {
+                fileNameDisplay.textContent = 'No file selected';
+                processButton.disabled = true;
+            }
+        });
+
+        // Handle button click
+        processButton.addEventListener('click', () => {
+            if (parsedData.length === 0) {
+                statusDisplay.textContent = 'No data to process. Please upload a valid CSV file.';
+                return;
+            }
+            try {
+                const percentage = parseInt(slider.value, 10);
+                const companionships = groupIntoCompanionships(parsedData);
+                const newAssignments = performTransfers(companionships, percentage);
+                const csvString = unwindToCsvString(newAssignments);
+                generateDownload(csvString);
+                statusDisplay.textContent = `✅ Success! Your file is ready for download.`;
+            } catch (error) {
+                statusDisplay.textContent = `An error occurred: ${error.message}`;
+                console.error(error);
+            }
+        });
+
+        /**
+         * Groups individual missionary rows into companionship units.
+         * A companionship is defined by a unique combination of Zone, District, and Area.
+         */
+        function groupIntoCompanionships(rows) {
+            const groups = new Map();
+            const headers = Object.keys(rows[0] || {});
+            
+            // Define location-specific keys from the headers
+            const locationKeys = headers.filter(h => 
+                ['Zone', 'District', 'Area', 'Area Phone', 'Area Address'].includes(h)
+            );
+
+            rows.forEach(row => {
+                const key = `${row.Zone || ''}-${row.District || ''}-${row.Area || ''}`.trim();
+                if (!groups.has(key)) {
+                    const location = {};
+                    locationKeys.forEach(k => location[k] = row[k]);
+                    groups.set(key, { location: location, missionaries: [] });
+                }
+                groups.get(key).missionaries.push(row);
+            });
+            return Array.from(groups.values());
+        }
+
+        /**
+         * Fisher-Yates shuffle algorithm to randomize an array.
+         */
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+        
+        /**
+         * Randomly selects a percentage of companionships, shuffles their locations, and returns the full list.
+         */
+        function performTransfers(allCompanionships, percentage) {
+            shuffleArray(allCompanionships);
+            const numToTransfer = Math.round(allCompanionships.length * (percentage / 100));
+            
+            if (numToTransfer < 2) { // Shuffling 0 or 1 items has no effect
+                return allCompanionships;
+            }
+
+            const transferring = allCompanionships.slice(0, numToTransfer);
+            const staying = allCompanionships.slice(numToTransfer);
+            
+            // Extract the locations from the companionships selected for transfer
+            const locationsToShuffle = transferring.map(comp => comp.location);
+            shuffleArray(locationsToShuffle);
+            
+            // Re-assign the shuffled locations back to the transferring companionships
+            transferring.forEach((comp, index) => {
+                comp.location = locationsToShuffle[index];
+            });
+
+            return staying.concat(transferring);
+        }
+
+        /**
+         * Converts the final list of companionships back into a CSV string.
+         */
+        function unwindToCsvString(finalCompanionships) {
+            const newRows = [];
+            if (parsedData.length === 0) return '';
+            const headers = Object.keys(parsedData[0]);
+
+            finalCompanionships.forEach(comp => {
+                comp.missionaries.forEach(missionary => {
+                    const newRow = { ...missionary }; // Start with original missionary data
+                    // Overwrite location data with the new (or old) location
+                    for (const key in comp.location) {
+                        newRow[key] = comp.location[key];
+                    }
+                    newRows.push(newRow);
+                });
+            });
+            
+            // Ensure original header order is maintained
+            return Papa.unparse(newRows, {
+                columns: headers
+            });
+        }
+
+        /**
+         * Creates a downloadable link for the generated CSV string.
+         */
+        function generateDownload(csvString) {
+            const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            downloadLink.setAttribute('href', url);
+            downloadLink.style.display = 'inline-block';
+        }
+
+    </script>
+</body>
+</html>
