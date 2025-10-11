@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mission Transfer Logistics</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        .is-hidden {
+            display: none;
+        }
+        .modal-card {
+            width: 80%;
+            max-width: 800px;
+        }
+        .color-box {
+            width: 20px;
+            height: 20px;
+            display: inline-block;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+    </style>
+</head>
+<body>
+
+    <section class="section" id="upload-section">
+        <div class="container">
+            <h1 class="title" data-lang="upload_title">Mission Transfer Logistics</h1>
+            <p class="subtitle" data-lang="upload_subtitle">Upload the old and new transfer boards to begin.</p>
+
+            <div class="columns">
+                <div class="column">
+                    <div class="field">
+                        <label class="label" data-lang="old_board">Old Transfer Board</label>
+                        <div class="control">
+                            <input class="input" type="file" id="old-file-input" accept=".xlsx, .csv">
+                        </div>
+                    </div>
+                </div>
+                <div class="column">
+                    <div class="field">
+                        <label class="label" data-lang="new_board">New Transfer Board</label>
+                        <div class="control">
+                            <input class="input" type="file" id="new-file-input" accept=".xlsx, .csv">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="field">
+                <div class="control">
+                    <button class="button is-primary" id="process-button" data-lang="process_button">Process Transfers</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section is-hidden" id="main-section">
+        <div class="container">
+            <div class="tabs is-boxed">
+                <ul>
+                    <li class="is-active" data-tab="1"><a data-lang="master_table_tab">Master Table</a></li>
+                    <li data-tab="2"><a data-lang="separate_tables_tab">Separate Tables</a></li>
+                    <li data-tab="3"><a data-lang="settings_tab">Settings</a></li>
+                </ul>
+            </div>
+
+            <div class="content-tab" id="tab-1">
+                <div class="level">
+                    <div class="level-left">
+                        <div class="level-item">
+                            <button class="button is-success" id="add-missionary-master" data-lang="add_missionary_button">
+                                <span class="icon"><i class="fas fa-plus"></i></span>
+                                <span data-lang="add_missionary_button_text">Add Missionary</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="level-right">
+                        <div class="level-item">
+                            <button class="button is-info" id="export-master-pdf" data-lang="export_pdf_button">Export PDF</button>
+                        </div>
+                        <div class="level-item">
+                           <button class="button is-info" id="export-master-excel" data-lang="export_excel_button">Export Excel</button>
+                        </div>
+                    </div>
+                </div>
+                 <div id="master-legend" class="mb-4"></div>
+                <div class="table-container">
+                    <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth" id="master-table">
+                        <thead>
+                            <tr>
+                                <th data-lang="col_type">Type</th>
+                                <th data-lang="col_name">Name</th>
+                                <th data-lang="col_origin">Origin City</th>
+                                <th data-lang="col_destination">Destination City</th>
+                                <th data-lang="col_dest_area">Destination Area</th>
+                                <th data-lang="col_transport">Transportation</th>
+                                <th data-lang="col_date">Date</th>
+                                <th data-lang="col_time">Time</th>
+                                <th data-lang="col_instructions">Instructions</th>
+                                <th data-lang="col_leader">Leader</th>
+                                <th><i class="fas fa-trash"></i></th>
+                            </tr>
+                        </thead>
+                        <tbody id="master-table-body">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="content-tab is-hidden" id="tab-2">
+                 <div class="level">
+                    <div class="level-left"></div>
+                    <div class="level-right">
+                         <div class="level-item">
+                            <button class="button is-info" id="export-separate-pdf" data-lang="export_pdf_button">Export All to PDF</button>
+                        </div>
+                        <div class="level-item">
+                           <button class="button is-info" id="export-separate-excel" data-lang="export_excel_button">Export All to Excel</button>
+                        </div>
+                    </div>
+                </div>
+                <div id="separate-tables-container"></div>
+            </div>
+
+            <div class="content-tab is-hidden" id="tab-3">
+                <h2 class="title is-4" data-lang="settings_title">Settings</h2>
+                <div class="field">
+                    <label class="label" data-lang="language_label">Language</label>
+                    <div class="control">
+                        <div class="select">
+                            <select id="language-select">
+                                <option value="en">English</option>
+                                <option value="pt">Português</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <hr>
+                <h3 class="title is-5" data-lang="delete_all_title">Delete All Data</h3>
+                <p data-lang="delete_all_warning">This will permanently delete all missionary travel data. This action cannot be undone.</p>
+                <button class="button is-danger mt-3" id="delete-all-button" data-lang="delete_all_button">Delete All Missionary Travel</button>
+            </div>
+        </div>
+    </section>
+
+    <div class="modal" id="add-missionary-modal">
+        <div class="modal-background"></div>
+        <div class="modal-card">
+            <header class="modal-card-head">
+                <p class="modal-card-title" data-lang="modal_add_missionary_title">Add New Missionary</p>
+                <button class="delete" aria-label="close"></button>
+            </header>
+            <section class="modal-card-body">
+                <form id="add-missionary-form">
+                    <div class="field">
+                        <label class="label" data-lang="col_type">Type</label>
+                        <div class="control">
+                            <div class="select">
+                                <select id="form-type" required>
+                                    <option>Elder</option>
+                                    <option>Sister</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label class="label" data-lang="col_name">Name</label>
+                        <div class="control">
+                            <input class="input" type="text" id="form-name" required>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label class="label" data-lang="col_origin">Origin City</label>
+                        <div class="control">
+                            <input class="input" type="text" id="form-origin" required>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label class="label" data-lang="col_destination">Destination City</label>
+                        <div class="control">
+                            <input class="input" type="text" id="form-destination" required>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label class="label" data-lang="col_dest_area">Destination Area</label>
+                        <div class="control">
+                            <input class="input" type="text" id="form-dest-area" required>
+                        </div>
+                    </div>
+                </form>
+            </section>
+            <footer class="modal-card-foot">
+                <button class="button is-success" id="save-missionary-button" data-lang="save_button">Save</button>
+                <button class="button" id="cancel-missionary-button" data-lang="cancel_button">Cancel</button>
+            </footer>
+        </div>
+    </div>
+
+    <div class="modal" id="city-exceptions-modal">
+        <div class="modal-background"></div>
+        <div class="modal-card">
+            <header class="modal-card-head">
+                <p class="modal-card-title" data-lang="modal_city_exceptions_title">City Exceptions</p>
+            </header>
+            <section class="modal-card-body">
+                <p class="mb-4" data-lang="modal_city_exceptions_desc">Assign areas or districts to a different city than their zone. Default exceptions are included.</p>
+                <h3 class="title is-5" data-lang="current_exceptions_title">Current Exceptions</h3>
+                <div id="exceptions-list" class="mb-4"></div>
+                <hr>
+                <h3 class="title is-5" data-lang="add_exception_title">Add a New Exception</h3>
+                <form id="add-exception-form">
+                     <div class="field">
+                        <label class="label" data-lang="exception_city_label">City</label>
+                        <div class="control">
+                            <input class="input" type="text" id="exception-city" placeholder="e.g., Quelimane">
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label class="label" data-lang="exception_type_label">Type</label>
+                        <div class="control">
+                           <div class="select">
+                               <select id="exception-type">
+                                   <option value="Area" data-lang="exception_type_area">Area</option>
+                                   <option value="District" data-lang="exception_type_district">District</option>
+                               </select>
+                           </div>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label class="label" data-lang="exception_name_label">Name of Area/District</label>
+                        <div class="control">
+                           <input class="input" type="text" id="exception-name" placeholder="e.g., Nhamatanda or Quelimane">
+                        </div>
+                    </div>
+                </form>
+
+            </section>
+            <footer class="modal-card-foot" style="justify-content: space-between;">
+                <button class="button is-success" id="add-exception-button" data-lang="add_button">Add</button>
+                <button class="button is-primary" id="continue-to-app-button" data-lang="continue_button">Continue to App</button>
+            </footer>
+        </div>
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+    const appState = {
+        missionaries: [],
+        settings: {
+            language: 'en'
+        },
+        exceptions: [
+            { type: 'District', name: 'Quelimane', city: 'Quelimane' },
+            { type: 'Area', name: 'Nhamatanda', city: 'Nhamatanda' },
+            { type: 'Area', name: 'Marromeu', city: 'Marromeu' },
+            { type: 'Area', name: 'Caia', city: 'Caia' },
+        ],
+        zoneToCityMap: {
+            'MUNHAVA': 'Beira',
+            'INHAMIZUA': 'Beira',
+            'MANGA': 'Beira'
+        }
+    };
+
+    const lang = {
+        en: {
+            upload_title: "Mission Transfer Logistics",
+            upload_subtitle: "Upload the old and new transfer boards to begin.",
+            old_board: "Old Transfer Board",
+            new_board: "New Transfer Board",
+            process_button: "Process Transfers",
+            master_table_tab: "Master Table",
+            separate_tables_tab: "Separate Tables",
+            settings_tab: "Settings",
+            add_missionary_button: "Add Missionary",
+            add_missionary_button_text: "Add Missionary",
+            export_pdf_button: "Export PDF",
+            export_excel_button: "Export Excel",
+            col_type: "Type",
+            col_name: "Name",
+            col_origin: "Origin City",
+            col_destination: "Destination City",
+            col_dest_area: "Destination Area",
+            col_transport: "Transportation",
+            col_date: "Date",
+            col_time: "Time",
+            col_instructions: "Instructions",
+            col_leader: "Leader",
+            settings_title: "Settings",
+            language_label: "Language",
+            delete_all_title: "Delete All Data",
+            delete_all_warning: "This will permanently delete all missionary travel data. This action cannot be undone.",
+            delete_all_button: "Delete All Missionary Travel",
+            modal_add_missionary_title: "Add New Missionary",
+            save_button: "Save",
+            cancel_button: "Cancel",
+            modal_city_exceptions_title: "City Exceptions",
+            modal_city_exceptions_desc: "Assign areas or districts to a different city than their zone. Default exceptions are included.",
+            current_exceptions_title: "Current Exceptions",
+            add_exception_title: "Add a New Exception",
+            exception_city_label: "City",
+            exception_type_label: "Type",
+            exception_type_area: "Area",
+            exception_type_district: "District",
+            exception_name_label: "Name of Area/District",
+            add_button: "Add",
+            continue_button: "Continue to App",
+            bus: "Bus",
+            airplane: "Airplane",
+            chapa: "Chapa",
+            txopela_taxi: "Txopela/Taxi",
+            ride: "Ride (Boleia)",
+        },
+        pt: {
+            upload_title: "Logística de Transferências da Missão",
+            upload_subtitle: "Carregue os quadros de transferências antigo e novo para começar.",
+            old_board: "Quadro de Transferências Antigo",
+            new_board: "Quadro de Transferências Novo",
+            process_button: "Processar Transferências",
+            master_table_tab: "Tabela Mestra",
+            separate_tables_tab: "Tabelas Separadas",
+            settings_tab: "Definições",
+            add_missionary_button: "Adicionar Missionário",
+            add_missionary_button_text: "Adicionar Missionário",
+            export_pdf_button: "Exportar PDF",
+            export_excel_button: "Exportar Excel",
+            col_type: "Tipo",
+            col_name: "Nome",
+            col_origin: "Cidade de Origem",
+            col_destination: "Cidade de Destino",
+            col_dest_area: "Área de Destino",
+            col_transport: "Transporte",
+            col_date: "Data",
+            col_time: "Hora",
+            col_instructions: "Instruções",
+            col_leader: "Líder",
+            settings_title: "Definições",
+            language_label: "Idioma",
+            delete_all_title: "Apagar Todos os Dados",
+            delete_all_warning: "Isto irá apagar permanentemente todos os dados de viagem dos missionários. Esta ação não pode ser desfeita.",
+            delete_all_button: "Apagar Todas as Viagens de Missionários",
+            modal_add_missionary_title: "Adicionar Novo Missionário",
+            save_button: "Salvar",
+            cancel_button: "Cancelar",
+            modal_city_exceptions_title: "Exceções de Cidade",
+            modal_city_exceptions_desc: "Atribua áreas ou distritos a uma cidade diferente da sua zona. As exceções padrão estão incluídas.",
+            current_exceptions_title: "Exceções Atuais",
+            add_exception_title: "Adicionar Nova Exceção",
+            exception_city_label: "Cidade",
+            exception_type_label: "Tipo",
+            exception_type_area: "Área",
+            exception_type_district: "Distrito",
+            exception_name_label: "Nome da Área/Distrito",
+            add_button: "Adicionar",
+            continue_button: "Continuar para a Aplicação",
+            bus: "Autocarro",
+            airplane: "Avião",
+            chapa: "Chapa",
+            txopela_taxi: "Txopela/Táxi",
+            ride: "Boleia",
+        }
+    };
+
+    // --- UTILITY FUNCTIONS ---
+    const getEl = (selector) => document.querySelector(selector);
+    const getAllEl = (selector) => document.querySelectorAll(selector);
+    const reader = (file) => new Promise((resolve, reject) => {
+        const fileReader = new FileReader();
+        fileReader.onload = (e) => resolve(e.target.result);
+        fileReader.onerror = (e) => reject(e);
+        fileReader.readAsBinaryString(file);
+    });
+
+    const normalizeString = (str) => str ? str.trim().toLowerCase() : '';
+    
+    function generateHslaColors (n, s, l, a) {
+        let colors = [];
+        let hue_start = Math.random() * 360;
+        for (let i = 0; i < n; i++) {
+            let hue = (hue_start + (i * (360/n))) % 360;
+            colors.push(`hsla(${hue}, ${s}%, ${l}%, ${a})`);
+        }
+        return colors;
+    }
+
+
+    // --- LOCAL STORAGE ---
+    const saveState = () => {
+        localStorage.setItem('transferAppData', JSON.stringify(appState));
+    };
+
+    const loadState = () => {
+        const savedData = localStorage.getItem('transferAppData');
+        if (savedData) {
+            const parsedData = JSON.parse(savedData);
+            Object.assign(appState, parsedData);
+            if (appState.missionaries && appState.missionaries.length > 0) {
+                 getEl('#upload-section').classList.add('is-hidden');
+                 getEl('#main-section').classList.remove('is-hidden');
+                 renderAll();
+            }
+        }
+    };
+
+
+    // --- LANGUAGE & TRANSLATION ---
+    const setLanguage = (langCode) => {
+        appState.settings.language = langCode;
+        getAllEl('[data-lang]').forEach(el => {
+            const key = el.getAttribute('data-lang');
+            if (lang[langCode][key]) {
+                el.textContent = lang[langCode][key];
+            }
+        });
+        getEl('#language-select').value = langCode;
+        saveState();
+        renderAll(); 
+    };
+
+    // --- DATA PROCESSING ---
+    const getCity = (missionary) => {
+        const upperCaseZone = missionary.Zone.toUpperCase();
+        
+        // Check for specific exceptions first
+        for (const ex of appState.exceptions) {
+            if (ex.type === 'Area' && normalizeString(ex.name) === normalizeString(missionary.Area)) {
+                return ex.city;
+            }
+            if (ex.type === 'District' && normalizeString(ex.name) === normalizeString(missionary.District)) {
+                return ex.city;
+            }
+        }
+        
+        // Check for zone to city mappings
+        if (appState.zoneToCityMap[upperCaseZone]) {
+            return appState.zoneToCityMap[upperCaseZone];
+        }
+
+        // Default: use zone name
+        return missionary.Zone.replace(/ZONA /i, '').charAt(0).toUpperCase() + missionary.Zone.replace(/ZONA /i, '').slice(1).toLowerCase();
+    };
+    
+    const getDefaultTransport = (origin, destination) => {
+        const o = origin.toLowerCase();
+        const d = destination.toLowerCase();
+        const cities = ['tete', 'chimoio', 'beira'];
+        
+        if (o === d) {
+             return o === 'beira' ? 'Ride (Boleia)' : 'Txopela/Taxi';
+        }
+        if ((cities.includes(o) && cities.includes(d))) {
+            return 'Bus';
+        }
+        if ((o === 'quelimane' && d === 'nampula') || (o === 'nampula' && d === 'quelimane')) {
+            return 'Bus';
+        }
+        if ((cities.includes(o) && d === 'nampula') || (o === 'nampula' && cities.includes(d))) {
+             return 'Airplane';
+        }
+
+        return 'Bus'; // Default
+    };
+
+    const processFiles = async () => {
+        const oldFileInput = getEl('#old-file-input');
+        const newFileInput = getEl('#new-file-input');
+
+        if (!oldFileInput.files[0] || !newFileInput.files[0]) {
+            alert('Please select both files.');
+            return;
+        }
+
+        try {
+            const oldData = await reader(oldFileInput.files[0]);
+            const newData = await reader(newFileInput.files[0]);
+
+            const oldWb = XLSX.read(oldData, { type: 'binary' });
+            const newWb = XLSX.read(newData, { type: 'binary' });
+
+            const oldSheet = XLSX.utils.sheet_to_json(oldWb.Sheets[oldWb.SheetNames[0]]);
+            const newSheet = XLSX.utils.sheet_to_json(newWb.Sheets[newWb.SheetNames[0]]);
+
+            const oldMap = new Map(oldSheet.map(m => [normalizeString(m['Missionary Name']), m]));
+
+            const transferred = newSheet.filter(newM => {
+                const oldM = oldMap.get(normalizeString(newM['Missionary Name']));
+                if (!oldM) return false; // Not in old sheet
+                return normalizeString(oldM.Area) !== normalizeString(newM.Area);
+            });
+            
+            appState.missionaries = transferred.map((m, index) => {
+                 const oldM = oldMap.get(normalizeString(m['Missionary Name']));
+                 const originCity = getCity(oldM);
+                 const destinationCity = getCity(m);
+                 return {
+                    id: Date.now() + index,
+                    type: m.Type,
+                    name: m['Missionary Name'],
+                    originCity: originCity,
+                    destinationCity: destinationCity,
+                    destinationArea: m.Area,
+                    transport: getDefaultTransport(originCity, destinationCity),
+                    date: '',
+                    dateTbd: true,
+                    time: '',
+                    timeTbd: true,
+                    instructions: '',
+                    leader: false
+                };
+            });
+            
+            getEl('#city-exceptions-modal').classList.add('is-active');
+            renderExceptionsList();
+
+        } catch (error) {
+            console.error(error);
+            alert('Error processing files. Make sure they are valid XLSX or CSV files.');
+        }
+    };
+    
+    // --- RENDERING ---
+    const renderAll = () => {
+        renderMasterTable();
+        renderSeparateTables();
+    };
+
+    const renderMasterTable = () => {
+        const tbody = getEl('#master-table-body');
+        tbody.innerHTML = '';
+        const originZones = [...new Set(appState.missionaries.map(m => m.originCity))];
+        const colors = generateHslaColors(originZones.length, 70, 80, 1);
+        const zoneColorMap = new Map(originZones.map((zone, i) => [zone, colors[i]]));
+        
+        // Render Legend
+        const legend = getEl('#master-legend');
+        legend.innerHTML = '';
+        zoneColorMap.forEach((color, zone) => {
+            legend.innerHTML += `<span class="tag" style="background-color:${color}; margin-right: 5px;">${zone}</span>`;
+        });
+
+        appState.missionaries.forEach(m => {
+            const row = document.createElement('tr');
+            row.style.backgroundColor = zoneColorMap.get(m.originCity);
+            row.innerHTML = `
+                <td>${m.type}</td>
+                <td>${m.name}</td>
+                <td>${m.originCity}</td>
+                <td>${m.destinationCity}</td>
+                <td>${m.destinationArea}</td>
+                <td>
+                    <div class="select is-small">
+                        <select data-id="${m.id}" data-field="transport">
+                            <option ${m.transport === 'Bus' ? 'selected' : ''}>Bus</option>
+                            <option ${m.transport === 'Airplane' ? 'selected' : ''}>Airplane</option>
+                            <option ${m.transport === 'Chapa' ? 'selected' : ''}>Chapa</option>
+                            <option ${m.transport === 'Txopela/Taxi' ? 'selected' : ''}>Txopela/Taxi</option>
+                            <option ${m.transport === 'Ride (Boleia)' ? 'selected' : ''}>Ride (Boleia)</option>
+                        </select>
+                    </div>
+                </td>
+                <td>
+                    <input class="input is-small" type="date" value="${m.date}" data-id="${m.id}" data-field="date" ${m.dateTbd ? 'disabled' : ''}>
+                    <label class="checkbox is-small"><input type="checkbox" data-id="${m.id}" data-field="dateTbd" ${m.dateTbd ? 'checked' : ''}> TBD</label>
+                </td>
+                <td>
+                    <input class="input is-small" type="time" value="${m.time}" data-id="${m.id}" data-field="time" ${m.timeTbd ? 'disabled' : ''}>
+                    <label class="checkbox is-small"><input type="checkbox" data-id="${m.id}" data-field="timeTbd" ${m.timeTbd ? 'checked' : ''}> TBD</label>
+                </td>
+                <td><textarea class="textarea is-small" data-id="${m.id}" data-field="instructions">${m.instructions}</textarea></td>
+                <td><input type="checkbox" data-id="${m.id}" data-field="leader" ${m.leader ? 'checked' : ''}></td>
+                <td><button class="button is-danger is-small is-outlined delete-missionary" data-id="${m.id}"><i class="fas fa-trash"></i></button></td>
+            `;
+            tbody.appendChild(row);
+        });
+    };
+    
+    const renderSeparateTables = () => {
+        const container = getEl('#separate-tables-container');
+        container.innerHTML = '';
+        const groups = appState.missionaries.reduce((acc, m) => {
+            const key = `${m.originCity} to ${m.destinationCity}`;
+            if (!acc[key]) acc[key] = [];
+            acc[key].push(m);
+            return acc;
+        }, {});
+
+        for (const groupName in groups) {
+            const missionaries = groups[groupName];
+            const div = document.createElement('div');
+            div.innerHTML = `
+                <h3 class="title is-4">${groupName}</h3>
+                <div class="table-container mb-6">
+                    <table class="table is-bordered is-striped is-fullwidth">
+                        <thead>
+                           <tr>
+                                <th data-lang="col_type">Type</th>
+                                <th data-lang="col_name">Name</th>
+                                <th data-lang="col_dest_area">Destination Area</th>
+                                <th data-lang="col_transport">Transportation</th>
+                                <th data-lang="col_date">Date</th>
+                                <th data-lang="col_time">Time</th>
+                                <th data-lang="col_instructions">Instructions</th>
+                                <th data-lang="col_leader">Leader</th>
+                                <th><i class="fas fa-trash"></i></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${missionaries.map(m => `
+                                <tr>
+                                    <td>${m.type}</td>
+                                    <td>${m.name}</td>
+                                    <td>${m.destinationArea}</td>
+                                    <td>
+                                        <div class="select is-small">
+                                            <select data-id="${m.id}" data-field="transport">
+                                                <option ${m.transport === 'Bus' ? 'selected' : ''}>Bus</option>
+                                                <option ${m.transport === 'Airplane' ? 'selected' : ''}>Airplane</option>
+                                                <option ${m.transport === 'Chapa' ? 'selected' : ''}>Chapa</option>
+                                                <option ${m.transport === 'Txopela/Taxi' ? 'selected' : ''}>Txopela/Taxi</option>
+                                                <option ${m.transport === 'Ride (Boleia)' ? 'selected' : ''}>Ride (Boleia)</option>
+                                            </select>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <input class="input is-small" type="date" value="${m.date}" data-id="${m.id}" data-field="date" ${m.dateTbd ? 'disabled' : ''}>
+                                        <label class="checkbox is-small"><input type="checkbox" data-id="${m.id}" data-field="dateTbd" ${m.dateTbd ? 'checked' : ''}> TBD</label>
+                                    </td>
+                                    <td>
+                                        <input class="input is-small" type="time" value="${m.time}" data-id="${m.id}" data-field="time" ${m.timeTbd ? 'disabled' : ''}>
+                                        <label class="checkbox is-small"><input type="checkbox" data-id="${m.id}" data-field="timeTbd" ${m.timeTbd ? 'checked' : ''}> TBD</label>
+                                    </td>
+                                    <td><textarea class="textarea is-small" data-id="${m.id}" data-field="instructions">${m.instructions}</textarea></td>
+                                    <td><input type="checkbox" data-id="${m.id}" data-field="leader" ${m.leader ? 'checked' : ''}></td>
+                                    <td><button class="button is-danger is-small is-outlined delete-missionary" data-id="${m.id}"><i class="fas fa-trash"></i></button></td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            container.appendChild(div);
+        }
+        setLanguage(appState.settings.language);
+    };
+    
+    const renderExceptionsList = () => {
+        const list = getEl('#exceptions-list');
+        list.innerHTML = '';
+        appState.exceptions.forEach((ex, index) => {
+             list.innerHTML += `
+                <div class="tags has-addons">
+                  <span class="tag is-medium">${ex.type}: ${ex.name}</span>
+                  <span class="tag is-info is-medium">${ex.city}</span>
+                   <a class="tag is-delete" data-index="${index}"></a>
+                </div>
+            `;
+        });
+    };
+    
+    
+    // --- EVENT HANDLERS ---
+    getEl('#process-button').addEventListener('click', processFiles);
+
+    getAllEl('.tabs li').forEach(tab => {
+        tab.addEventListener('click', () => {
+            const tabNumber = tab.getAttribute('data-tab');
+            getAllEl('.tabs li').forEach(t => t.classList.remove('is-active'));
+            tab.classList.add('is-active');
+
+            getAllEl('.content-tab').forEach(content => content.classList.add('is-hidden'));
+            getEl(`#tab-${tabNumber}`).classList.remove('is-hidden');
+        });
+    });
+
+    // Delegated event listener for dynamic content
+    document.addEventListener('input', (e) => {
+        const target = e.target;
+        const id = parseInt(target.getAttribute('data-id'));
+        if (!id) return;
+        
+        const missionary = appState.missionaries.find(m => m.id === id);
+        if (!missionary) return;
+
+        const field = target.getAttribute('data-field');
+        const value = target.type === 'checkbox' ? target.checked : target.value;
+
+        missionary[field] = value;
+        
+        // Handle TBD checkboxes
+        if (field === 'dateTbd') {
+            const dateInput = target.closest('td').querySelector('input[type="date"]');
+            dateInput.disabled = value;
+            if (value) missionary.date = '';
+        }
+        if (field === 'timeTbd') {
+            const timeInput = target.closest('td').querySelector('input[type="time"]');
+            timeInput.disabled = value;
+            if (value) missionary.time = '';
+        }
+
+        saveState();
+        renderAll();
+    });
+    
+     document.addEventListener('click', e => {
+        if (e.target.closest('.delete-missionary')) {
+            const id = parseInt(e.target.closest('.delete-missionary').getAttribute('data-id'));
+            if (confirm('Are you sure you want to remove this missionary from the travel plans?')) {
+                appState.missionaries = appState.missionaries.filter(m => m.id !== id);
+                saveState();
+                renderAll();
+            }
+        }
+        if(e.target.closest('.tag.is-delete')){
+             const index = parseInt(e.target.closest('.tag.is-delete').getAttribute('data-index'));
+             appState.exceptions.splice(index, 1);
+             saveState();
+             renderExceptionsList();
+        }
+    });
+
+    getEl('#language-select').addEventListener('change', (e) => {
+        setLanguage(e.target.value);
+    });
+
+    getEl('#delete-all-button').addEventListener('click', () => {
+        if (confirm('Are you sure you want to delete all data? This cannot be undone.')) {
+            localStorage.removeItem('transferAppData');
+            appState.missionaries = [];
+            getEl('#upload-section').classList.remove('is-hidden');
+            getEl('#main-section').classList.add('is-hidden');
+        }
+    });
+    
+    // Modal handlers
+    const addMissionaryModal = getEl('#add-missionary-modal');
+    getEl('#add-missionary-master').addEventListener('click', () => addMissionaryModal.classList.add('is-active'));
+    addMissionaryModal.querySelector('.delete').addEventListener('click', () => addMissionaryModal.classList.remove('is-active'));
+    getEl('#cancel-missionary-button').addEventListener('click', () => addMissionaryModal.classList.remove('is-active'));
+
+    getEl('#save-missionary-button').addEventListener('click', () => {
+        const newMissionary = {
+            id: Date.now(),
+            type: getEl('#form-type').value,
+            name: getEl('#form-name').value,
+            originCity: getEl('#form-origin').value,
+            destinationCity: getEl('#form-destination').value,
+            destinationArea: getEl('#form-dest-area').value,
+            transport: 'Bus',
+            date: '',
+            dateTbd: true,
+            time: '',
+            timeTbd: true,
+            instructions: '',
+            leader: false
+        };
+
+        if(newMissionary.name && newMissionary.originCity && newMissionary.destinationCity && newMissionary.destinationArea) {
+            appState.missionaries.push(newMissionary);
+            saveState();
+            renderAll();
+            addMissionaryModal.classList.remove('is-active');
+            getEl('#add-missionary-form').reset();
+        } else {
+            alert("Please fill out all fields.");
+        }
+    });
+
+    // Exceptions Modal Handlers
+    const cityExceptionsModal = getEl('#city-exceptions-modal');
+    getEl('#add-exception-button').addEventListener('click', () => {
+        const city = getEl('#exception-city').value;
+        const type = getEl('#exception-type').value;
+        const name = getEl('#exception-name').value;
+        
+        if (city && type && name) {
+            appState.exceptions.push({ city, type, name });
+            saveState();
+            renderExceptionsList();
+            getEl('#add-exception-form').reset();
+        } else {
+            alert("Please fill all fields to add an exception.");
+        }
+    });
+
+    getEl('#continue-to-app-button').addEventListener('click', () => {
+        cityExceptionsModal.classList.remove('is-active');
+        getEl('#upload-section').classList.add('is-hidden');
+        getEl('#main-section').classList.remove('is-hidden');
+        saveState();
+        renderAll();
+    });
+    
+    // --- EXPORTING ---
+    const { jsPDF } = window.jspdf;
+    
+    const exportMasterPDF = () => {
+        const doc = new jsPDF();
+        doc.autoTable({ html: '#master-table' });
+        doc.save('master-transfer-list.pdf');
+    };
+
+    const exportMasterExcel = () => {
+        const wb = XLSX.utils.table_to_book(getEl('#master-table'));
+        XLSX.writeFile(wb, "master-transfer-list.xlsx");
+    };
+
+    const exportSeparatePDF = () => {
+        const doc = new jsPDF();
+        const tables = getAllEl('#separate-tables-container .table-container');
+        tables.forEach((table, index) => {
+            const title = table.previousElementSibling.textContent;
+            doc.text(title, 14, (index * 10) + 15);
+            doc.autoTable({
+                html: table.querySelector('table'),
+                startY: (index * 10) + 20,
+            });
+            if (index < tables.length -1) {
+                doc.addPage();
+            }
+        });
+        doc.save('separate-transfer-lists.pdf');
+    };
+
+    const exportSeparateExcel = () => {
+        const wb = XLSX.utils.book_new();
+        const tables = getAllEl('#separate-tables-container .table-container');
+         tables.forEach(table => {
+            const title = table.previousElementSibling.textContent.replace(/ /g, "_").slice(0, 31);
+            const ws = XLSX.utils.table_to_sheet(table.querySelector('table'));
+            XLSX.utils.book_append_sheet(wb, ws, title);
+        });
+        XLSX.writeFile(wb, 'separate-transfer-lists.xlsx');
+    };
+    
+    getEl('#export-master-pdf').addEventListener('click', exportMasterPDF);
+    getEl('#export-master-excel').addEventListener('click', exportMasterExcel);
+    getEl('#export-separate-pdf').addEventListener('click', exportSeparatePDF);
+    getEl('#export-separate-excel').addEventListener('click', exportSeparateExcel);
+
+
+    // --- INITIALIZATION ---
+    loadState();
+    setLanguage(appState.settings.language);
+
+});
+</script>
+
+</body>
+</html>
