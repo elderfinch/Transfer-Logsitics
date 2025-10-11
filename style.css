@@ -1,0 +1,17 @@
+body {
+    padding-bottom: 60px; /* To make space for the settings button */
+}
+
+.table-responsive {
+    margin-top: 20px;
+}
+
+.modal-body form .form-group {
+    margin-bottom: 1rem;
+}
+
+#separate-tables-container h3 {
+    margin-top: 2rem;
+    border-bottom: 2px solid #dee2e6;
+    padding-bottom: 0.5rem;
+}
