@@ -2,74 +2,34 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- TRANSLATION DICTIONARY ---
     const translations = {
         en: {
-            "missionary_transfer_logistics": "Missionary Transfer Logistics",
-            "upload_transfer_boards": "Upload Transfer Boards",
-            "old_transfer_board": "Old Transfer Board (Excel)",
-            "new_transfer_board": "New Transfer Board (Excel)",
-            "process_files": "Process Files",
-            "master_table": "Master Table",
-            "separate_tables": "Separate Tables",
-            "add_missionary": "Add Missionary",
-            "download_pdf": "PDF",
-            "download_excel": "Excel",
-            "type": "Type",
-            "name": "Name",
-            "origin_city": "Origin City",
-            "destination_city": "Destination City",
-            "destination_area": "Destination Area",
-            "transportation": "Transportation",
-            "date_of_travel": "Date of Travel",
-            "departure_time": "Departure Time",
-            "instructions": "Instructions",
-            "travel_leader": "Travel Leader",
-            "settings": "Settings",
-            "language": "Language",
-            "danger_zone": "Danger Zone",
-            "delete_all_travel_data": "Delete All Travel Data",
-            "delete_confirmation": "Are you sure you want to delete all missionary travel data? This cannot be undone.",
+            "missionary_transfer_logistics": "Missionary Transfer Logistics", "upload_transfer_boards": "Upload Transfer Boards",
+            "old_transfer_board": "Old Transfer Board (Excel)", "new_transfer_board": "New Transfer Board (Excel)",
+            "process_files": "Process Files", "master_table": "Master Table", "separate_tables": "Separate Tables",
+            "add_missionary": "Add Missionary", "download_pdf": "PDF", "download_excel": "Excel", "type": "Type",
+            "name": "Name", "origin_city": "Origin City", "destination_city": "Destination City",
+            "destination_area": "Destination Area", "transportation": "Transportation", "date_of_travel": "Date of Travel",
+            "departure_time": "Departure Time", "instructions": "Instructions", "travel_leader": "Travel Leader",
+            "settings": "Settings", "language": "Language", "danger_zone": "Danger Zone",
+            "delete_all_travel_data": "Delete All Travel Data", "delete_confirmation": "Are you sure you want to delete all missionary travel data? This cannot be undone.",
             "remove_confirmation": "Are you sure you want to remove this missionary from the travel plans?",
-            "assign_city_exceptions": "Assign City Exceptions",
-            "assign_city_exceptions_desc": "Assign areas or districts to a specific city if they are not in the main zone city.",
-            "add_new_exception": "Add New Exception",
-            "process_with_cities": "Process with These Cities",
-            "city": "City",
-            "area": "Area",
-            "district": "District",
+            "assign_city_exceptions": "Assign City Exceptions", "assign_city_exceptions_desc": "Assign areas or districts to a specific city if they are not in the main zone city.",
+            "add_new_exception": "Add New Exception", "process_with_cities": "Process with These Cities", "city": "City",
+            "area": "Area", "district": "District",
         },
         pt: {
-            "missionary_transfer_logistics": "Logística de Transferência de Missionários",
-            "upload_transfer_boards": "Carregar Planilhas de Transferência",
-            "old_transfer_board": "Planilha de Transferência Antiga (Excel)",
-            "new_transfer_board": "Planilha de Transferência Nova (Excel)",
-            "process_files": "Processar Arquivos",
-            "master_table": "Tabela Principal",
-            "separate_tables": "Tabelas Separadas",
-            "add_missionary": "Adicionar Missionário",
-            "download_pdf": "PDF",
-            "download_excel": "Excel",
-            "type": "Tipo",
-            "name": "Nome",
-            "origin_city": "Cidade de Origem",
-            "destination_city": "Cidade de Destino",
-            "destination_area": "Área de Destino",
-            "transportation": "Transporte",
-            "date_of_travel": "Data da Viagem",
-            "departure_time": "Hora de Partida",
-            "instructions": "Instruções",
-            "travel_leader": "Líder de Viagem",
-            "settings": "Configurações",
-            "language": "Idioma",
-            "danger_zone": "Zona de Perigo",
-            "delete_all_travel_data": "Apagar Todos os Dados de Viagem",
-            "delete_confirmation": "Tem certeza de que deseja apagar todos os dados de viagem dos missionários? Esta ação não pode ser desfeita.",
-            "remove_confirmation": "Tem certeza de que deseja remover este missionário dos planos de viagem?",
-            "assign_city_exceptions": "Atribuir Exceções de Cidade",
-            "assign_city_exceptions_desc": "Atribua áreas ou distritos a uma cidade específica se não estiverem na cidade principal da zona.",
-            "add_new_exception": "Adicionar Nova Exceção",
-            "process_with_cities": "Processar com Estas Cidades",
-            "city": "Cidade",
-            "area": "Área",
-            "district": "Distrito",
+            "missionary_transfer_logistics": "Logística de Transferência de Missionários", "upload_transfer_boards": "Carregar Planilhas de Transferência",
+            "old_transfer_board": "Planilha Antiga (Excel)", "new_transfer_board": "Planilha Nova (Excel)",
+            "process_files": "Processar Arquivos", "master_table": "Tabela Principal", "separate_tables": "Tabelas Separadas",
+            "add_missionary": "Adicionar Missionário", "download_pdf": "PDF", "download_excel": "Excel", "type": "Tipo",
+            "name": "Nome", "origin_city": "Cidade de Origem", "destination_city": "Cidade de Destino",
+            "destination_area": "Área de Destino", "transportation": "Transporte", "date_of_travel": "Data da Viagem",
+            "departure_time": "Hora de Partida", "instructions": "Instruções", "travel_leader": "Líder de Viagem",
+            "settings": "Configurações", "language": "Idioma", "danger_zone": "Zona de Perigo",
+            "delete_all_travel_data": "Apagar Todos os Dados", "delete_confirmation": "Tem certeza que quer apagar todos os dados? Esta ação não pode ser desfeita.",
+            "remove_confirmation": "Tem certeza que quer remover este missionário dos planos de viagem?",
+            "assign_city_exceptions": "Atribuir Exceções de Cidade", "assign_city_exceptions_desc": "Atribua áreas ou distritos a uma cidade específica se não estiverem na cidade principal da zona.",
+            "add_new_exception": "Adicionar Nova Exceção", "process_with_cities": "Processar com Cidades", "city": "Cidade",
+            "area": "Área", "district": "Distrito",
         }
     };
 
@@ -78,13 +38,11 @@ document.addEventListener('DOMContentLoaded', () => {
         missionaries: [],
         settings: { language: 'en' },
         cityExceptions: [
-            { city: 'Quelimane', type: 'district', name: 'Quelimane' },
-            { city: 'Nhamatanda', type: 'area', name: 'Nhamatanda' },
-            { city: 'Marromeu', type: 'area', name: 'Marromeu' },
-            { city: 'Caia', type: 'area', name: 'Caia' },
+            { city: 'Quelimane', type: 'district', name: 'Quelimane' }, { city: 'Nhamatanda', type: 'area', name: 'Nhamatanda' },
+            { city: 'Marromeu', type: 'area', name: 'Marromeu' }, { city: 'Caia', type: 'area', name: 'Caia' },
         ],
         cities: ['Tete', 'Chimoio', 'Beira', 'Quelimane', 'Nampula', 'Nhamatanda', 'Marromeu', 'Caia'],
-        tempData: null // To hold data during exception modal
+        tempData: null
     };
 
     // --- DOM ELEMENTS ---
@@ -98,8 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const deleteAllBtn = document.getElementById('delete-all-missionaries');
     const languageSelect = document.getElementById('language-select');
     const saveExceptionsBtn = document.getElementById('save-exceptions');
-    const exceptionsModalEl = document.getElementById('city-exceptions-modal');
-    const exceptionsModal = new bootstrap.Modal(exceptionsModalEl);
+    const exceptionsModal = new bootstrap.Modal(document.getElementById('city-exceptions-modal'));
     const exceptionsForm = document.getElementById('add-exception-form');
     const exceptionsList = document.getElementById('city-exceptions-list');
 
@@ -116,10 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
     processFilesBtn.addEventListener('click', () => {
         const oldFile = oldBoardInput.files[0];
         const newFile = newBoardInput.files[0];
-        if (!oldFile || !newFile) {
-            alert('Please upload both transfer board Excel files.');
-            return;
-        }
+        if (!oldFile || !newFile) { alert('Please upload both transfer board Excel files.'); return; }
         Promise.all([readExcelFile(oldFile), readExcelFile(newFile)])
             .then(([oldData, newData]) => {
                 appState.tempData = { oldData, newData };
@@ -132,7 +86,7 @@ document.addEventListener('DOMContentLoaded', () => {
     saveExceptionsBtn.addEventListener('click', () => {
         if (appState.tempData) {
             processData(appState.tempData.oldData, appState.tempData.newData);
-            appState.tempData = null; // Clear temp data
+            appState.tempData = null;
             uploadSection.style.display = 'none';
             mainContent.style.display = 'block';
             renderTables();
@@ -149,7 +103,7 @@ document.addEventListener('DOMContentLoaded', () => {
             appState.cityExceptions.push({ city, type, name });
             if(!appState.cities.includes(city)) appState.cities.push(city);
             saveState();
-            populateExceptionsModal(appState.tempData.newData); // Refresh modal view
+            populateExceptionsModal(appState.tempData.newData);
             e.target.reset();
         }
     });
@@ -177,7 +131,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const oldM = oldDataMap.get(newM['Missionary Name']);
             if (oldM && (oldM.Area !== newM.Area || oldM.Zone !== newM.Zone)) {
                  transferred.push({
-                    type: (newM.Position && newM.Position.includes('Sister')) ? 'Sister' : 'Elder',
+                    type: (newM.Position?.includes('Sister')) ? 'Sister' : 'Elder',
                     name: newM['Missionary Name'],
                     originZone: oldM.Zone, originDistrict: oldM.District, originArea: oldM.Area,
                     destinationZone: newM.Zone, destinationDistrict: newM.District, destinationArea: newM.Area,
@@ -231,9 +185,7 @@ document.addEventListener('DOMContentLoaded', () => {
             row.style.backgroundColor = zoneColorMap[m.originZone];
             row.dataset.id = m.id;
             row.innerHTML = `
-                <td>${m.type}</td>
-                <td>${m.name}</td>
-                <td>${m.originCity}</td>
+                <td>${m.type}</td> <td>${m.name}</td> <td>${m.originCity}</td>
                 <td>${createDropdown(appState.cities, m.destinationCity, 'destinationCity')}</td>
                 <td><input type="text" class="form-control form-control-sm" data-field="destinationArea" value="${m.destinationArea}"></td>
                 <td>${createDropdown(['Bus', 'Airplane', 'Chapa', 'Txopela/Taxi', 'Ride', 'Boleia'], m.transport, 'transport')}</td>
@@ -262,25 +214,14 @@ document.addEventListener('DOMContentLoaded', () => {
             return acc;
         }, {});
         for (const groupName in groups) {
-            const missionariesInGroup = groups[groupName];
             const container = document.createElement('div');
             container.innerHTML = `<h3 class="mt-4">${groupName}</h3>`;
             const table = document.createElement('table');
             table.className = 'table table-bordered table-striped';
             table.innerHTML = `<thead class="table-dark"><tr><th>Type</th><th>Name</th><th>Transportation</th><th>Date</th><th>Instructions</th><th>Leader</th></tr></thead>`;
             const tbody = document.createElement('tbody');
-            missionariesInGroup.forEach(m => {
-                 const row = document.createElement('tr');
-                 tbody.innerHTML += `
-                    <tr>
-                        <td>${m.type}</td>
-                        <td>${m.name}</td>
-                        <td>${m.transport}</td>
-                        <td>${m.tbd ? 'TBD' : m.date}</td>
-                        <td>${m.instructions}</td>
-                        <td>${m.leader ? 'Yes' : 'No'}</td>
-                    </tr>
-                 `;
+            groups[groupName].forEach(m => {
+                 tbody.innerHTML += `<tr><td>${m.type}</td><td>${m.name}</td><td>${m.transport}</td><td>${m.tbd ? 'TBD' : m.date}</td><td>${m.instructions}</td><td>${m.leader ? 'Yes' : 'No'}</td></tr>`;
             });
             table.appendChild(tbody);
             container.appendChild(table);
@@ -293,24 +234,20 @@ document.addEventListener('DOMContentLoaded', () => {
         const uniqueAreas = [...new Set(data.map(item => item.Area).filter(Boolean))];
         const uniqueDistricts = [...new Set(data.map(item => item.District).filter(Boolean))];
 
-        let exceptionsHTML = '<ul class="list-group mb-4">';
-        appState.cityExceptions.forEach(ex => {
-            exceptionsHTML += `<li class="list-group-item">${ex.type.charAt(0).toUpperCase() + ex.type.slice(1)} '${ex.name}' is in <strong>${ex.city}</strong></li>`;
-        });
-        exceptionsHTML += '</ul>';
-        exceptionsList.innerHTML = exceptionsHTML;
-
+        exceptionsList.innerHTML = `<ul class="list-group mb-4">${appState.cityExceptions.map(ex => `<li class="list-group-item">${ex.type.charAt(0).toUpperCase() + ex.type.slice(1)} '${ex.name}' is in <strong>${ex.city}</strong></li>`).join('')}</ul>`;
+        
         const nameSelect = exceptionsForm.querySelector('#exception-name');
         const typeSelect = exceptionsForm.querySelector('#exception-type');
 
-        const updateNameOptions = () => {
-            const selectedType = typeSelect.value;
-            const options = selectedType === 'area' ? uniqueAreas : uniqueDistricts;
-            nameSelect.innerHTML = options.map(opt => `<option value="${opt}">${opt}</option>`).join('');
-        };
-
-        typeSelect.addEventListener('change', updateNameOptions);
-        updateNameOptions(); // Initial population
+        // ROBUSTNESS CHECK: Ensure elements exist before adding listeners
+        if (nameSelect && typeSelect) {
+            const updateNameOptions = () => {
+                const options = typeSelect.value === 'area' ? uniqueAreas : uniqueDistricts;
+                nameSelect.innerHTML = options.map(opt => `<option value="${opt}">${opt}</option>`).join('');
+            };
+            typeSelect.onchange = updateNameOptions; // Use onchange to avoid multiple listeners
+            updateNameOptions();
+        }
     }
 
     // --- EVENT LISTENERS & UI ---
@@ -365,21 +302,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function exportToPdf(elementId) {
         const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
+        const doc = new jsPDF({ orientation: 'landscape' });
         const element = document.getElementById(elementId);
         const tables = element.getElementsByTagName('table');
-        let yPos = 15;
-
+        
         for (let i = 0; i < tables.length; i++) {
             if (i > 0) doc.addPage();
             const title = tables[i].previousElementSibling?.textContent || "Transfers";
-            doc.text(title, 14, yPos);
+            doc.text(title, 14, 15);
             doc.autoTable({
                 html: tables[i],
-                startY: yPos + 5,
+                startY: 20,
                 theme: 'grid',
                 styles: { fontSize: 8 },
-                headStyles: { fillColor: [22, 160, 133] }
+                headStyles: { fillColor: [41, 128, 185] }
             });
         }
         doc.save('transfers.pdf');
@@ -391,9 +327,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const wb = XLSX.utils.book_new();
 
         for (let i = 0; i < tables.length; i++) {
-            const title = tables[i].previousElementSibling?.textContent.replace(/[^a-zA-Z0-9]/g, '') || `Sheet${i+1}`;
+            let title = `Sheet${i+1}`;
+            if(elementId === 'separate-tables-container' && tables[i].previousElementSibling) {
+                title = tables[i].previousElementSibling.textContent;
+            } else if (elementId === 'master-table') {
+                title = 'Master List';
+            }
             const ws = XLSX.utils.table_to_sheet(tables[i]);
-            XLSX.utils.book_append_sheet(wb, ws, title.substring(0, 31));
+            XLSX.utils.book_append_sheet(wb, ws, title.replace(/[^a-zA-Z0-9]/g, '').substring(0, 31));
         }
         XLSX.writeFile(wb, fileName);
     }
@@ -404,34 +345,21 @@ document.addEventListener('DOMContentLoaded', () => {
         languageSelect.value = lang;
         document.querySelectorAll("[data-translate-key]").forEach(el => {
             const key = el.getAttribute("data-translate-key");
-            if (translations[lang] && translations[lang][key]) {
-                el.innerText = translations[lang][key];
-            }
+            if (translations[lang] && translations[lang][key]) el.innerText = translations[lang][key];
         });
         document.querySelectorAll("#master-table thead th").forEach((th, i) => {
             const keys = ["type", "name", "origin_city", "destination_city", "destination_area", "transportation", "date_of_travel", "departure_time", "instructions", "travel_leader"];
-            th.innerText = getText(keys[i]);
+            if (keys[i]) th.innerText = getText(keys[i]);
         });
     }
 
-    function getText(key) {
-        return translations[appState.settings.language][key] || key;
-    }
-    
-    function createDropdown(options, selectedValue, fieldName) {
-        return `<select class="form-select form-select-sm" data-field="${fieldName}">${options.map(o => `<option value="${o}" ${o === selectedValue ? 'selected' : ''}>${o}</option>`).join('')}</select>`;
-    }
+    function getText(key) { return translations[appState.settings.language]?.[key] || key; }
+    function createDropdown(options, selected, field) { return `<select class="form-select form-select-sm" data-field="${field}">${options.map(o => `<option value="${o}" ${o === selected ? 'selected' : ''}>${o}</option>`).join('')}</select>`; }
     
     // --- LOCALSTORAGE ---
-    function saveState() {
-        localStorage.setItem('missionaryTransferState', JSON.stringify(appState));
-    }
-
+    function saveState() { localStorage.setItem('missionaryTransferState', JSON.stringify(appState)); }
     function loadState() {
-        const savedState = localStorage.getItem('missionaryTransferState');
-        if (savedState) {
-            const loaded = JSON.parse(savedState);
-            appState = {...appState, ...loaded};
-        }
+        const saved = localStorage.getItem('missionaryTransferState');
+        if (saved) appState = {...appState, ...JSON.parse(saved)};
     }
 });
