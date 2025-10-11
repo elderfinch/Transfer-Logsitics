@@ -9,15 +9,15 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container-fluid mt-4">
+    <div class="container-fluid mt-4" id="app-container">
         <header class="d-flex justify-content-between align-items-center mb-4">
              <h1 class="mb-0" data-translate-key="missionary_transfer_logistics">Missionary Transfer Logistics</h1>
-            <button class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#settings-modal">
+            <button class="btn btn-secondary no-print" data-bs-toggle="modal" data-bs-target="#settings-modal">
                 <i class="fas fa-cog"></i> <span data-translate-key="settings">Settings</span>
             </button>
         </header>
 
-        <div id="upload-section" class="card p-4 shadow-sm">
+        <div id="upload-section" class="card p-4 shadow-sm no-print">
             <div class="card-body">
                 <h2 class="card-title" data-translate-key="upload_transfer_boards">Upload Transfer Boards</h2>
                 <div class="mb-3">
@@ -33,24 +33,24 @@
         </div>
 
         <div id="main-content" style="display: none;">
-            <ul class="nav nav-tabs" id="myTab" role="tablist">
+            <ul class="nav nav-tabs no-print" id="myTab" role="tablist">
                 <li class="nav-item" role="presentation"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#master-table-view"><span data-translate-key="master_table">Master Table</span></button></li>
                 <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#separate-tables-view"><span data-translate-key="separate_tables">Separate Tables</span></button></li>
             </ul>
             <div class="tab-content" id="myTabContent">
                 <div class="tab-pane fade show active p-3" id="master-table-view" role="tabpanel">
-                    <div class="d-flex justify-content-between align-items-center my-3 flex-wrap gap-2">
-                        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#add-missionary-modal"><i class="fas fa-plus"></i> <span data-translate-key="add_missionary">Add Missionary</span></button>
+                    <div class="d-flex justify-content-between align-items-center my-3 flex-wrap gap-2 no-print">
+                        <div></div>
                         <div>
-                            <button class="btn btn-info" id="download-master-pdf"><i class="fas fa-file-pdf"></i> <span data-translate-key="download_pdf">PDF</span></button>
-                            <button class="btn btn-success" id="download-master-excel"><i class="fas fa-file-excel"></i> <span data-translate-key="download_excel">Excel</span></button>
+                            <button class="btn btn-secondary" id="print-btn"><i class="fas fa-print"></i> Print</button>
+                            <button class="btn btn-success" id="download-excel-btn"><i class="fas fa-file-excel"></i> <span data-translate-key="download_excel">Excel</span></button>
                         </div>
                     </div>
                     <div class="table-responsive">
                         <table class="table table-bordered table-hover" id="master-table">
                             <thead class="table-dark">
                                 <tr>
-                                    <th data-sort="type">Type</th><th data-sort="name">Name</th><th data-sort="originCity">Origin</th><th data-sort="destinationCity">Destination</th><th data-sort="destinationArea">Area</th><th data-sort="transport">Transport</th><th>Date</th><th>Time</th><th>Instructions</th><th>Leader</th><th>Actions</th>
+                                    <th>Type</th><th>Name</th><th>Origin</th><th>Destination</th><th>Area</th><th>Transportation</th><th>Date</th><th>Time</th><th>Instructions</th><th>Leader</th><th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody></tbody>
@@ -58,10 +58,7 @@
                     </div>
                 </div>
                 <div class="tab-pane fade p-3" id="separate-tables-view" role="tabpanel">
-                    <div class="d-flex justify-content-end my-3">
-                         <button class="btn btn-info" id="download-separate-pdf"><i class="fas fa-file-pdf"></i> PDF</button>
-                         <button class="btn btn-success" id="download-separate-excel"><i class="fas fa-file-excel"></i> Excel</button>
-                    </div>
+                    <h2 class="print-only">Separate Tables View</h2>
                     <div id="separate-tables-container"></div>
                 </div>
             </div>
@@ -81,43 +78,8 @@
       </div>
     </div>
 
-    <div class="modal fade" id="city-exceptions-modal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header"><h5 class="modal-title" data-translate-key="assign_city_exceptions">Assign City Exceptions</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-                <div class="modal-body">
-                    <p data-translate-key="assign_city_exceptions_desc">Assign areas or districts to a city.</p>
-                    <div id="city-exceptions-list"></div><hr>
-                    <h5 data-translate-key="add_new_exception">Add New Exception</h5>
-                    <form id="add-exception-form" class="row g-3 align-items-end">
-                       <div class="col-md-4"><label for="new-city-name" class="form-label" data-translate-key="city">City</label><input type="text" class="form-control" id="new-city-name" required></div>
-                       <div class="col-md-3"><label for="exception-type" class="form-label">Type</label><select class="form-select" id="exception-type"><option value="area" data-translate-key="area">Area</option><option value="district" data-translate-key="district">District</option></select></div>
-                       <div class="col-md-4"><label for="exception-name" class="form-label">Name</label><select class="form-select" id="exception-name"></select></div>
-                       <div class="col-md-1"><button type="submit" class="btn btn-primary w-100">+</button></div>
-                    </form>
-                </div>
-                <div class="modal-footer"><button type="button" class="btn btn-primary" id="continue-to-transport" data-translate-key="process_with_cities">Continue to Transportation</button></div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade" id="transportation-defaults-modal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header"><h5 class="modal-title">Set Default Transportation</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-                <div class="modal-body">
-                    <p>Review and set the default transportation for each route.</p>
-                    <div id="transportation-defaults-list" class="table-responsive"></div>
-                </div>
-                <div class="modal-footer"><button type="button" class="btn btn-success" id="finish-processing">Process & View Transfers</button></div>
-            </div>
-        </div>
-    </div>
-
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

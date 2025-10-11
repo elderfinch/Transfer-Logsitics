@@ -1,17 +1,47 @@
 body {
-    padding-bottom: 60px; /* To make space for the settings button */
+    padding-bottom: 60px; 
 }
 
 .table-responsive {
     margin-top: 20px;
 }
 
-.modal-body form .form-group {
-    margin-bottom: 1rem;
-}
-
 #separate-tables-container h3 {
     margin-top: 2rem;
     border-bottom: 2px solid #dee2e6;
     padding-bottom: 0.5rem;
+}
+
+/* Print Styles */
+@media print {
+    body * {
+        visibility: hidden;
+    }
+
+    #main-content, #main-content * {
+        visibility: visible;
+    }
+    
+    #main-content {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+    }
+
+    .no-print, .no-print * {
+        display: none !important;
+    }
+
+    .table, .table-bordered, .table th, .table td {
+        border: 1px solid #dee2e6 !important;
+    }
+
+    .table {
+        font-size: 12px;
+    }
+    
+    h3 {
+        margin-top: 20px;
+    }
 }
