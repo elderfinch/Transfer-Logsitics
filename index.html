@@ -17,7 +17,14 @@
     .btn-group { margin-top: 10px; }
     .btn-group .btn { margin-right: 8px; }
     #modal-add h6 { margin: 10px 0 2px 0; font-size: 0.9rem; color: #555; }
-    .bulk-instr-input { height: 45px !important; padding: 5px !important; }
+    .bulk-instr-input {
+        min-height: 45px; /* Set a minimum height */
+        height: auto; /* Allow height to be controlled by JS */
+        padding: 5px !important;
+    }
+    .instr-input {
+        height: auto;
+    }
   </style>
 </head>
 <body>
@@ -386,6 +393,10 @@
     // -- Helpers
     function normalizeZoneName(name){ if(!name) return ''; name = name.replace(/ZONA/i,'').trim(); return name.charAt(0).toUpperCase()+name.slice(1).toLowerCase(); }
     function areaToCity(area){ if(!area) return ''; for(const key of Object.keys(state.exceptions||{})){ if(key.toLowerCase() === area.toLowerCase()){ return state.exceptions[key].city || key; } } return normalizeZoneName(area); }
+    function autoResizeTextarea(element) {
+        element.style.height = 'auto';
+        element.style.height = (element.scrollHeight) + 'px';
+    }
 
     // -- File Processing
     document.getElementById('btn-process').addEventListener('click', async ()=>{
@@ -513,28 +524,37 @@
 
           const dateInput = tr.querySelector('.date-input');
           const tbdCheckbox = tr.querySelector('.tbd-checkbox');
+          const instrTextarea = tr.querySelector('.instr-input');
           
           const toggleDateVisibility = () => {
             dateInput.style.display = tbdCheckbox.checked ? 'none' : 'block';
           };
           
-          toggleDateVisibility(); // Set initial state
+          toggleDateVisibility();
           tbdCheckbox.addEventListener('change', toggleDateVisibility);
+
+          // Auto-resize textarea
+          instrTextarea.addEventListener('input', () => autoResizeTextarea(instrTextarea));
+          setTimeout(() => autoResizeTextarea(instrTextarea), 0); // Initial resize
 
           tr.querySelector('.transport-select').value = m.transport;
           tr.querySelectorAll('input, select, textarea').forEach(el=>{
             el.addEventListener('change', ()=>{
-              const item = state.groups[key][idx]; item.transport = tr.querySelector('.transport-select').value; item.date = dateInput.value; item.tbd = tbdCheckbox.checked; item.time = tr.querySelector('.time-input').value; item.instructions = tr.querySelector('.instr-input').value; item.leader = tr.querySelector('.leader-checkbox').checked; saveToLS();
+              const item = state.groups[key][idx]; item.transport = tr.querySelector('.transport-select').value; item.date = dateInput.value; item.tbd = tbdCheckbox.checked; item.time = tr.querySelector('.time-input').value; item.instructions = instrTextarea.value; item.leader = tr.querySelector('.leader-checkbox').checked; saveToLS();
             });
           });
           tr.querySelector('.remove-btn').addEventListener('click', ()=>{ if(confirm(T.confirm_remove_missionary)){ state.groups[key].splice(idx,1); if(state.groups[key].length===0) delete state.groups[key]; saveToLS(); renderGroups(); } });
         });
         table.appendChild(tbody); content.appendChild(table); card.appendChild(content);
         const bulkUpdate = (field, value) => { if(!value && field !== 'instructions') return; state.groups[key].forEach(m => { m[field] = value; }); saveToLS(); renderGroups(); M.toast({html: T.toast_updated.replace('{field}', field)}); };
+        
+        const bulkInstrTextarea = card.querySelector('.bulk-instr-input');
+        bulkInstrTextarea.addEventListener('input', () => autoResizeTextarea(bulkInstrTextarea));
+        
         card.querySelector('.bulk-transport-select').addEventListener('change', (e) => bulkUpdate('transport', e.target.value));
         card.querySelector('.bulk-date-input').addEventListener('change', (e) => bulkUpdate('date', e.target.value));
         card.querySelector('.bulk-time-input').addEventListener('change', (e) => bulkUpdate('time', e.target.value));
-        card.querySelector('.bulk-instr-input').addEventListener('change', (e) => bulkUpdate('instructions', e.target.value));
+        bulkInstrTextarea.addEventListener('change', (e) => bulkUpdate('instructions', e.target.value));
         container.appendChild(card);
       }
       M.AutoInit();
@@ -585,7 +605,7 @@
         
         // Prepare card for printing
         const bulkEditRow = card.querySelector('.bulk-edit-row');
-        bulkEditRow.style.display = 'none';
+        if (bulkEditRow) bulkEditRow.style.display = 'none';
         
         card.querySelectorAll('tbody tr').forEach(row => {
           const dateInput = row.querySelector('.date-input');
@@ -598,7 +618,7 @@
         const canvas = await html2canvas(card, { scale: 2 });
         
         // Restore card to original view
-        bulkEditRow.style.display = '';
+        if (bulkEditRow) bulkEditRow.style.display = '';
         card.querySelectorAll('.tbd-wrapper').forEach(el => el.style.display = '');
 
         const imgData = canvas.toDataURL('image/jpeg', 0.7); // Use JPEG with 70% quality for compression
