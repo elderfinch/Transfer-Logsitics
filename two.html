@@ -14,10 +14,10 @@
     .group-card { margin-bottom: 18px; }
     .small-input { width:120px }
     .time-input { width:140px }
-    .bulk-instr-input::placeholder { color: #9e9e9e; }
     .btn-group { margin-top: 10px; }
     .btn-group .btn { margin-right: 8px; }
     #modal-add h6 { margin: 10px 0 2px 0; font-size: 0.9rem; color: #555; }
+    .bulk-instr-input { height: 45px !important; padding: 5px !important; }
   </style>
 </head>
 <body>
@@ -450,7 +450,9 @@
           if (chk.checked && city) { state.exceptions[key] = { city: city }; } else { if (state.exceptions[key]) { delete state.exceptions[key]; } }
       });
       state.exceptions = Object.assign({}, defaults.exceptions, state.exceptions);
-      saveToLS(); renderExceptions(); processTransfers();
+      saveToLS();
+      processTransfers();
+      location.reload();
     });
 
     function processTransfers(){
@@ -474,7 +476,8 @@
       });
       state.groups = {};
       transfers.forEach(m=>{ const key = `${m.originCity} -> ${m.destinationCity}`; if(!state.groups[key]) state.groups[key]=[]; state.groups[key].push(m); });
-      saveToLS(); renderGroups(); M.toast({html: translations[state.lang].toast_processed.replace('{count}', transfers.length)});
+      saveToLS(); 
+      M.toast({html: translations[state.lang].toast_processed.replace('{count}', transfers.length)});
     }
 
     function defaultTransportForPair(from, to){
@@ -494,7 +497,7 @@
             <tr>
               <th colspan="5">${T.bulk_edit_title}</th>
               <th><select class="bulk-transport-select browser-default" title="${T.bulk_edit_transport_placeholder}"><option value="" selected disabled>${T.bulk_edit_transport_placeholder}</option><option value="Bus">${T.transport_bus}</option><option value="Plane">${T.transport_plane}</option><option value="Chapa">${T.transport_chapa}</option><option value="Txopela/Taxi">${T.transport_taxi}</option><option value="Ride">${T.transport_ride}</option></select></th>
-              <th><input type="date" class="bulk-date-input"></th><th><input type="time" class="bulk-time-input"></th><th><input class="bulk-instr-input" placeholder="${T.bulk_edit_instructions_placeholder}"></th><th colspan="2"></th>
+              <th><input type="date" class="bulk-date-input"></th><th><input type="time" class="bulk-time-input"></th><th><textarea class="materialize-textarea bulk-instr-input" placeholder="${T.bulk_edit_instructions_placeholder}"></textarea></th><th colspan="2"></th>
             </tr>
             <tr><th>${T.table_header_type}</th><th>${T.table_header_name}</th><th>${T.table_header_origin}</th><th>${T.table_header_destination}</th><th>${T.table_header_dest_area}</th><th>${T.table_header_transport}</th><th>${T.table_header_date}</th><th>${T.table_header_time}</th><th>${T.table_header_instructions}</th><th>${T.table_header_leader}</th><th>${T.table_header_remove}</th></tr>
           </thead>`;
@@ -515,7 +518,7 @@
           tr.querySelector('.remove-btn').addEventListener('click', ()=>{ if(confirm(T.confirm_remove_missionary)){ state.groups[key].splice(idx,1); if(state.groups[key].length===0) delete state.groups[key]; saveToLS(); renderGroups(); } });
         });
         table.appendChild(tbody); content.appendChild(table); card.appendChild(content);
-        const bulkUpdate = (field, value) => { if(!value) return; state.groups[key].forEach(m => { m[field] = value; }); saveToLS(); renderGroups(); M.toast({html: T.toast_updated.replace('{field}', field)}); };
+        const bulkUpdate = (field, value) => { if(!value && field !== 'instructions') return; state.groups[key].forEach(m => { m[field] = value; }); saveToLS(); renderGroups(); M.toast({html: T.toast_updated.replace('{field}', field)}); };
         card.querySelector('.bulk-transport-select').addEventListener('change', (e) => bulkUpdate('transport', e.target.value));
         card.querySelector('.bulk-date-input').addEventListener('change', (e) => bulkUpdate('date', e.target.value));
         card.querySelector('.bulk-time-input').addEventListener('change', (e) => bulkUpdate('time', e.target.value));
@@ -531,7 +534,10 @@
         id: 'manual-'+Date.now(), type: document.getElementById('add-type').value, name: document.getElementById('add-name').value, originCity: normalizeZoneName(document.getElementById('add-origin').value), destinationCity: normalizeZoneName(document.getElementById('add-dest').value),
         destinationArea: document.getElementById('add-destarea').value, transport: document.getElementById('add-transport').value, date: document.getElementById('add-date').value, tbd: document.getElementById('add-tbd').checked, time: document.getElementById('add-time').value, instructions: document.getElementById('add-instructions').value, leader: document.getElementById('add-leader').checked
       };
-      const key = `${m.originCity} -> ${m.destinationCity}`; if(!state.groups[key]) state.groups[key]=[]; state.groups[key].push(m); saveToLS(); renderGroups(); M.toast({html: translations[state.lang].toast_added});
+      const key = `${m.originCity} -> ${m.destinationCity}`; if(!state.groups[key]) state.groups[key]=[]; state.groups[key].push(m);
+      saveToLS();
+      M.toast({html: translations[state.lang].toast_added});
+      location.reload();
     });
     
     document.getElementById('btn-save-exception').addEventListener('click', () => {
@@ -543,7 +549,7 @@
     
     document.getElementById('btn-delete-all').addEventListener('click', ()=>{ if(confirm(translations[state.lang].confirm_delete_all)){ state.groups = {}; saveToLS(); renderGroups(); } });
     document.getElementById('btn-clear-local').addEventListener('click', ()=>{ if(confirm(translations[state.lang].confirm_clear_local)){ localStorage.removeItem(LS_KEY); state={groups:{},exceptions:defaults.exceptions, lang:'pt'}; loadState(); } });
-    document.getElementById('lang-select').addEventListener('change', (e)=>{ setLanguage(e.target.value); });
+    document.getElementById('lang-select').addEventListener('change', (e)=>{ setLanguage(e.target.value); saveToLS(); });
     
     // -- Export Functions
     document.getElementById('btn-export-pdf').addEventListener('click', async () => {
@@ -555,12 +561,12 @@
       for (let i = 0; i < cards.length; i++) {
         const card = cards[i];
         const canvas = await html2canvas(card, { scale: 2 });
-        const imgData = canvas.toDataURL('image/png');
+        const imgData = canvas.toDataURL('image/jpeg', 0.7); // Use JPEG with 70% quality
         const imgProps = doc.getImageProperties(imgData);
         const pdfWidth = doc.internal.pageSize.getWidth() - 20; // with margin
         const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
         if (i > 0) doc.addPage();
-        doc.addImage(imgData, 'PNG', 10, 10, pdfWidth, pdfHeight);
+        doc.addImage(imgData, 'JPEG', 10, 10, pdfWidth, pdfHeight);
       }
       doc.save('transfer_logistics.pdf');
       M.toast({html: translations[state.lang].toast_pdf_generated});
@@ -569,15 +575,21 @@
     document.getElementById('btn-export-csv').addEventListener('click', () => {
         const lang = state.lang || 'pt';
         const T = translations[lang];
+        const delimiter = ';';
         const headers = [T.table_header_type, T.table_header_name, T.table_header_origin, T.table_header_destination, T.table_header_dest_area, T.table_header_transport, T.table_header_date, T.table_header_time, T.table_header_instructions, T.table_header_leader];
-        let csvContent = "data:text/csv;charset=utf-8," + headers.join(";") + "\n";
+        let csvContent = "data:text/csv;charset=utf-8," + headers.join(delimiter) + "\n";
         const allMissionaries = Object.values(state.groups || {}).flat();
         
         allMissionaries.forEach(m => {
             const transportText = m.transport ? (T[`transport_${m.transport.toLowerCase().replace('/','_')}`] || m.transport) : '';
             const leaderText = m.leader ? 'Yes' : 'No';
-            const row = [m.type, `"${m.name}"`, m.originCity, m.destinationCity, `"${m.destinationArea}"`, transportText, m.date, m.time, `"${(m.instructions || '').replace(/"/g, '""')}"`, leaderText];
-            csvContent += row.join(";") + "\n";
+            // Escape quotes inside fields by doubling them
+            const sanitizedInstructions = (m.instructions || '').replace(/"/g, '""');
+            const sanitizedName = (m.name || '').replace(/"/g, '""');
+            const sanitizedArea = (m.destinationArea || '').replace(/"/g, '""');
+            
+            const row = [m.type, `"${sanitizedName}"`, m.originCity, m.destinationCity, `"${sanitizedArea}"`, transportText, m.date, m.time, `"${sanitizedInstructions}"`, leaderText];
+            csvContent += row.join(delimiter) + "\n";
         });
 
         const encodedUri = encodeURI(csvContent);
