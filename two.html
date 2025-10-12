@@ -9,7 +9,7 @@
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <style>
     body { padding: 16px; }
-    .container { width: 95%; max-width: initial; } /* Wider container for tables */
+    .container { width: 95%; max-width: initial; }
     .chip-leader { background: #ffd54f; }
     .group-card { margin-bottom: 18px; }
     .small-input { width:120px }
@@ -59,8 +59,12 @@
       <h5>Add Missionary</h5>
       <div class="row">
         <div class="input-field col s2">
-          <input id="add-type" placeholder="Elder/Sister">
-          <label for="add-type">Type</label>
+          <select id="add-type">
+            <option value="" disabled selected>Choose...</option>
+            <option value="Elder">Elder</option>
+            <option value="Sister">Sister</option>
+          </select>
+          <label>Type</label>
         </div>
         <div class="input-field col s4">
           <input id="add-name">
@@ -170,10 +174,10 @@
     </div>
   </div>
 
-  <div id="modal-exceptions" class="modal">
+  <div id="modal-exceptions" class="modal modal-fixed-footer">
     <div class="modal-content">
       <h5>Assign exceptions (areas/districts that map to a different city)</h5>
-      <p>Select any area/district that should be treated as a different origin/destination city than its zone, then choose the city name to use.</p>
+      <p>For any area or zone below, you can enter a city name to override the default. Check "Apply" to save the exception.</p>
       <div id="exceptions-assign"></div>
     </div>
     <div class="modal-footer">
@@ -238,7 +242,6 @@
       if(!fOld || !fNew){ M.toast({html:'Please select both files'}); return; }
       fileOldRows = await readFileRows(fOld);
       fileNewRows = await readFileRows(fNew);
-      // show mapping modal
       showMappingModal(fileOldRows[0] || fileNewRows[0]);
     });
 
@@ -249,66 +252,83 @@
       const keys = Object.keys(sampleRow || {});
       const fields = [ {id:'name', label:'Name'}, {id:'type', label:'Type (Elder/Sister)'}, {id:'area', label:'Area/Neighborhood'}, {id:'zone', label:'Zone (this becomes City by default)'} ];
       fields.forEach(f=>{
-        const div = document.createElement('div'); div.className = 'input-field';
-        const label = document.createElement('label'); label.textContent = f.label; label.setAttribute('for','map-'+f.id);
-        const select = document.createElement('select'); select.id = 'map-'+f.id;
-        const emptyOpt = document.createElement('option'); emptyOpt.value=''; emptyOpt.text=''; select.appendChild(emptyOpt);
+        const div = document.createElement('div');
+        div.style.marginBottom = '20px';
+        const h6 = document.createElement('h6');
+        h6.textContent = f.label;
+        const select = document.createElement('select');
+        select.id = 'map-'+f.id;
+        select.className = 'browser-default';
+        const emptyOpt = document.createElement('option'); emptyOpt.value=''; emptyOpt.text='-- Select column --'; select.appendChild(emptyOpt);
         keys.forEach(k=>{ const opt=document.createElement('option'); opt.value=k; opt.text=k; select.appendChild(opt); });
-        div.appendChild(label); div.appendChild(select); container.appendChild(div);
+        div.appendChild(h6);
+        div.appendChild(select);
+        container.appendChild(div);
       });
-      M.AutoInit();
       const modal = M.Modal.getInstance(document.getElementById('modal-map'));
       modal.open();
     }
 
     document.getElementById('btn-map-apply').addEventListener('click', ()=>{
       ['name','type','area','zone'].forEach(f=>mapping[f]=document.getElementById('map-'+f).value || null);
-      // after mapping, show exceptions assignment modal so user can override areas/zones
       prepareExceptionsAssignment();
     });
 
-    // prepare exceptions modal: show unique zones/areas from both files so user can assign overrides
     function prepareExceptionsAssignment(){
-      const setVals = new Set();
+      const uniqueZones = new Set();
+      const uniqueAreas = new Set();
       [fileOldRows,fileNewRows].forEach(rows=>{ (rows||[]).forEach(r=>{
-        const z = mapping.zone ? (r[mapping.zone]||'') : '';
-        const a = mapping.area ? (r[mapping.area]||'') : '';
-        if(z) setVals.add(z.toString());
-        if(a) setVals.add(a.toString());
+        const z = mapping.zone ? (r[mapping.zone]||'').toString().trim() : '';
+        const a = mapping.area ? (r[mapping.area]||'').toString().trim() : '';
+        if(z) uniqueZones.add(z);
+        if(a) uniqueAreas.add(a);
       }); });
-      const list = Array.from(setVals).sort((x,y)=>x.localeCompare(y));
+      const listZones = Array.from(uniqueZones).sort((x,y)=>x.localeCompare(y));
+      const listAreas = Array.from(uniqueAreas).sort((x,y)=>x.localeCompare(y));
       const container = document.getElementById('exceptions-assign'); container.innerHTML='';
-      list.forEach(val=>{
-        const row = document.createElement('div'); row.className='row';
-        row.innerHTML = `
-          <div class="input-field col s6"> <input value="${val}" readonly> <label class="active">Area/Zone</label></div>
-          <div class="input-field col s4"> <input class="ex-city" data-key="${val}" placeholder="Override city (leave blank to use zone)" /> <label>Override City</label></div>
-          <div class="col s2"> <label><input type="checkbox" class="ex-apply" data-key="${val}" checked /><span>Apply</span></label></div>
-        `;
-        container.appendChild(row);
-      });
+
+      const createSection = (title, list) => {
+        if (list.length === 0) return;
+        const titleEl = document.createElement('h5'); titleEl.textContent = title; container.appendChild(titleEl);
+        list.forEach(val=>{
+          const row = document.createElement('div'); row.className='row valign-wrapper'; row.style.marginBottom = '0px';
+          const existingCity = state.exceptions[val]?.city || '';
+          row.innerHTML = `
+            <div class="input-field col s5"> <input value="${val}" readonly> <label class="active">Source Name</label></div>
+            <div class="input-field col s5"> <input class="ex-city" data-key="${val}" value="${existingCity}" placeholder="e.g., Beira" /> <label class="active">Override City</label></div>
+            <div class="col s2"> <label><input type="checkbox" class="ex-apply" data-key="${val}" ${existingCity ? 'checked' : ''} /><span>Apply</span></label></div>
+          `;
+          container.appendChild(row);
+        });
+        const divider = document.createElement('div'); divider.className = 'divider'; divider.style.margin = '20px 0'; container.appendChild(divider);
+      };
+      createSection('Zone Overrides', listZones);
+      createSection('Area Overrides', listAreas);
       M.AutoInit();
       const modal = M.Modal.getInstance(document.getElementById('modal-exceptions'));
       modal.open();
     }
 
     document.getElementById('btn-exceptions-apply').addEventListener('click', ()=>{
-      // read override inputs
-      document.querySelectorAll('.ex-city').forEach(inp=>{
-        const key = inp.dataset.key; const city = inp.value && inp.value.trim(); const applyChk = document.querySelector('.ex-apply[data-key="'+key+'"]');
-        if(applyChk && !applyChk.checked) return; // skip
-        if(city){ state.exceptions[key] = { city: normalizeZoneName(city) }; }
+      document.querySelectorAll('.ex-apply').forEach(chk => {
+          const key = chk.dataset.key;
+          const cityInput = document.querySelector(`.ex-city[data-key="${key}"]`);
+          const city = cityInput.value.trim();
+          if (chk.checked && city) {
+              state.exceptions[key] = { city: city };
+          } else {
+              if (state.exceptions[key]) {
+                  delete state.exceptions[key];
+              }
+          }
       });
-      // merge defaults if missing
-      state.exceptions = Object.assign({}, defaults.exceptions, state.exceptions||{});
-      saveToLS(); renderExceptions();
-      // finally process transfers
+      state.exceptions = Object.assign({}, defaults.exceptions, state.exceptions);
+      saveToLS();
+      renderExceptions();
       processTransfers();
     });
 
-    // compute transfers and create groups
     function processTransfers(){
-      // build index of old by name (lower)
       const oldIdx = {};
       (fileOldRows||[]).forEach(r=>{
         const nameVal = mapping.name ? (r[mapping.name]||'') : '';
@@ -320,8 +340,7 @@
         const nameVal = mapping.name ? (r[mapping.name]||'') : '';
         const key = nameVal.toString().trim().toLowerCase();
         const old = oldIdx[key];
-        if(!old) return; // new addition or unmatched - ignore
-        // prefer zone for city, but keep area for area-level
+        if(!old) return;
         const oldZone = mapping.zone ? (old[mapping.zone]||'') : '';
         const newZone = mapping.zone ? (r[mapping.zone]||'') : '';
         const oldArea = mapping.area ? (old[mapping.area]||'') : '';
@@ -330,7 +349,6 @@
         const newZoneStr = newZone.toString();
         const oldAreaStr = oldArea.toString();
         const newAreaStr = newArea.toString();
-        // determine if transfer: zone or area changed
         if(oldZoneStr !== newZoneStr || oldAreaStr !== newAreaStr){
           const originCity = areaToCity(oldZoneStr || oldAreaStr);
           const destinationCity = areaToCity(newZoneStr || newAreaStr);
@@ -350,8 +368,6 @@
           transfers.push(m);
         }
       });
-
-      // group by origin->destination
       state.groups = {};
       transfers.forEach(m=>{
         const key = `${m.originCity} -> ${m.destinationCity}`;
@@ -362,7 +378,6 @@
       M.toast({html: `Processed ${transfers.length} transfers.`});
     }
 
-    // default transport logic
     function defaultTransportForPair(from, to){
       const f = (from||'').toLowerCase(), t = (to||'').toLowerCase();
       const main = ['tete','chimoio','beira'];
@@ -373,7 +388,6 @@
       return 'Bus';
     }
 
-    // --- Rendering groups
     function renderGroups(){
       const container = document.getElementById('groups'); container.innerHTML = '';
       const lang = document.getElementById('lang-select')?.value || 'en';
@@ -389,7 +403,7 @@
             <th colspan="6">Bulk Edit for This Group:</th>
             <th><input type="date" class="bulk-date-input" title="Set date for all in this group"></th>
             <th><input type="time" class="bulk-time-input" title="Set time for all in this group"></th>
-            <th colspan="1"><input class="bulk-instr-input" placeholder="Set instructions for all"></th>
+            <th><input class="bulk-instr-input" placeholder="Set instructions for all"></th>
             <th colspan="2"></th>
           </tr>
           <tr><th>Type</th><th>Name</th><th>Origin City</th><th>Destination City</th><th>Destination Area</th><th>Transportation</th><th>Date</th><th>Time</th><th>Instructions</th><th>Leader</th><th>Remove</th></tr>`;
@@ -423,10 +437,7 @@
 
           tr.querySelectorAll('input, select, textarea').forEach(el=>{
             el.addEventListener('change', ()=>{
-              const g = state.groups[key];
-              const item = g[idx];
-              item.type = tr.querySelector('.type-input').value;
-              item.destinationArea = tr.querySelector('.destarea-input').value;
+              const item = state.groups[key][idx];
               item.transport = tr.querySelector('.transport-select').value;
               item.date = tr.querySelector('.date-input').value;
               item.tbd = tr.querySelector('.tbd-checkbox').checked;
@@ -449,13 +460,9 @@
         content.appendChild(table);
         card.appendChild(content);
 
-        // Add event listeners for bulk edits
         const bulkUpdate = (field, value) => {
-          state.groups[key].forEach(missionary => {
-            missionary[field] = value;
-          });
-          saveToLS();
-          renderGroups(); // Re-render to show changes everywhere
+          state.groups[key].forEach(m => { m[field] = value; });
+          saveToLS(); renderGroups();
           M.toast({html: `Updated ${field} for all in group.`});
         };
         card.querySelector('.bulk-date-input').addEventListener('change', (e) => bulkUpdate('date', e.target.value));
@@ -464,9 +471,9 @@
 
         container.appendChild(card);
       }
+      M.AutoInit(); // Re-init all materialize components after rendering
     }
 
-    // -- Add missionary form
     document.getElementById('btn-add-save').addEventListener('click', ()=>{
       const m = {
         id: 'manual-'+Date.now(),
@@ -489,7 +496,6 @@
       M.toast({html:'Added'});
     });
 
-    // settings
     function renderExceptions(){ const el = document.getElementById('exceptions-list'); el.innerHTML=''; for(const k of Object.keys(state.exceptions||{})){ const row = document.createElement('div'); row.className='row'; row.innerHTML = `<div class="col s4">${k}</div><div class="col s4">${state.exceptions[k].city || ''}</div><div class="col s4"><a data-key="${k}" class="btn-small red btn-ex-remove">Remove</a></div>`; el.appendChild(row); row.querySelector('.btn-ex-remove').addEventListener('click', (e)=>{ const keyToRemove = e.currentTarget.dataset.key; delete state.exceptions[keyToRemove]; saveToLS(); renderExceptions(); }); } }
 
     document.getElementById('btn-save-exception').addEventListener('click', () => {
@@ -497,32 +503,19 @@
       const cityInput = document.getElementById('ex-add-city');
       const name = nameInput.value.trim();
       const city = cityInput.value.trim();
-
-      if (!name || !city) {
-        M.toast({html: 'Please provide both a name and a city.'});
-        return;
-      }
+      if (!name || !city) { M.toast({html: 'Please provide both a name and a city.'}); return; }
       if (!state.exceptions) state.exceptions = {};
-      state.exceptions[name] = { city: normalizeZoneName(city) };
-      saveToLS();
-      renderExceptions();
+      state.exceptions[name] = { city: city };
+      saveToLS(); renderExceptions();
       M.toast({html: `Saved exception for ${name}.`});
-      // Clear inputs
-      nameInput.value = '';
-      cityInput.value = '';
-      M.updateTextFields(); // To reset the floating labels
+      nameInput.value = ''; cityInput.value = '';
+      M.updateTextFields();
     });
 
     document.getElementById('btn-delete-all').addEventListener('click', ()=>{ if(confirm('Delete ALL missionary travel? This will clear saved groups.')){ state.groups = {}; saveToLS(); renderGroups(); } });
-
     document.getElementById('btn-clear-local').addEventListener('click', ()=>{ if(confirm('Clear local storage? This will delete all saved travel and settings.')){ localStorage.removeItem(LS_KEY); state={groups:{},exceptions:defaults.exceptions}; loadState(); } });
-
-    // language change
     document.getElementById('lang-select').addEventListener('change', ()=>{ renderGroups(); });
-
-    // initialize selects & modals and load LS
-    document.addEventListener('DOMContentLoaded', ()=>{ const elems = document.querySelectorAll('select'); M.FormSelect.init(elems); const modals = document.querySelectorAll('.modal'); M.Modal.init(modals, {dismissible:true}); const ls = loadFromLS(); if(ls){ state=ls; } state.exceptions = Object.assign({}, defaults.exceptions, state.exceptions||{}); saveToLS(); renderExceptions(); renderGroups(); });
-
+    document.addEventListener('DOMContentLoaded', ()=>{ const ls = loadFromLS(); if(ls){ state=ls; } state.exceptions = Object.assign({}, defaults.exceptions, state.exceptions||{}); saveToLS(); renderExceptions(); renderGroups(); });
   </script>
 </body>
 </html>
