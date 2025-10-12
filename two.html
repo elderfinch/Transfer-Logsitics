@@ -261,7 +261,7 @@
         select.id = 'map-'+f;
         const emptyOpt = document.createElement('option'); emptyOpt.value=''; emptyOpt.text='--none--'; select.appendChild(emptyOpt);
         keys.forEach(k=>{ const opt=document.createElement('option'); opt.value=k; opt.text=k; select.appendChild(opt); });
-        div.innerHTML = `<label>Map ${f}</label>`;
+        div.innerHTML = `<h5>Map ${f}</label>`;
         div.appendChild(select);
         container.appendChild(div);
       });
