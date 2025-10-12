@@ -1,0 +1,486 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Transfer Logistics</title>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    body { padding: 16px; }
+    .chip-leader { background: #ffd54f; }
+    .group-card { margin-bottom: 18px; }
+    .small-input { width:120px }
+    .time-input { width:140px }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="nav-wrapper teal">
+      <a href="#" class="brand-logo center">Transfer Logistics</a>
+      <ul id="nav-mobile" class="left">
+        <li><a id="btn-settings" href="#modal-settings" class="modal-trigger"><i class="fa fa-cog"></i></a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="section">
+      <h5>Upload transferboards</h5>
+      <div class="row">
+        <div class="col s12 m6">
+          <label>Old transferboard (from)</label>
+          <input id="file-old" type="file" accept=".xlsx,.xls,.csv" />
+        </div>
+        <div class="col s12 m6">
+          <label>New transferboard (to)</label>
+          <input id="file-new" type="file" accept=".xlsx,.xls,.csv" />
+        </div>
+      </div>
+      <a id="btn-process" class="btn">Process upload</a>
+      <a id="btn-clear-local" class="btn red">Clear All Saved Travel</a>
+    </div>
+
+    <div class="section">
+      <h5>Groups</h5>
+      <div id="groups"></div>
+    </div>
+
+    <div class="fixed-action-btn">
+      <a class="btn-floating btn-large teal modal-trigger" href="#modal-add"><i class="large material-icons">add</i></a>
+    </div>
+  </div>
+
+  <!-- Add modal -->
+  <div id="modal-add" class="modal">
+    <div class="modal-content">
+      <h5>Add Missionary</h5>
+      <div class="row">
+        <div class="input-field col s2">
+          <input id="add-type" placeholder="Elder/Sister">
+          <label for="add-type">Type</label>
+        </div>
+        <div class="input-field col s4">
+          <input id="add-name">
+          <label for="add-name">Name</label>
+        </div>
+        <div class="input-field col s3">
+          <input id="add-origin">
+          <label for="add-origin">Origin City</label>
+        </div>
+        <div class="input-field col s3">
+          <input id="add-dest">
+          <label for="add-dest">Destination City</label>
+        </div>
+      </div>
+      <div class="row">
+        <div class="input-field col s4">
+          <input id="add-destarea">
+          <label for="add-destarea">Destination Area</label>
+        </div>
+        <div class="input-field col s4">
+          <select id="add-transport">
+            <option value="Bus" selected>Bus</option>
+            <option value="Plane">Plane</option>
+            <option value="Chapa">Chapa</option>
+            <option value="Txopela/Taxi">Txopela/Taxi</option>
+            <option value="Ride">Ride</option>
+          </select>
+          <label>Transportation</label>
+        </div>
+        <div class="input-field col s2">
+          <input id="add-date" type="date">
+          <label for="add-date">Date</label>
+        </div>
+        <div class="col s2">
+          <label>
+            <input type="checkbox" id="add-tbd" />
+            <span>TBD</span>
+          </label>
+        </div>
+      </div>
+      <div class="row">
+        <div class="input-field col s3">
+          <input id="add-time" type="time">
+          <label for="add-time">Departure Time</label>
+        </div>
+        <div class="input-field col s5">
+          <input id="add-instructions">
+          <label for="add-instructions">Travel Instructions</label>
+        </div>
+        <div class="col s2">
+          <label>
+            <input type="checkbox" id="add-leader" />
+            <span>Travel Leader</span>
+          </label>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <a id="btn-add-save" class="modal-close btn">Save</a>
+    </div>
+  </div>
+
+  <!-- Settings modal -->
+  <div id="modal-settings" class="modal">
+    <div class="modal-content">
+      <h5>Settings</h5>
+      <div class="row">
+        <div class="input-field col s6">
+          <select id="lang-select">
+            <option value="en">English</option>
+            <option value="pt">Português</option>
+          </select>
+          <label>Language</label>
+        </div>
+        <div class="col s6">
+          <a id="btn-delete-all" class="btn red">Delete All Missionary Travel</a>
+        </div>
+      </div>
+      <h6>Area/District exceptions</h6>
+      <div id="exceptions-list"></div>
+      <a id="btn-add-exception" class="btn small">Add exception</a>
+    </div>
+  </div>
+
+  <!-- Column mapping modal -->
+  <div id="modal-map" class="modal">
+    <div class="modal-content">
+      <h5>Map columns (choose which column in your spreadsheet corresponds to these fields)</h5>
+      <div id="mapping-forms"></div>
+    </div>
+    <div class="modal-footer">
+      <a id="btn-map-apply" class="modal-close btn">Apply Mapping</a>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+  <script>
+    // -- Constants & defaults
+    const LS_KEY = 'transfer_logistics_data_v1';
+    const LS_EXCEPTIONS = 'transfer_logistics_exceptions_v1';
+    const defaults = {
+      exceptions: {
+        'Quelimane': { type: 'district' },
+        'Nhamatanda': { type: 'area' },
+        'Marromeu': { type: 'area' },
+        'Caia': { type: 'area' },
+        'Munhava': { city: 'Beira' },
+        'Inhamizua': { city: 'Beira' },
+        'Manga': { city: 'Beira' }
+      },
+      transportDefaults: {}
+    };
+
+    // translations
+    const T = {
+      en: {
+        Bus: 'Bus', Plane: 'Plane', Chapa: 'Chapa', 'Txopela/Taxi': 'Txopela/Taxi', Ride: 'Ride'
+      },
+      pt: {
+        Bus: 'Autocarro', Plane: 'Avião', Chapa: 'Chapa', 'Txopela/Taxi': 'Txopela/Taxi', Ride: 'Boleia'
+      }
+    };
+
+    // init materialize
+    document.addEventListener('DOMContentLoaded', function() {
+      M.AutoInit();
+      loadState();
+    });
+
+    // -- State
+    let state = loadFromLS() || { groups: {}, exceptions: defaults.exceptions, transportDefaults: defaults.transportDefaults };
+
+    function loadFromLS() {
+      try { return JSON.parse(localStorage.getItem(LS_KEY)); } catch(e){return null}
+    }
+    function saveToLS() {
+      localStorage.setItem(LS_KEY, JSON.stringify(state));
+    }
+
+    function loadState(){
+      renderExceptions();
+      renderGroups();
+    }
+
+    // --- helpers for normalization
+    function normalizeZoneName(name){
+      if(!name) return '';
+      name = name.replace(/ZONA/i,'').trim();
+      return name.charAt(0).toUpperCase()+name.slice(1).toLowerCase();
+    }
+
+    // Apply exceptions mapping: if area/district matches key, use its city override
+    function areaToCity(area){
+      if(!area) return '';
+      if(state.exceptions[area]){
+        return state.exceptions[area].city || area;
+      }
+      // some exceptions stored as keys like Munhava -> city Beira
+      for(const key of Object.keys(state.exceptions)){
+        if(key.toLowerCase() === area.toLowerCase()){
+          return state.exceptions[key].city || key;
+        }
+      }
+      return normalizeZoneName(area);
+    }
+
+    // --- File reading + mapping UI
+    let fileOldRows = null; let fileNewRows = null;
+    let mapping = { id: null, name: null, area: null, zone: null };
+
+    document.getElementById('btn-process').addEventListener('click', async ()=>{
+      const fOld = document.getElementById('file-old').files[0];
+      const fNew = document.getElementById('file-new').files[0];
+      if(!fOld || !fNew){ M.toast({html:'Please select both files'}); return; }
+      fileOldRows = await readFileRows(fOld);
+      fileNewRows = await readFileRows(fNew);
+      // show mapping modal
+      showMappingModal(fileOldRows[0] || fileNewRows[0]);
+    });
+
+    async function readFileRows(file){
+      const data = await file.arrayBuffer();
+      const wb = XLSX.read(data);
+      const first = wb.SheetNames[0];
+      const sheet = wb.Sheets[first];
+      return XLSX.utils.sheet_to_json(sheet, {defval: ''});
+    }
+
+    function showMappingModal(sampleRow){
+      const container = document.getElementById('mapping-forms');
+      container.innerHTML = '';
+      const keys = Object.keys(sampleRow || {});
+      const fields = ['id','type','name','area','zone'];
+      fields.forEach(f=>{
+        const div = document.createElement('div');
+        div.className = 'input-field';
+        const select = document.createElement('select');
+        select.id = 'map-'+f;
+        const emptyOpt = document.createElement('option'); emptyOpt.value=''; emptyOpt.text='--none--'; select.appendChild(emptyOpt);
+        keys.forEach(k=>{ const opt=document.createElement('option'); opt.value=k; opt.text=k; select.appendChild(opt); });
+        div.innerHTML = `<label>Map ${f}</label>`;
+        div.appendChild(select);
+        container.appendChild(div);
+      });
+      M.AutoInit();
+      const modal = M.Modal.getInstance(document.getElementById('modal-map'));
+      modal.open();
+    }
+
+    document.getElementById('btn-map-apply').addEventListener('click', ()=>{
+      // read mapping
+      ['id','type','name','area','zone'].forEach(f=>mapping[f]=document.getElementById('map-'+f).value || null);
+      processTransfers();
+    });
+
+    // compute transfers and create groups
+    function processTransfers(){
+      // build index of old by id or name
+      const oldIdx = {};
+      fileOldRows.forEach(r=>{
+        const key = mapping.id? r[mapping.id] : (r[mapping.name]||'').toString().toLowerCase();
+        oldIdx[key]=r;
+      });
+      const transfers = [];
+      fileNewRows.forEach(r=>{
+        const key = mapping.id? r[mapping.id] : (r[mapping.name]||'').toString().toLowerCase();
+        const old = oldIdx[key];
+        if(!old) return; // new addition or unmatched - ignore
+        // compare area/zone
+        const oldArea = (old[mapping.area]||old[mapping.zone]||'').toString();
+        const newArea = (r[mapping.area]||r[mapping.zone]||'').toString();
+        if(oldArea !== newArea){
+          // build missionary object
+          const m = {
+            id: key,
+            type: (r[mapping.type]||'').toString(),
+            name: (r[mapping.name]||'').toString(),
+            originArea: oldArea,
+            destinationArea: newArea,
+            originCity: areaToCity(oldArea) || normalizeZoneName(oldArea),
+            destinationCity: areaToCity(newArea) || normalizeZoneName(newArea),
+            destinationZone: r[mapping.zone]||'',
+            transport: defaultTransportForPair(areaToCity(oldArea) || normalizeZoneName(oldArea), areaToCity(newArea) || normalizeZoneName(newArea)),
+            date: '', tbd: true, time: '', instructions:'', leader:false
+          };
+          transfers.push(m);
+        }
+      });
+
+      // also include moves within same city but different area? The user asked include those: above check oldArea !== newArea covers that
+      // group by origin->destination
+      state.groups = {};
+      transfers.forEach(m=>{
+        const key = `${m.originCity} -> ${m.destinationCity}`;
+        if(!state.groups[key]) state.groups[key]=[];
+        state.groups[key].push(m);
+      });
+      saveToLS();
+      renderGroups();
+      M.toast({html: `Processed ${transfers.length} transfers.`});
+    }
+
+    // default transport logic
+    function defaultTransportForPair(from, to){
+      const f = from.toLowerCase(), t = to.toLowerCase();
+      const main = ['tete','chimoio','beira'];
+      if(main.includes(f) && main.includes(t) && f !== t) return 'Bus';
+      if((f==='quelimane' && t==='nampula') || (f==='nampula' && t==='quelimane')) return 'Bus';
+      if((['tete','chimoio','beira'].includes(f) && t==='nampula')) return 'Plane';
+      if(f === t){
+        if(f==='beira') return 'Ride';
+        return 'Txopela/Taxi';
+      }
+      return 'Bus';
+    }
+
+    // --- Rendering groups
+    function renderGroups(){
+      const container = document.getElementById('groups');
+      container.innerHTML = '';
+      const lang = document.getElementById('lang-select')?.value || 'en';
+      for(const key of Object.keys(state.groups||{})){
+        const card = document.createElement('div'); card.className='card group-card';
+        const content = document.createElement('div'); content.className='card-content';
+        const title = document.createElement('span'); title.className='card-title'; title.textContent = key;
+        content.appendChild(title);
+        const table = document.createElement('table'); table.className='striped';
+        const thead = document.createElement('thead');
+        thead.innerHTML = `<tr><th>Type</th><th>Name</th><th>Origin City</th><th>Destination City</th><th>Destination Area</th><th>Transportation</th><th>Date</th><th>Time</th><th>Instructions</th><th>Leader</th><th>Remove</th></tr>`;
+        table.appendChild(thead);
+        const tbody = document.createElement('tbody');
+        state.groups[key].forEach((m, idx)=>{
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td><input value="${m.type}" class="type-input"></td>
+            <td>${m.name}</td>
+            <td>${m.originCity}</td>
+            <td>${m.destinationCity}</td>
+            <td><input value="${m.destinationArea}" class="destarea-input"></td>
+            <td>
+              <select class="transport-select">
+                <option value="Bus">${T[lang].Bus}</option>
+                <option value="Plane">${T[lang].Plane}</option>
+                <option value="Chapa">${T[lang].Chapa}</option>
+                <option value="Txopela/Taxi">${T[lang]['Txopela/Taxi']}</option>
+                <option value="Ride">${T[lang].Ride}</option>
+              </select>
+            </td>
+            <td><input type="date" class="date-input" value="${m.date}"><label class="active"></label><p><label><input type="checkbox" class="tbd-checkbox" ${m.tbd? 'checked':''}><span>TBD</span></label></p></td>
+            <td><input type="time" class="time-input" value="${m.time}"></td>
+            <td><input value="${m.instructions}" class="instr-input"></td>
+            <td><label><input type="checkbox" class="leader-checkbox" ${m.leader ? 'checked':''}><span></span></label></td>
+            <td><a class="btn-small red remove-btn"><i class="fa fa-trash"></i></a></td>
+          `;
+          tbody.appendChild(tr);
+          // after append, set select value
+          setTimeout(()=>{
+            const sel = tr.querySelector('.transport-select'); sel.value = m.transport;
+            M.FormSelect.init(sel);
+          }, 0);
+
+          // events
+          tr.querySelectorAll('input, select').forEach(el=>{
+            el.addEventListener('change', ()=>{
+              // update state
+              const g = state.groups[key];
+              const item = g[idx];
+              item.type = tr.querySelector('.type-input').value;
+              item.destinationArea = tr.querySelector('.destarea-input').value;
+              item.transport = tr.querySelector('.transport-select').value;
+              item.date = tr.querySelector('.date-input').value;
+              item.tbd = tr.querySelector('.tbd-checkbox').checked;
+              item.time = tr.querySelector('.time-input').value;
+              item.instructions = tr.querySelector('.instr-input').value;
+              item.leader = tr.querySelector('.leader-checkbox').checked;
+              saveToLS();
+            });
+          });
+
+          tr.querySelector('.remove-btn').addEventListener('click', ()=>{
+            if(confirm('Remove this missionary from travel plans?')){
+              state.groups[key].splice(idx,1);
+              if(state.groups[key].length===0) delete state.groups[key];
+              saveToLS(); renderGroups();
+            }
+          });
+        });
+        table.appendChild(tbody);
+        content.appendChild(table);
+        card.appendChild(content);
+        container.appendChild(card);
+      }
+    }
+
+    // -- Add missionary form
+    document.getElementById('btn-add-save').addEventListener('click', ()=>{
+      const m = {
+        id: 'manual-'+Date.now(),
+        type: document.getElementById('add-type').value,
+        name: document.getElementById('add-name').value,
+        originCity: normalizeZoneName(document.getElementById('add-origin').value),
+        destinationCity: normalizeZoneName(document.getElementById('add-dest').value),
+        destinationArea: document.getElementById('add-destarea').value,
+        transport: document.getElementById('add-transport').value,
+        date: document.getElementById('add-date').value,
+        tbd: document.getElementById('add-tbd').checked,
+        time: document.getElementById('add-time').value,
+        instructions: document.getElementById('add-instructions').value,
+        leader: document.getElementById('add-leader').checked
+      };
+      const key = `${m.originCity} -> ${m.destinationCity}`;
+      if(!state.groups[key]) state.groups[key]=[];
+      state.groups[key].push(m);
+      saveToLS(); renderGroups();
+      M.toast({html:'Added'});
+    });
+
+    // settings
+    function renderExceptions(){
+      const el = document.getElementById('exceptions-list'); el.innerHTML='';
+      for(const k of Object.keys(state.exceptions||{})){
+        const row = document.createElement('div'); row.className='row';
+        row.innerHTML = `<div class="col s4">${k}</div><div class="col s4">${state.exceptions[k].city || state.exceptions[k].type || ''}</div><div class="col s4"><a class="btn-small red btn-ex-remove">Remove</a></div>`;
+        el.appendChild(row);
+        row.querySelector('.btn-ex-remove').addEventListener('click', ()=>{ delete state.exceptions[k]; saveToLS(); renderExceptions(); });
+      }
+    }
+
+    document.getElementById('btn-add-exception').addEventListener('click', ()=>{
+      const name = prompt('Area or District name'); if(!name) return;
+      const type = prompt('Type: city/area/district (if you want to override city name type "city")','city');
+      if(!state.exceptions) state.exceptions={};
+      if(type === 'city') state.exceptions[name] = { city: name };
+      else state.exceptions[name] = { type };
+      saveToLS(); renderExceptions();
+    });
+
+    document.getElementById('btn-delete-all').addEventListener('click', ()=>{
+      if(confirm('Delete ALL missionary travel? This will clear saved groups.')){
+        state.groups = {}; saveToLS(); renderGroups();
+      }
+    });
+
+    document.getElementById('btn-clear-local').addEventListener('click', ()=>{ if(confirm('Clear local storage?')){ localStorage.removeItem(LS_KEY); state={groups:{},exceptions:defaults.exceptions,transportDefaults:{}}; loadState(); } });
+
+    // language change
+    document.getElementById('lang-select').addEventListener('change', ()=>{ renderGroups(); });
+
+    // initialize settings selects
+    document.addEventListener('DOMContentLoaded', ()=>{
+      const elems = document.querySelectorAll('select'); M.FormSelect.init(elems);
+      const modals = document.querySelectorAll('.modal'); M.Modal.init(modals, {dismissible:true});
+      // prefill state from LS
+      const ls = loadFromLS(); if(ls){ state=ls; }
+      // ensure exceptions default present
+      state.exceptions = Object.assign({}, defaults.exceptions, state.exceptions||{});
+      saveToLS();
+      renderExceptions(); renderGroups();
+    });
+
+  </script>
+</body>
+</html>
