@@ -400,7 +400,17 @@
         const thead = document.createElement('thead');
         thead.innerHTML = `
           <tr>
-            <th colspan="6">Bulk Edit for This Group:</th>
+            <th colspan="5">Bulk Edit for This Group:</th>
+            <th>
+              <select class="bulk-transport-select browser-default" title="Set transport for all in this group">
+                  <option value="" selected disabled>Set Transport</option>
+                  <option value="Bus">${T[lang].Bus}</option>
+                  <option value="Plane">${T[lang].Plane}</option>
+                  <option value="Chapa">${T[lang].Chapa}</option>
+                  <option value="Txopela/Taxi">${T[lang]['Txopela/Taxi']}</option>
+                  <option value="Ride">${T[lang].Ride}</option>
+              </select>
+            </th>
             <th><input type="date" class="bulk-date-input" title="Set date for all in this group"></th>
             <th><input type="time" class="bulk-time-input" title="Set time for all in this group"></th>
             <th><input class="bulk-instr-input" placeholder="Set instructions for all"></th>
@@ -461,17 +471,20 @@
         card.appendChild(content);
 
         const bulkUpdate = (field, value) => {
+          if(!value) return; // Don't update if the value is empty (e.g., the placeholder on the select)
           state.groups[key].forEach(m => { m[field] = value; });
           saveToLS(); renderGroups();
           M.toast({html: `Updated ${field} for all in group.`});
         };
+        card.querySelector('.bulk-transport-select').addEventListener('change', (e) => bulkUpdate('transport', e.target.value));
         card.querySelector('.bulk-date-input').addEventListener('change', (e) => bulkUpdate('date', e.target.value));
         card.querySelector('.bulk-time-input').addEventListener('change', (e) => bulkUpdate('time', e.target.value));
         card.querySelector('.bulk-instr-input').addEventListener('change', (e) => bulkUpdate('instructions', e.target.value));
 
         container.appendChild(card);
       }
-      M.AutoInit(); // Re-init all materialize components after rendering
+      // This re-initializes all Materialize components. It is the correct fix for the scrolling issue.
+      M.AutoInit();
     }
 
     document.getElementById('btn-add-save').addEventListener('click', ()=>{
