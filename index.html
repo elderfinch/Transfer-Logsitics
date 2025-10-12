@@ -16,15 +16,21 @@
     .time-input { width:140px }
     .btn-group { margin-top: 10px; }
     .btn-group .btn { margin-right: 8px; }
-    #modal-add h6 { margin: 10px 0 2px 0; font-size: 0.9rem; color: #555; }
-    .bulk-instr-input {
-        min-height: 45px; /* Set a minimum height */
-        height: auto; /* Allow height to be controlled by JS */
+    #modal-add h6, #modal-edit h6 { margin: 10px 0 2px 0; font-size: 0.9rem; color: #555; }
+    .bulk-instr-input, .instr-input {
+        min-height: 45px;
+        height: auto;
         padding: 5px !important;
     }
-    .instr-input {
-        height: auto;
+    .pdf-instr-wrap {
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        font-size: 0.8rem;
+        padding: 5px 0;
+        display: none;
+        min-height: 20px;
     }
+    .action-buttons a { margin: 0 4px; }
   </style>
 </head>
 <body>
@@ -82,7 +88,7 @@
         </div>
         <div class="col s4">
           <h6 data-translate="name">Name</h6>
-          <input id="add-name">
+          <input id="add-name" placeholder="Last, First">
         </div>
         <div class="col s3">
           <h6 data-translate="origin_city">Origin City</h6>
@@ -132,6 +138,74 @@
     </div>
     <div class="modal-footer">
       <a id="btn-add-save" class="modal-close btn" data-translate="save">Save</a>
+    </div>
+  </div>
+  
+  <div id="modal-edit" class="modal">
+    <div class="modal-content">
+      <h5 data-translate="edit_missionary_title">Edit Missionary</h5>
+      <input type="hidden" id="edit-original-group-key">
+      <input type="hidden" id="edit-missionary-index">
+      <div class="row">
+        <div class="col s2">
+          <h6 data-translate="type">Type</h6>
+          <select id="edit-type" class="browser-default">
+            <option value="Elder">Elder</option>
+            <option value="Sister">Sister</option>
+          </select>
+        </div>
+        <div class="col s4">
+          <h6 data-translate="name">Name</h6>
+          <input id="edit-name" placeholder="Last, First">
+        </div>
+        <div class="col s3">
+          <h6 data-translate="origin_city">Origin City</h6>
+          <input id="edit-origin">
+        </div>
+        <div class="col s3">
+          <h6 data-translate="dest_city">Destination City</h6>
+          <input id="edit-dest">
+        </div>
+      </div>
+      <div class="row">
+        <div class="col s4">
+          <h6 data-translate="dest_area">Destination Area</h6>
+          <input id="edit-destarea">
+        </div>
+        <div class="col s4">
+          <h6 data-translate="transportation">Transportation</h6>
+          <select id="edit-transport" class="browser-default"></select>
+        </div>
+        <div class="col s2 edit-date-wrapper">
+          <h6 data-translate="date">Date</h6>
+          <input id="edit-date" type="date">
+        </div>
+        <div class="col s2" style="padding-top: 30px;">
+          <label>
+            <input type="checkbox" id="edit-tbd" />
+            <span data-translate="tbd">TBD</span>
+          </label>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col s3">
+          <h6 data-translate="departure_time">Departure Time</h6>
+          <input id="edit-time" type="time">
+        </div>
+        <div class="col s5">
+          <h6 data-translate="travel_instructions">Travel Instructions</h6>
+          <input id="edit-instructions">
+        </div>
+        <div class="col s2" style="padding-top: 30px;">
+          <label>
+            <input type="checkbox" id="edit-leader" />
+            <span data-translate="travel_leader">Travel Leader</span>
+          </label>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <a id="btn-edit-save" class="modal-close btn" data-translate="save">Save</a>
     </div>
   </div>
 
@@ -228,6 +302,7 @@
             clear_all_travel: "Clear All Saved Travel",
             groups_title: "Groups",
             add_missionary_title: "Add Missionary",
+            edit_missionary_title: "Edit Missionary",
             type: "Type",
             name: "Name",
             origin_city: "Origin City",
@@ -264,7 +339,7 @@
             table_header_time: "Time",
             table_header_instructions: "Instructions",
             table_header_leader: "Leader",
-            table_header_remove: "Remove",
+            table_header_actions: "Actions",
             bulk_edit_title: "Bulk Edit for This Group:",
             bulk_edit_instructions_placeholder: "Set instructions for all",
             bulk_edit_transport_placeholder: "Set Transport",
@@ -295,6 +370,7 @@
             clear_all_travel: "Limpar Viagens Guardadas",
             groups_title: "Grupos",
             add_missionary_title: "Adicionar Missionário",
+            edit_missionary_title: "Editar Missionário",
             type: "Tipo",
             name: "Nome",
             origin_city: "Cidade de Origem",
@@ -331,7 +407,7 @@
             table_header_time: "Hora",
             table_header_instructions: "Instruções",
             table_header_leader: "Líder",
-            table_header_remove: "Remover",
+            table_header_actions: "Ações",
             bulk_edit_title: "Edição em Massa para Este Grupo:",
             bulk_edit_instructions_placeholder: "Definir instruções para todos",
             bulk_edit_transport_placeholder: "Definir Transporte",
@@ -367,7 +443,7 @@
             M.FormSelect.init(langSelect);
         }
         populateTransportDropdowns();
-        renderGroups(); // Re-render groups with new language
+        renderGroups();
     }
     
     function populateTransportDropdowns() {
@@ -379,10 +455,8 @@
             <option value="Txopela/Taxi">${translations[lang].transport_taxi}</option>
             <option value="Ride">${translations[lang].transport_ride}</option>`;
         
-        const addTransportSelect = document.getElementById('add-transport');
-        if (addTransportSelect) {
-            addTransportSelect.innerHTML = transportOptions;
-        }
+        document.getElementById('add-transport').innerHTML = transportOptions;
+        document.getElementById('edit-transport').innerHTML = transportOptions;
     }
 
     // -- State Management
@@ -391,6 +465,7 @@
     function loadState(){ renderExceptions(); renderGroups(); setLanguage(state.lang || 'pt'); }
 
     // -- Helpers
+    function getLastName(fullName) { if (!fullName) return ''; return fullName.split(',')[0].trim(); }
     function normalizeZoneName(name){ if(!name) return ''; name = name.replace(/ZONA/i,'').trim(); return name.charAt(0).toUpperCase()+name.slice(1).toLowerCase(); }
     function areaToCity(area){ if(!area) return ''; for(const key of Object.keys(state.exceptions||{})){ if(key.toLowerCase() === area.toLowerCase()){ return state.exceptions[key].city || key; } } return normalizeZoneName(area); }
     function autoResizeTextarea(element) {
@@ -463,7 +538,7 @@
       state.exceptions = Object.assign({}, defaults.exceptions, state.exceptions);
       saveToLS();
       processTransfers();
-      location.reload(); // Reload after onboarding is complete
+      location.reload();
     });
 
     function processTransfers(){
@@ -508,34 +583,31 @@
             <tr class="bulk-edit-row">
               <th colspan="5">${T.bulk_edit_title}</th>
               <th><select class="bulk-transport-select browser-default" title="${T.bulk_edit_transport_placeholder}"><option value="" selected disabled>${T.bulk_edit_transport_placeholder}</option><option value="Bus">${T.transport_bus}</option><option value="Plane">${T.transport_plane}</option><option value="Chapa">${T.transport_chapa}</option><option value="Txopela/Taxi">${T.transport_taxi}</option><option value="Ride">${T.transport_ride}</option></select></th>
-              <th><input type="date" class="bulk-date-input"></th><th><input type="time" class="bulk-time-input"></th><th><textarea class="materialize-textarea bulk-instr-input" placeholder="${T.bulk_edit_instructions_placeholder}"></textarea></th><th colspan="2"></th>
+              <th><input type="date" class="bulk-date-input"></th><th><input type="time" class="bulk-time-input"></th><th><textarea class="materialize-textarea bulk-instr-input" placeholder="${T.bulk_edit_instructions_placeholder}"></textarea></th><th class="actions-header" colspan="2"></th>
             </tr>
-            <tr><th>${T.table_header_type}</th><th>${T.table_header_name}</th><th>${T.table_header_origin}</th><th>${T.table_header_destination}</th><th>${T.table_header_dest_area}</th><th>${T.table_header_transport}</th><th>${T.table_header_date}</th><th>${T.table_header_time}</th><th>${T.table_header_instructions}</th><th>${T.table_header_leader}</th><th>${T.table_header_remove}</th></tr>
+            <tr><th>${T.table_header_type}</th><th>${T.table_header_name}</th><th>${T.table_header_origin}</th><th>${T.table_header_destination}</th><th>${T.table_header_dest_area}</th><th>${T.table_header_transport}</th><th>${T.table_header_date}</th><th>${T.table_header_time}</th><th>${T.table_header_instructions}</th><th>${T.table_header_leader}</th><th class="actions-header">${T.table_header_actions}</th></tr>
           </thead>`;
         const tbody = document.createElement('tbody');
         state.groups[key].forEach((m, idx)=>{
           const tr = document.createElement('tr');
-          tr.innerHTML = `<td>${m.type}</td><td>${m.name}</td><td>${m.originCity}</td><td>${m.destinationCity}</td><td>${m.destinationArea}</td>
+          tr.innerHTML = `<td>${m.type}</td><td>${getLastName(m.name)}</td><td>${m.originCity}</td><td>${m.destinationCity}</td><td>${m.destinationArea}</td>
             <td><select class="transport-select browser-default"><option value="Bus">${T.transport_bus}</option><option value="Plane">${T.transport_plane}</option><option value="Chapa">${T.transport_chapa}</option><option value="Txopela/Taxi">${T.transport_taxi}</option><option value="Ride">${T.transport_ride}</option></select></td>
             <td><input type="date" class="date-input" value="${m.date}"><p class="tbd-wrapper" style="margin-top:5px;"><label><input type="checkbox" class="tbd-checkbox" ${m.tbd? 'checked':''}><span>${T.tbd}</span></label></p></td><td><input type="time" class="time-input" value="${m.time}"></td>
-            <td><textarea class="instr-input materialize-textarea">${m.instructions || ''}</textarea></td><td><label><input type="checkbox" class="leader-checkbox" ${m.leader ? 'checked':''}><span></span></label></td>
-            <td><a class="btn-small red remove-btn"><i class="fa fa-trash"></i></a></td>`;
+            <td><textarea class="instr-input materialize-textarea">${m.instructions || ''}</textarea><div class="pdf-instr-wrap">${m.instructions || ''}</div></td><td><label><input type="checkbox" class="leader-checkbox" ${m.leader ? 'checked':''}><span></span></label></td>
+            <td class="actions-cell"><div class="action-buttons"><a class="btn-small blue edit-btn"><i class="fa fa-pencil"></i></a><a class="btn-small red remove-btn"><i class="fa fa-trash"></i></a></div></td>`;
           tbody.appendChild(tr);
 
           const dateInput = tr.querySelector('.date-input');
           const tbdCheckbox = tr.querySelector('.tbd-checkbox');
           const instrTextarea = tr.querySelector('.instr-input');
           
-          const toggleDateVisibility = () => {
-            dateInput.style.display = tbdCheckbox.checked ? 'none' : 'block';
-          };
+          const toggleDateVisibility = () => { dateInput.style.display = tbdCheckbox.checked ? 'none' : 'block'; };
           
           toggleDateVisibility();
           tbdCheckbox.addEventListener('change', toggleDateVisibility);
 
-          // Auto-resize textarea
           instrTextarea.addEventListener('input', () => autoResizeTextarea(instrTextarea));
-          setTimeout(() => autoResizeTextarea(instrTextarea), 0); // Initial resize
+          setTimeout(() => autoResizeTextarea(instrTextarea), 0);
 
           tr.querySelector('.transport-select').value = m.transport;
           tr.querySelectorAll('input, select, textarea').forEach(el=>{
@@ -544,6 +616,7 @@
             });
           });
           tr.querySelector('.remove-btn').addEventListener('click', ()=>{ if(confirm(T.confirm_remove_missionary)){ state.groups[key].splice(idx,1); if(state.groups[key].length===0) delete state.groups[key]; saveToLS(); renderGroups(); } });
+          tr.querySelector('.edit-btn').addEventListener('click', () => openEditModal(key, idx));
         });
         table.appendChild(tbody); content.appendChild(table); card.appendChild(content);
         const bulkUpdate = (field, value) => { if(!value && field !== 'instructions') return; state.groups[key].forEach(m => { m[field] = value; }); saveToLS(); renderGroups(); M.toast({html: T.toast_updated.replace('{field}', field)}); };
@@ -559,21 +632,77 @@
       }
       M.AutoInit();
     }
+    
+    function openEditModal(groupKey, index) {
+        const missionary = state.groups[groupKey][index];
+        document.getElementById('edit-original-group-key').value = groupKey;
+        document.getElementById('edit-missionary-index').value = index;
+        document.getElementById('edit-name').value = missionary.name;
+        document.getElementById('edit-type').value = missionary.type;
+        document.getElementById('edit-origin').value = missionary.originCity;
+        document.getElementById('edit-dest').value = missionary.destinationCity;
+        document.getElementById('edit-destarea').value = missionary.destinationArea;
+        document.getElementById('edit-transport').value = missionary.transport;
+        document.getElementById('edit-date').value = missionary.date;
+        document.getElementById('edit-tbd').checked = missionary.tbd;
+        document.getElementById('edit-time').value = missionary.time;
+        document.getElementById('edit-instructions').value = missionary.instructions;
+        document.getElementById('edit-leader').checked = missionary.leader;
+        
+        document.querySelector('.edit-date-wrapper').style.display = missionary.tbd ? 'none' : 'block';
+
+        M.Modal.getInstance(document.getElementById('modal-edit')).open();
+    }
 
     // -- Event Listeners
-    document.getElementById('add-tbd').addEventListener('change', (e) => {
-        document.querySelector('.add-date-wrapper').style.display = e.target.checked ? 'none' : 'block';
-    });
+    document.getElementById('add-tbd').addEventListener('change', (e) => { document.querySelector('.add-date-wrapper').style.display = e.target.checked ? 'none' : 'block'; });
+    document.getElementById('edit-tbd').addEventListener('change', (e) => { document.querySelector('.edit-date-wrapper').style.display = e.target.checked ? 'none' : 'block'; });
 
     document.getElementById('btn-add-save').addEventListener('click', ()=>{
       const m = {
-        id: 'manual-'+Date.now(), type: document.getElementById('add-type').value, name: document.getElementById('add-name').value, originCity: normalizeZoneName(document.getElementById('add-origin').value), destinationCity: normalizeZoneName(document.getElementById('add-dest').value),
+        id: document.getElementById('add-name').value.trim().toLowerCase(), type: document.getElementById('add-type').value, name: document.getElementById('add-name').value.trim(), originCity: normalizeZoneName(document.getElementById('add-origin').value), destinationCity: normalizeZoneName(document.getElementById('add-dest').value),
         destinationArea: document.getElementById('add-destarea').value, transport: document.getElementById('add-transport').value, date: document.getElementById('add-date').value, tbd: document.getElementById('add-tbd').checked, time: document.getElementById('add-time').value, instructions: document.getElementById('add-instructions').value, leader: document.getElementById('add-leader').checked
       };
       const key = `${m.originCity} -> ${m.destinationCity}`; if(!state.groups[key]) state.groups[key]=[]; state.groups[key].push(m);
       saveToLS();
       M.toast({html: translations[state.lang].toast_added});
-      location.reload(); // Reload after adding a new missionary
+      location.reload();
+    });
+    
+    document.getElementById('btn-edit-save').addEventListener('click', () => {
+        const originalGroupKey = document.getElementById('edit-original-group-key').value;
+        const index = parseInt(document.getElementById('edit-missionary-index').value, 10);
+        
+        const missionary = {
+            id: document.getElementById('edit-name').value.trim().toLowerCase(),
+            name: document.getElementById('edit-name').value.trim(),
+            type: document.getElementById('edit-type').value,
+            originCity: normalizeZoneName(document.getElementById('edit-origin').value),
+            destinationCity: normalizeZoneName(document.getElementById('edit-dest').value),
+            destinationArea: document.getElementById('edit-destarea').value,
+            transport: document.getElementById('edit-transport').value,
+            date: document.getElementById('edit-date').value,
+            tbd: document.getElementById('edit-tbd').checked,
+            time: document.getElementById('edit-time').value,
+            instructions: document.getElementById('edit-instructions').value,
+            leader: document.getElementById('edit-leader').checked
+        };
+
+        // Remove from old group
+        state.groups[originalGroupKey].splice(index, 1);
+        if (state.groups[originalGroupKey].length === 0) {
+            delete state.groups[originalGroupKey];
+        }
+
+        // Add to new group
+        const newGroupKey = `${missionary.originCity} -> ${missionary.destinationCity}`;
+        if (!state.groups[newGroupKey]) {
+            state.groups[newGroupKey] = [];
+        }
+        state.groups[newGroupKey].push(missionary);
+
+        saveToLS();
+        location.reload();
     });
     
     document.getElementById('btn-save-exception').addEventListener('click', () => {
@@ -589,7 +718,7 @@
     document.getElementById('lang-select').addEventListener('change', (e)=>{
       state.lang = e.target.value;
       saveToLS();
-      location.reload(); // Reload after changing language
+      location.reload();
     });
     
     // -- Export Functions
@@ -604,26 +733,38 @@
         const card = cards[i];
         
         // Prepare card for printing
-        const bulkEditRow = card.querySelector('.bulk-edit-row');
-        if (bulkEditRow) bulkEditRow.style.display = 'none';
+        const toHide = card.querySelectorAll('.bulk-edit-row, .actions-header, .actions-cell');
+        toHide.forEach(el => el.style.display = 'none');
         
         card.querySelectorAll('tbody tr').forEach(row => {
-          const dateInput = row.querySelector('.date-input');
-          if (dateInput && dateInput.value) {
-            const tbdWrapper = row.querySelector('.tbd-wrapper');
-            if (tbdWrapper) tbdWrapper.style.display = 'none';
-          }
+            const dateInput = row.querySelector('.date-input');
+            if (dateInput && dateInput.value) {
+                const tbdWrapper = row.querySelector('.tbd-wrapper');
+                if (tbdWrapper) tbdWrapper.style.display = 'none';
+            }
+            // Swap textarea for div for wrapping
+            const instrTextarea = row.querySelector('.instr-input');
+            const pdfDiv = row.querySelector('.pdf-instr-wrap');
+            if (instrTextarea) instrTextarea.style.display = 'none';
+            if (pdfDiv) pdfDiv.style.display = 'block';
         });
 
         const canvas = await html2canvas(card, { scale: 2 });
         
         // Restore card to original view
-        if (bulkEditRow) bulkEditRow.style.display = '';
-        card.querySelectorAll('.tbd-wrapper').forEach(el => el.style.display = '');
+        toHide.forEach(el => el.style.display = '');
+        card.querySelectorAll('tbody tr').forEach(row => {
+            const tbdWrapper = row.querySelector('.tbd-wrapper');
+            if (tbdWrapper) tbdWrapper.style.display = '';
+            const instrTextarea = row.querySelector('.instr-input');
+            const pdfDiv = row.querySelector('.pdf-instr-wrap');
+            if (instrTextarea) instrTextarea.style.display = '';
+            if (pdfDiv) pdfDiv.style.display = 'none';
+        });
 
-        const imgData = canvas.toDataURL('image/jpeg', 0.7); // Use JPEG with 70% quality for compression
+        const imgData = canvas.toDataURL('image/jpeg', 0.7);
         const imgProps = doc.getImageProperties(imgData);
-        const pdfWidth = doc.internal.pageSize.getWidth() - 20; // with margin
+        const pdfWidth = doc.internal.pageSize.getWidth() - 20;
         const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
         
         if (i > 0) doc.addPage();
