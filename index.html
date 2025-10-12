@@ -95,7 +95,7 @@
           <h6 data-translate="transportation">Transportation</h6>
           <select id="add-transport" class="browser-default"></select>
         </div>
-        <div class="col s2">
+        <div class="col s2 add-date-wrapper">
           <h6 data-translate="date">Date</h6>
           <input id="add-date" type="date">
         </div>
@@ -337,7 +337,7 @@
             confirm_remove_missionary: "Remover este missionário dos planos de viagem?",
             confirm_delete_all: "Apagar TODAS as viagens de missionários? Isto irá limpar os grupos guardados.",
             confirm_clear_local: "Limpar armazenamento local? Isto irá apagar todas as viagens e definições guardadas.",
-            transport_bus: "Autocarro",
+            transport_bus: "Ônibus",
             transport_plane: "Avião",
             transport_chapa: "Chapa",
             transport_taxi: "Txopela/Táxi",
@@ -452,7 +452,7 @@
       state.exceptions = Object.assign({}, defaults.exceptions, state.exceptions);
       saveToLS();
       processTransfers();
-      location.reload();
+      location.reload(); // Reload after onboarding is complete
     });
 
     function processTransfers(){
@@ -494,7 +494,7 @@
         const table = document.createElement('table'); table.className='striped';
         table.innerHTML = `
           <thead>
-            <tr>
+            <tr class="bulk-edit-row">
               <th colspan="5">${T.bulk_edit_title}</th>
               <th><select class="bulk-transport-select browser-default" title="${T.bulk_edit_transport_placeholder}"><option value="" selected disabled>${T.bulk_edit_transport_placeholder}</option><option value="Bus">${T.transport_bus}</option><option value="Plane">${T.transport_plane}</option><option value="Chapa">${T.transport_chapa}</option><option value="Txopela/Taxi">${T.transport_taxi}</option><option value="Ride">${T.transport_ride}</option></select></th>
               <th><input type="date" class="bulk-date-input"></th><th><input type="time" class="bulk-time-input"></th><th><textarea class="materialize-textarea bulk-instr-input" placeholder="${T.bulk_edit_instructions_placeholder}"></textarea></th><th colspan="2"></th>
@@ -506,13 +506,25 @@
           const tr = document.createElement('tr');
           tr.innerHTML = `<td>${m.type}</td><td>${m.name}</td><td>${m.originCity}</td><td>${m.destinationCity}</td><td>${m.destinationArea}</td>
             <td><select class="transport-select browser-default"><option value="Bus">${T.transport_bus}</option><option value="Plane">${T.transport_plane}</option><option value="Chapa">${T.transport_chapa}</option><option value="Txopela/Taxi">${T.transport_taxi}</option><option value="Ride">${T.transport_ride}</option></select></td>
-            <td><input type="date" class="date-input" value="${m.date}"><p style="margin-top:5px;"><label><input type="checkbox" class="tbd-checkbox" ${m.tbd? 'checked':''}><span>${T.tbd}</span></label></p></td><td><input type="time" class="time-input" value="${m.time}"></td>
+            <td><input type="date" class="date-input" value="${m.date}"><p class="tbd-wrapper" style="margin-top:5px;"><label><input type="checkbox" class="tbd-checkbox" ${m.tbd? 'checked':''}><span>${T.tbd}</span></label></p></td><td><input type="time" class="time-input" value="${m.time}"></td>
             <td><textarea class="instr-input materialize-textarea">${m.instructions || ''}</textarea></td><td><label><input type="checkbox" class="leader-checkbox" ${m.leader ? 'checked':''}><span></span></label></td>
             <td><a class="btn-small red remove-btn"><i class="fa fa-trash"></i></a></td>`;
-          tbody.appendChild(tr); tr.querySelector('.transport-select').value = m.transport;
+          tbody.appendChild(tr);
+
+          const dateInput = tr.querySelector('.date-input');
+          const tbdCheckbox = tr.querySelector('.tbd-checkbox');
+          
+          const toggleDateVisibility = () => {
+            dateInput.style.display = tbdCheckbox.checked ? 'none' : 'block';
+          };
+          
+          toggleDateVisibility(); // Set initial state
+          tbdCheckbox.addEventListener('change', toggleDateVisibility);
+
+          tr.querySelector('.transport-select').value = m.transport;
           tr.querySelectorAll('input, select, textarea').forEach(el=>{
             el.addEventListener('change', ()=>{
-              const item = state.groups[key][idx]; item.transport = tr.querySelector('.transport-select').value; item.date = tr.querySelector('.date-input').value; item.tbd = tr.querySelector('.tbd-checkbox').checked; item.time = tr.querySelector('.time-input').value; item.instructions = tr.querySelector('.instr-input').value; item.leader = tr.querySelector('.leader-checkbox').checked; saveToLS();
+              const item = state.groups[key][idx]; item.transport = tr.querySelector('.transport-select').value; item.date = dateInput.value; item.tbd = tbdCheckbox.checked; item.time = tr.querySelector('.time-input').value; item.instructions = tr.querySelector('.instr-input').value; item.leader = tr.querySelector('.leader-checkbox').checked; saveToLS();
             });
           });
           tr.querySelector('.remove-btn').addEventListener('click', ()=>{ if(confirm(T.confirm_remove_missionary)){ state.groups[key].splice(idx,1); if(state.groups[key].length===0) delete state.groups[key]; saveToLS(); renderGroups(); } });
@@ -529,6 +541,10 @@
     }
 
     // -- Event Listeners
+    document.getElementById('add-tbd').addEventListener('change', (e) => {
+        document.querySelector('.add-date-wrapper').style.display = e.target.checked ? 'none' : 'block';
+    });
+
     document.getElementById('btn-add-save').addEventListener('click', ()=>{
       const m = {
         id: 'manual-'+Date.now(), type: document.getElementById('add-type').value, name: document.getElementById('add-name').value, originCity: normalizeZoneName(document.getElementById('add-origin').value), destinationCity: normalizeZoneName(document.getElementById('add-dest').value),
@@ -537,7 +553,7 @@
       const key = `${m.originCity} -> ${m.destinationCity}`; if(!state.groups[key]) state.groups[key]=[]; state.groups[key].push(m);
       saveToLS();
       M.toast({html: translations[state.lang].toast_added});
-      location.reload();
+      location.reload(); // Reload after adding a new missionary
     });
     
     document.getElementById('btn-save-exception').addEventListener('click', () => {
@@ -549,22 +565,47 @@
     
     document.getElementById('btn-delete-all').addEventListener('click', ()=>{ if(confirm(translations[state.lang].confirm_delete_all)){ state.groups = {}; saveToLS(); renderGroups(); } });
     document.getElementById('btn-clear-local').addEventListener('click', ()=>{ if(confirm(translations[state.lang].confirm_clear_local)){ localStorage.removeItem(LS_KEY); state={groups:{},exceptions:defaults.exceptions, lang:'pt'}; loadState(); } });
-    document.getElementById('lang-select').addEventListener('change', (e)=>{ setLanguage(e.target.value); saveToLS(); });
+    
+    document.getElementById('lang-select').addEventListener('change', (e)=>{
+      state.lang = e.target.value;
+      saveToLS();
+      location.reload(); // Reload after changing language
+    });
     
     // -- Export Functions
     document.getElementById('btn-export-pdf').addEventListener('click', async () => {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ orientation: 'l', unit: 'mm', format: 'a4' });
-      const cards = document.querySelectorAll('.group-card');
+      const cards = Array.from(document.querySelectorAll('.group-card'));
       if (cards.length === 0) return;
       M.toast({html: translations[state.lang].toast_pdf_generating});
+      
       for (let i = 0; i < cards.length; i++) {
         const card = cards[i];
+        
+        // Prepare card for printing
+        const bulkEditRow = card.querySelector('.bulk-edit-row');
+        bulkEditRow.style.display = 'none';
+        
+        card.querySelectorAll('tbody tr').forEach(row => {
+          const dateInput = row.querySelector('.date-input');
+          if (dateInput && dateInput.value) {
+            const tbdWrapper = row.querySelector('.tbd-wrapper');
+            if (tbdWrapper) tbdWrapper.style.display = 'none';
+          }
+        });
+
         const canvas = await html2canvas(card, { scale: 2 });
-        const imgData = canvas.toDataURL('image/jpeg', 0.7); // Use JPEG with 70% quality
+        
+        // Restore card to original view
+        bulkEditRow.style.display = '';
+        card.querySelectorAll('.tbd-wrapper').forEach(el => el.style.display = '');
+
+        const imgData = canvas.toDataURL('image/jpeg', 0.7); // Use JPEG with 70% quality for compression
         const imgProps = doc.getImageProperties(imgData);
         const pdfWidth = doc.internal.pageSize.getWidth() - 20; // with margin
         const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+        
         if (i > 0) doc.addPage();
         doc.addImage(imgData, 'JPEG', 10, 10, pdfWidth, pdfHeight);
       }
@@ -583,7 +624,6 @@
         allMissionaries.forEach(m => {
             const transportText = m.transport ? (T[`transport_${m.transport.toLowerCase().replace('/','_')}`] || m.transport) : '';
             const leaderText = m.leader ? 'Yes' : 'No';
-            // Escape quotes inside fields by doubling them
             const sanitizedInstructions = (m.instructions || '').replace(/"/g, '""');
             const sanitizedName = (m.name || '').replace(/"/g, '""');
             const sanitizedArea = (m.destinationArea || '').replace(/"/g, '""');
