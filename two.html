@@ -17,6 +17,7 @@
     .bulk-instr-input::placeholder { color: #9e9e9e; }
     .btn-group { margin-top: 10px; }
     .btn-group .btn { margin-right: 8px; }
+    #modal-add h6 { margin: 10px 0 2px 0; font-size: 0.9rem; color: #555; }
   </style>
 </head>
 <body>
@@ -64,41 +65,41 @@
     <div class="modal-content">
       <h5 data-translate="add_missionary_title">Add Missionary</h5>
       <div class="row">
-        <div class="input-field col s2">
-          <select id="add-type">
+        <div class="col s2">
+          <h6 data-translate="type">Type</h6>
+          <select id="add-type" class="browser-default">
             <option value="" disabled selected data-translate="choose_option">Choose...</option>
             <option value="Elder">Elder</option>
             <option value="Sister">Sister</option>
           </select>
-          <label data-translate="type">Type</label>
         </div>
-        <div class="input-field col s4">
+        <div class="col s4">
+          <h6 data-translate="name">Name</h6>
           <input id="add-name">
-          <label for="add-name" data-translate="name">Name</label>
         </div>
-        <div class="input-field col s3">
+        <div class="col s3">
+          <h6 data-translate="origin_city">Origin City</h6>
           <input id="add-origin">
-          <label for="add-origin" data-translate="origin_city">Origin City</label>
         </div>
-        <div class="input-field col s3">
+        <div class="col s3">
+          <h6 data-translate="dest_city">Destination City</h6>
           <input id="add-dest">
-          <label for="add-dest" data-translate="dest_city">Destination City</label>
         </div>
       </div>
       <div class="row">
-        <div class="input-field col s4">
+        <div class="col s4">
+          <h6 data-translate="dest_area">Destination Area</h6>
           <input id="add-destarea">
-          <label for="add-destarea" data-translate="dest_area">Destination Area</label>
         </div>
-        <div class="input-field col s4">
-          <select id="add-transport"></select>
-          <label data-translate="transportation">Transportation</label>
-        </div>
-        <div class="input-field col s2">
-          <input id="add-date" type="date">
-          <label for="add-date" data-translate="date">Date</label>
+        <div class="col s4">
+          <h6 data-translate="transportation">Transportation</h6>
+          <select id="add-transport" class="browser-default"></select>
         </div>
         <div class="col s2">
+          <h6 data-translate="date">Date</h6>
+          <input id="add-date" type="date">
+        </div>
+        <div class="col s2" style="padding-top: 30px;">
           <label>
             <input type="checkbox" id="add-tbd" />
             <span data-translate="tbd">TBD</span>
@@ -106,15 +107,15 @@
         </div>
       </div>
       <div class="row">
-        <div class="input-field col s3">
+        <div class="col s3">
+          <h6 data-translate="departure_time">Departure Time</h6>
           <input id="add-time" type="time">
-          <label for="add-time" data-translate="departure_time">Departure Time</label>
         </div>
-        <div class="input-field col s5">
+        <div class="col s5">
+          <h6 data-translate="travel_instructions">Travel Instructions</h6>
           <input id="add-instructions">
-          <label for="add-instructions" data-translate="travel_instructions">Travel Instructions</label>
         </div>
-        <div class="col s2">
+        <div class="col s2" style="padding-top: 30px;">
           <label>
             <input type="checkbox" id="add-leader" />
             <span data-translate="travel_leader">Travel Leader</span>
@@ -353,8 +354,11 @@
                 el.textContent = translations[lang][key];
             }
         });
-        document.getElementById('lang-select').value = lang;
-        M.FormSelect.init(document.getElementById('lang-select'));
+        const langSelect = document.getElementById('lang-select');
+        if (langSelect) {
+            langSelect.value = lang;
+            M.FormSelect.init(langSelect);
+        }
         populateTransportDropdowns();
         renderGroups(); // Re-render groups with new language
     }
@@ -369,8 +373,9 @@
             <option value="Ride">${translations[lang].transport_ride}</option>`;
         
         const addTransportSelect = document.getElementById('add-transport');
-        addTransportSelect.innerHTML = transportOptions;
-        M.FormSelect.init(addTransportSelect);
+        if (addTransportSelect) {
+            addTransportSelect.innerHTML = transportOptions;
+        }
     }
 
     // -- State Management
@@ -496,7 +501,7 @@
         const tbody = document.createElement('tbody');
         state.groups[key].forEach((m, idx)=>{
           const tr = document.createElement('tr');
-          tr.innerHTML = `<td><input value="${m.type}" readonly></td><td>${m.name}</td><td>${m.originCity}</td><td>${m.destinationCity}</td><td><input value="${m.destinationArea}" readonly></td>
+          tr.innerHTML = `<td>${m.type}</td><td>${m.name}</td><td>${m.originCity}</td><td>${m.destinationCity}</td><td>${m.destinationArea}</td>
             <td><select class="transport-select browser-default"><option value="Bus">${T.transport_bus}</option><option value="Plane">${T.transport_plane}</option><option value="Chapa">${T.transport_chapa}</option><option value="Txopela/Taxi">${T.transport_taxi}</option><option value="Ride">${T.transport_ride}</option></select></td>
             <td><input type="date" class="date-input" value="${m.date}"><p style="margin-top:5px;"><label><input type="checkbox" class="tbd-checkbox" ${m.tbd? 'checked':''}><span>${T.tbd}</span></label></p></td><td><input type="time" class="time-input" value="${m.time}"></td>
             <td><textarea class="instr-input materialize-textarea">${m.instructions || ''}</textarea></td><td><label><input type="checkbox" class="leader-checkbox" ${m.leader ? 'checked':''}><span></span></label></td>
@@ -517,7 +522,7 @@
         card.querySelector('.bulk-instr-input').addEventListener('change', (e) => bulkUpdate('instructions', e.target.value));
         container.appendChild(card);
       }
-      M.AutoInit(); // Re-init components, fixes scrolling issue
+      M.AutoInit();
     }
 
     // -- Event Listeners
@@ -565,14 +570,14 @@
         const lang = state.lang || 'pt';
         const T = translations[lang];
         const headers = [T.table_header_type, T.table_header_name, T.table_header_origin, T.table_header_destination, T.table_header_dest_area, T.table_header_transport, T.table_header_date, T.table_header_time, T.table_header_instructions, T.table_header_leader];
-        let csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\n";
+        let csvContent = "data:text/csv;charset=utf-8," + headers.join(";") + "\n";
         const allMissionaries = Object.values(state.groups || {}).flat();
         
         allMissionaries.forEach(m => {
-            const transportText = T[`transport_${m.transport?.toLowerCase().replace('/','_')}`] || m.transport;
+            const transportText = m.transport ? (T[`transport_${m.transport.toLowerCase().replace('/','_')}`] || m.transport) : '';
             const leaderText = m.leader ? 'Yes' : 'No';
             const row = [m.type, `"${m.name}"`, m.originCity, m.destinationCity, `"${m.destinationArea}"`, transportText, m.date, m.time, `"${(m.instructions || '').replace(/"/g, '""')}"`, leaderText];
-            csvContent += row.join(",") + "\n";
+            csvContent += row.join(";") + "\n";
         });
 
         const encodedUri = encodeURI(csvContent);
