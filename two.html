@@ -9,10 +9,12 @@
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <style>
     body { padding: 16px; }
+    .container { width: 95%; max-width: initial; } /* Wider container for tables */
     .chip-leader { background: #ffd54f; }
     .group-card { margin-bottom: 18px; }
     .small-input { width:120px }
     .time-input { width:140px }
+    .bulk-instr-input::placeholder { color: #9e9e9e; }
   </style>
 </head>
 <body>
@@ -52,7 +54,6 @@
     </div>
   </div>
 
-  <!-- Add modal -->
   <div id="modal-add" class="modal">
     <div class="modal-content">
       <h5>Add Missionary</h5>
@@ -122,7 +123,6 @@
     </div>
   </div>
 
-  <!-- Settings modal -->
   <div id="modal-settings" class="modal">
     <div class="modal-content">
       <h5>Settings</h5>
@@ -138,13 +138,27 @@
           <a id="btn-delete-all" class="btn red">Delete All Missionary Travel</a>
         </div>
       </div>
-      <h6>Area/District exceptions</h6>
+      <h6>Area/District Exceptions</h6>
       <div id="exceptions-list"></div>
-      <a id="btn-add-exception" class="btn small">Add exception</a>
+      <div class="section">
+        <h6>Add New Exception</h6>
+        <div class="row">
+          <div class="input-field col s5">
+            <input id="ex-add-name" type="text">
+            <label for="ex-add-name">Area/District/Zone Name</label>
+          </div>
+          <div class="input-field col s5">
+            <input id="ex-add-city" type="text">
+            <label for="ex-add-city">Override City</label>
+          </div>
+          <div class="input-field col s2">
+            <a id="btn-save-exception" class="btn">Save</a>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- Column mapping modal -->
   <div id="modal-map" class="modal">
     <div class="modal-content">
       <h5>Map columns (choose which column in your spreadsheet corresponds to these fields)</h5>
@@ -156,7 +170,6 @@
     </div>
   </div>
 
-  <!-- Exceptions modal (show unique zones/areas and allow overriding to a city) -->
   <div id="modal-exceptions" class="modal">
     <div class="modal-content">
       <h5>Assign exceptions (areas/districts that map to a different city)</h5>
@@ -179,9 +192,9 @@
         'Nhamatanda': { city: 'Nhamatanda' },
         'Marromeu': { city: 'Marromeu' },
         'Caia': { city: 'Caia' },
-        'Munhava': { city: 'Beira' },
-        'Inhamizua': { city: 'Beira' },
-        'Manga': { city: 'Beira' }
+        'ZONA INHAMIZUA': { city: 'Beira' },
+        'ZONA MANGA': { city: 'Beira' },
+        'ZONA MUNHAVA': { city: 'Beira' }
       }
     };
 
@@ -371,19 +384,27 @@
         content.appendChild(title);
         const table = document.createElement('table'); table.className='striped';
         const thead = document.createElement('thead');
-        thead.innerHTML = `<tr><th>Type</th><th>Name</th><th>Origin City</th><th>Destination City</th><th>Destination Area</th><th>Transportation</th><th>Date</th><th>Time</th><th>Instructions</th><th>Leader</th><th>Remove</th></tr>`;
+        thead.innerHTML = `
+          <tr>
+            <th colspan="6">Bulk Edit for This Group:</th>
+            <th><input type="date" class="bulk-date-input" title="Set date for all in this group"></th>
+            <th><input type="time" class="bulk-time-input" title="Set time for all in this group"></th>
+            <th colspan="1"><input class="bulk-instr-input" placeholder="Set instructions for all"></th>
+            <th colspan="2"></th>
+          </tr>
+          <tr><th>Type</th><th>Name</th><th>Origin City</th><th>Destination City</th><th>Destination Area</th><th>Transportation</th><th>Date</th><th>Time</th><th>Instructions</th><th>Leader</th><th>Remove</th></tr>`;
         table.appendChild(thead);
         const tbody = document.createElement('tbody');
         state.groups[key].forEach((m, idx)=>{
           const tr = document.createElement('tr');
           tr.innerHTML = `
-            <td><input value="${m.type}" class="type-input"></td>
+            <td><input value="${m.type}" class="type-input" readonly></td>
             <td>${m.name}</td>
             <td>${m.originCity}</td>
             <td>${m.destinationCity}</td>
-            <td><input value="${m.destinationArea}" class="destarea-input"></td>
+            <td><input value="${m.destinationArea}" class="destarea-input" readonly></td>
             <td>
-              <select class="transport-select">
+              <select class="transport-select browser-default">
                 <option value="Bus">${T[lang].Bus}</option>
                 <option value="Plane">${T[lang].Plane}</option>
                 <option value="Chapa">${T[lang].Chapa}</option>
@@ -391,16 +412,16 @@
                 <option value="Ride">${T[lang].Ride}</option>
               </select>
             </td>
-            <td><input type="date" class="date-input" value="${m.date}"><label class="active"></label><p><label><input type="checkbox" class="tbd-checkbox" ${m.tbd? 'checked':''}><span>TBD</span></label></p></td>
+            <td><input type="date" class="date-input" value="${m.date}"><p style="margin-top: 5px;"><label><input type="checkbox" class="tbd-checkbox" ${m.tbd? 'checked':''}><span>TBD</span></label></p></td>
             <td><input type="time" class="time-input" value="${m.time}"></td>
-            <td><input value="${m.instructions}" class="instr-input"></td>
+            <td><textarea class="instr-input materialize-textarea">${m.instructions || ''}</textarea></td>
             <td><label><input type="checkbox" class="leader-checkbox" ${m.leader ? 'checked':''}><span></span></label></td>
             <td><a class="btn-small red remove-btn"><i class="fa fa-trash"></i></a></td>
           `;
           tbody.appendChild(tr);
-          setTimeout(()=>{ const sel = tr.querySelector('.transport-select'); sel.value = m.transport; M.FormSelect.init(sel); }, 0);
+          tr.querySelector('.transport-select').value = m.transport;
 
-          tr.querySelectorAll('input, select').forEach(el=>{
+          tr.querySelectorAll('input, select, textarea').forEach(el=>{
             el.addEventListener('change', ()=>{
               const g = state.groups[key];
               const item = g[idx];
@@ -427,6 +448,20 @@
         table.appendChild(tbody);
         content.appendChild(table);
         card.appendChild(content);
+
+        // Add event listeners for bulk edits
+        const bulkUpdate = (field, value) => {
+          state.groups[key].forEach(missionary => {
+            missionary[field] = value;
+          });
+          saveToLS();
+          renderGroups(); // Re-render to show changes everywhere
+          M.toast({html: `Updated ${field} for all in group.`});
+        };
+        card.querySelector('.bulk-date-input').addEventListener('change', (e) => bulkUpdate('date', e.target.value));
+        card.querySelector('.bulk-time-input').addEventListener('change', (e) => bulkUpdate('time', e.target.value));
+        card.querySelector('.bulk-instr-input').addEventListener('change', (e) => bulkUpdate('instructions', e.target.value));
+
         container.appendChild(card);
       }
     }
@@ -455,13 +490,32 @@
     });
 
     // settings
-    function renderExceptions(){ const el = document.getElementById('exceptions-list'); el.innerHTML=''; for(const k of Object.keys(state.exceptions||{})){ const row = document.createElement('div'); row.className='row'; row.innerHTML = `<div class="col s4">${k}</div><div class="col s4">${state.exceptions[k].city || state.exceptions[k].type || ''}</div><div class="col s4"><a class="btn-small red btn-ex-remove">Remove</a></div>`; el.appendChild(row); row.querySelector('.btn-ex-remove').addEventListener('click', ()=>{ delete state.exceptions[k]; saveToLS(); renderExceptions(); }); } }
+    function renderExceptions(){ const el = document.getElementById('exceptions-list'); el.innerHTML=''; for(const k of Object.keys(state.exceptions||{})){ const row = document.createElement('div'); row.className='row'; row.innerHTML = `<div class="col s4">${k}</div><div class="col s4">${state.exceptions[k].city || ''}</div><div class="col s4"><a data-key="${k}" class="btn-small red btn-ex-remove">Remove</a></div>`; el.appendChild(row); row.querySelector('.btn-ex-remove').addEventListener('click', (e)=>{ const keyToRemove = e.currentTarget.dataset.key; delete state.exceptions[keyToRemove]; saveToLS(); renderExceptions(); }); } }
 
-    document.getElementById('btn-add-exception').addEventListener('click', ()=>{ const name = prompt('Area or District name'); if(!name) return; const type = prompt('Type: city/area/district (if you want to override city name type "city")','city'); if(!state.exceptions) state.exceptions={}; if(type === 'city') state.exceptions[name] = { city: name }; else state.exceptions[name] = { type }; saveToLS(); renderExceptions(); });
+    document.getElementById('btn-save-exception').addEventListener('click', () => {
+      const nameInput = document.getElementById('ex-add-name');
+      const cityInput = document.getElementById('ex-add-city');
+      const name = nameInput.value.trim();
+      const city = cityInput.value.trim();
+
+      if (!name || !city) {
+        M.toast({html: 'Please provide both a name and a city.'});
+        return;
+      }
+      if (!state.exceptions) state.exceptions = {};
+      state.exceptions[name] = { city: normalizeZoneName(city) };
+      saveToLS();
+      renderExceptions();
+      M.toast({html: `Saved exception for ${name}.`});
+      // Clear inputs
+      nameInput.value = '';
+      cityInput.value = '';
+      M.updateTextFields(); // To reset the floating labels
+    });
 
     document.getElementById('btn-delete-all').addEventListener('click', ()=>{ if(confirm('Delete ALL missionary travel? This will clear saved groups.')){ state.groups = {}; saveToLS(); renderGroups(); } });
 
-    document.getElementById('btn-clear-local').addEventListener('click', ()=>{ if(confirm('Clear local storage?')){ localStorage.removeItem(LS_KEY); state={groups:{},exceptions:defaults.exceptions}; loadState(); } });
+    document.getElementById('btn-clear-local').addEventListener('click', ()=>{ if(confirm('Clear local storage? This will delete all saved travel and settings.')){ localStorage.removeItem(LS_KEY); state={groups:{},exceptions:defaults.exceptions}; loadState(); } });
 
     // language change
     document.getElementById('lang-select').addEventListener('change', ()=>{ renderGroups(); });
