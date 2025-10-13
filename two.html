@@ -929,7 +929,7 @@
     });
     
     // -- Export Functions
-// -- Export Functions (replacement - canvas slice method for clean multi-page tables)
+// -- Export Functions (improved: row-safe slicing, compressed canvas, last-name-only, preserve order)
 document.getElementById('btn-export-pdf').addEventListener('click', async () => {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation: 'l', unit: 'mm', format: 'a4' });
@@ -939,125 +939,253 @@ document.getElementById('btn-export-pdf').addEventListener('click', async () => 
   if (!Object.keys(groups).length) return;
   M.toast({ html: T.toast_pdf_generating });
 
-  // PDF page inner width/height (leave 10mm margin on each side)
-  const margin = 10;
+  // PDF layout settings
+  const marginMM = 10;
   const pageWidthMM = doc.internal.pageSize.getWidth();
   const pageHeightMM = doc.internal.pageSize.getHeight();
-  const contentWidthMM = pageWidthMM - margin * 2;
+  const contentWidthMM = pageWidthMM - marginMM * 2;
+  const contentHeightMM = pageHeightMM - marginMM * 2;
 
-  let firstGroup = true;
+  // Canvas rendering settings (tweak these to increase/decrease quality & size)
+  const canvasScale = 1.4;           // <= larger => higher quality and larger canvas (try 1.2 - 1.8)
+  const tablePixelWidth = 1100;      // pixel width of the generated HTML table (smaller => "compressed" pages)
 
-  // helper to build a clean table element for a group
+  // helper: extract last name (everything before comma)
+  function extractLastName(full) {
+    if (!full) return '';
+    return full.split(',')[0].trim();
+  }
+
+  // helper to build a standalone table element for a group (read-only, styled inline)
   function buildTableElement(groupKey, group) {
+    // preserve order: non-new first, new ones go to bottom
+    const sorted = group.slice().sort((a, b) => {
+      if (a.isNew === b.isNew) return 0;
+      return a.isNew ? 1 : -1; // new (true) goes after non-new (false)
+    });
+
     const wrapper = document.createElement('div');
-    wrapper.className = 'pdf-table-wrapper';
     wrapper.style.boxSizing = 'border-box';
     wrapper.style.padding = '8px';
     wrapper.style.background = '#ffffff';
-    wrapper.style.fontFamily = 'sans-serif';
+    wrapper.style.fontFamily = 'Arial, Helvetica, sans-serif';
     wrapper.style.color = '#000';
-    // Give it a pixel width that renders well in canvas; we'll scale later.
-    wrapper.style.width = '1200px';
+    wrapper.style.width = tablePixelWidth + 'px';
+    wrapper.style.maxWidth = tablePixelWidth + 'px';
+
+    // table HTML with inline styles to be stable when rendered to canvas
+    let rowsHtml = sorted.map(m => {
+      const transportText = m.transport ? (T[`transport_${(m.transport||'').toLowerCase().replace('/','_')}`] || m.transport) : '';
+      const dateText = m.date || (m.tbd ? T.tbd : '');
+      return `<tr>
+        <td style="padding:6px; border:1px solid #ddd; white-space:nowrap;">${m.type || ''}</td>
+        <td style="padding:6px; border:1px solid #ddd;">${extractLastName(m.name) || ''}</td>
+        <td style="padding:6px; border:1px solid #ddd;">${m.originCity || ''}</td>
+        <td style="padding:6px; border:1px solid #ddd;">${m.destinationCity || ''}</td>
+        <td style="padding:6px; border:1px solid #ddd;">${m.destinationArea || ''}</td>
+        <td style="padding:6px; border:1px solid #ddd; white-space:nowrap;">${transportText}</td>
+        <td style="padding:6px; border:1px solid #ddd; white-space:nowrap;">${dateText}</td>
+        <td style="padding:6px; border:1px solid #ddd; white-space:nowrap;">${m.time || ''}</td>
+        <td style="padding:6px; border:1px solid #ddd; white-space:pre-wrap; max-width:250px;">${(m.instructions||'')}</td>
+        <td style="padding:6px; border:1px solid #ddd; text-align:center;">${m.isNew ? '✔️' : ''}</td>
+        <td style="padding:6px; border:1px solid #ddd; text-align:center;">${m.leader ? '⭐' : ''}</td>
+      </tr>`;
+    }).join('');
+
     wrapper.innerHTML = `
-      <h4 style="margin:0 0 6px 0; font-size:18px;">${groupKey}</h4>
+      <div style="margin-bottom:8px;"><strong style="font-size:18px;">${groupKey}</strong></div>
       <table style="width:100%; border-collapse:collapse; font-size:12px;">
         <thead>
           <tr style="background:#e0f2f1;">
-            <th style="padding:6px; border:1px solid #ddd;">${T.table_header_type}</th>
+            <th style="padding:6px; border:1px solid #ddd; white-space:nowrap;">${T.table_header_type}</th>
             <th style="padding:6px; border:1px solid #ddd;">${T.table_header_name}</th>
             <th style="padding:6px; border:1px solid #ddd;">${T.table_header_origin}</th>
             <th style="padding:6px; border:1px solid #ddd;">${T.table_header_destination}</th>
             <th style="padding:6px; border:1px solid #ddd;">${T.table_header_dest_area}</th>
-            <th style="padding:6px; border:1px solid #ddd;">${T.table_header_transport}</th>
-            <th style="padding:6px; border:1px solid #ddd;">${T.table_header_date}</th>
-            <th style="padding:6px; border:1px solid #ddd;">${T.table_header_time}</th>
+            <th style="padding:6px; border:1px solid #ddd; white-space:nowrap;">${T.table_header_transport}</th>
+            <th style="padding:6px; border:1px solid #ddd; white-space:nowrap;">${T.table_header_date}</th>
+            <th style="padding:6px; border:1px solid #ddd; white-space:nowrap;">${T.table_header_time}</th>
             <th style="padding:6px; border:1px solid #ddd;">${T.table_header_instructions}</th>
-            <th style="padding:6px; border:1px solid #ddd;">${T.table_header_new}</th>
-            <th style="padding:6px; border:1px solid #ddd;">${T.table_header_leader}</th>
+            <th style="padding:6px; border:1px solid #ddd; text-align:center;">${T.table_header_new}</th>
+            <th style="padding:6px; border:1px solid #ddd; text-align:center;">${T.table_header_leader}</th>
           </tr>
         </thead>
         <tbody>
-          ${group.map(m => `
-            <tr>
-              <td style="padding:6px; border:1px solid #ddd;">${m.type || ''}</td>
-              <td style="padding:6px; border:1px solid #ddd;">${(m.name||'')}</td>
-              <td style="padding:6px; border:1px solid #ddd;">${m.originCity || ''}</td>
-              <td style="padding:6px; border:1px solid #ddd;">${m.destinationCity || ''}</td>
-              <td style="padding:6px; border:1px solid #ddd;">${m.destinationArea || ''}</td>
-              <td style="padding:6px; border:1px solid #ddd;">${T[`transport_${(m.transport||'').toLowerCase().replace('/','_')}`] || m.transport || ''}</td>
-              <td style="padding:6px; border:1px solid #ddd;">${m.date || (m.tbd ? T.tbd : '')}</td>
-              <td style="padding:6px; border:1px solid #ddd;">${m.time || ''}</td>
-              <td style="padding:6px; border:1px solid #ddd; white-space:pre-wrap;">${(m.instructions||'')}</td>
-              <td style="padding:6px; border:1px solid #ddd; text-align:center;">${m.isNew ? '✔️' : ''}</td>
-              <td style="padding:6px; border:1px solid #ddd; text-align:center;">${m.leader ? '⭐' : ''}</td>
-            </tr>`).join('')}
+          ${rowsHtml}
         </tbody>
       </table>
     `;
+
     return wrapper;
   }
 
-  // For each group, render and slice
+  // For each group, render, compute row boundaries, slice at safe row boundaries, and add to PDF
+  let firstGroup = true;
   for (const key of Object.keys(groups)) {
     const group = groups[key];
 
-    // Build offscreen table and append to body (hidden)
+    // Create offscreen element to render
     const tableEl = buildTableElement(key, group);
     tableEl.style.position = 'fixed';
     tableEl.style.left = '-5000px';
     tableEl.style.top = '0';
     document.body.appendChild(tableEl);
 
-    // Render with html2canvas at 2x for quality (adjust scale if needed)
-    // useCORS true helps if any external images/styles required
-    const canvas = await html2canvas(tableEl, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+    // Render to canvas using html2canvas
+    const canvas = await html2canvas(tableEl, {
+      scale: canvasScale,
+      useCORS: true,
+      backgroundColor: '#ffffff'
+    });
 
-    // remove offscreen element
+    // Remove offscreen element
     document.body.removeChild(tableEl);
 
-    // Determine scaling: map canvas width -> contentWidthMM in PDF
-    const imgWidthPx = canvas.width;
-    const imgHeightPx = canvas.height;
-    const imgWidthMM = contentWidthMM; // we want to fit into content width in mm
-    const pxToMm = imgWidthMM / imgWidthPx; // mm per pixel
-    const fullImgHeightMM = imgHeightPx * pxToMm;
+    const imgW = canvas.width;
+    const imgH = canvas.height;
 
-    // Page height available for content (leave vertical margins)
-    const contentPageHeightMM = pageHeightMM - margin * 2;
+    // Compute mapping pixels -> mm so we fit the content width into contentWidthMM
+    const pxToMm = contentWidthMM / imgW; // mm per pixel
+    const sliceHeightMM = contentHeightMM; // how much mm we can put on a page vertically
+    const sliceHeightPxApprox = Math.floor(sliceHeightMM / pxToMm);
 
-    // Convert that to pixels on the canvas scale so we can slice
-    const sliceHeightPx = Math.floor(contentPageHeightMM / pxToMm);
+    // Determine header height in pixels to repeat on each page (so header is visible on all pages)
+    // We'll find the bottom of the thead in DOM coordinates by re-creating header measurement:
+    // (since tableEl isn't available anymore, instead measure header rows by rendering small header canvas)
+    // To simplify: estimate header px by locating first <tr> boundary using text metrics on the canvas:
+    // We'll scan for the first horizontal change (heuristic): find first row height by checking where the top border ends.
+    // Safer approach: compute approximate headerHeightPx as  (imgH * 0.06) or more sensibly find the first occurrence of a horizontal line:
+    let headerHeightPx = Math.round(canvas.height * 0.07); // fallback default ~7% of canvas height
 
-    // Slice the canvas vertically and add each slice as a page
-    let y = 0;
-    let pageIndex = 0;
-    while (y < imgHeightPx) {
-      const sliceHeight = Math.min(sliceHeightPx, imgHeightPx - y);
-      // create temporary canvas for slice
-      const tmpCanvas = document.createElement('canvas');
-      tmpCanvas.width = imgWidthPx;
-      tmpCanvas.height = sliceHeight;
-      const tctx = tmpCanvas.getContext('2d');
-      tctx.fillStyle = '#ffffff';
-      tctx.fillRect(0, 0, tmpCanvas.width, tmpCanvas.height);
-      tctx.drawImage(canvas, 0, y, imgWidthPx, sliceHeight, 0, 0, imgWidthPx, sliceHeight);
-
-      const imgData = tmpCanvas.toDataURL('image/png');
-      const imgSliceHeightMM = sliceHeight * pxToMm;
-
-      if (!(firstGroup && pageIndex === 0)) {
-        doc.addPage();
+    // Better attempt: detect horizontal separator line color near top by scanning pixels for a line of border color.
+    try {
+      const ctx = canvas.getContext('2d');
+      const scanYMax = Math.min(300, imgH - 2); // only scan top 300px for header boundaries
+      const imgData = ctx.getImageData(0, 0, imgW, scanYMax).data;
+      // look for a row where many pixels are border-like (gray) => probable header bottom
+      let candidate = -1;
+      for (let y = 10; y < scanYMax - 2; y++) {
+        let count = 0;
+        for (let x = 0; x < imgW; x += 8) {
+          const idx = (y * imgW + x) * 4;
+          const r = imgData[idx], g = imgData[idx + 1], b = imgData[idx + 2];
+          // border color approx (light gray) -> check brightness
+          const brightness = (r + g + b) / 3;
+          if (brightness > 200 && brightness < 255) count++;
+        }
+        if (count > imgW / 16) { candidate = y; break; }
       }
+      if (candidate > 0) headerHeightPx = candidate + 6;
+    } catch (e) {
+      // ignore detection errors and use fallback
+    }
+
+    // Build a list of row bottom boundaries (so we never cut a row)
+    // We'll scan the whole canvas vertically and look for horizontal lines (table cell borders)
+    const rowBoundaries = [0]; // top
+    try {
+      const ctx = canvas.getContext('2d');
+      const imageData = ctx.getImageData(0, 0, imgW, imgH).data;
+      for (let y = Math.max(5, headerHeightPx); y < imgH - 5; y++) {
+        // sample some points across the width and count how many are border-ish
+        let borderCount = 0;
+        for (let x = 10; x < imgW; x += Math.max(8, Math.floor(imgW / 30))) {
+          const idx = (y * imgW + x) * 4;
+          const r = imageData[idx], g = imageData[idx + 1], b = imageData[idx + 2];
+          const brightness = (r + g + b) / 3;
+          // table borders are near light gray / dark depending on theme; detect contrast drops
+          if (brightness < 230) borderCount++;
+        }
+        // threshold tuned to detect horizontal rules
+        if (borderCount > Math.max(6, Math.floor(imgW / 200))) {
+          rowBoundaries.push(y);
+        }
+      }
+      // ensure last boundary is image bottom
+      if (rowBoundaries[rowBoundaries.length - 1] !== imgH) rowBoundaries.push(imgH);
+    } catch (e) {
+      // fallback: create approximate equal-sized row boundaries every approx 28px
+      rowBoundaries.length = 0;
+      for (let y = 0; y < imgH; y += 28 * canvasScale) rowBoundaries.push(Math.min(Math.round(y), imgH));
+      if (rowBoundaries[rowBoundaries.length - 1] !== imgH) rowBoundaries.push(imgH);
+    }
+
+    // Utility: find the largest boundary <= target (so we cut between rows)
+    function snapBoundary(targetPx) {
+      for (let i = 0; i < rowBoundaries.length; i++) {
+        if (rowBoundaries[i] > targetPx) return Math.max(0, rowBoundaries[i - 1] || 0);
+      }
+      return rowBoundaries[rowBoundaries.length - 1];
+    }
+
+    // Now slice the canvas, ensuring each slice includes the header at top
+    let srcY = 0;
+    let pageCountForGroup = 0;
+    while (srcY < imgH) {
+      // available content height in px (approx)
+      const approxSlicePx = sliceHeightPxApprox;
+      // target end (not exceeding imgH)
+      let targetEnd = Math.min(imgH, srcY + approxSlicePx);
+
+      // For the first page in the group, ensure we at least include header + some rows
+      if (pageCountForGroup === 0 && targetEnd - srcY < headerHeightPx + 40) {
+        targetEnd = Math.min(imgH, srcY + headerHeightPx + 40);
+      }
+
+      // snap end to nearest row boundary (so we don't cut a row)
+      let endPx = snapBoundary(targetEnd);
+      if (endPx <= srcY) {
+        // if snapping gives no progress (rare), force at least a small advance
+        endPx = Math.min(imgH, srcY + Math.max(40, Math.floor(approxSlicePx / 2)));
+      }
+
+      // Compute slice height
+      const sliceH = endPx - srcY;
+
+      // Create a temporary canvas to hold the page image (including header at top)
+      // If not first page, we include header at the top of this page
+      let outCanvas = document.createElement('canvas');
+      const headerPx = headerHeightPx;
+      if (pageCountForGroup === 0) {
+        outCanvas.width = imgW;
+        outCanvas.height = sliceH;
+        const outCtx = outCanvas.getContext('2d');
+        outCtx.fillStyle = '#ffffff';
+        outCtx.fillRect(0, 0, outCanvas.width, outCanvas.height);
+        outCtx.drawImage(canvas, 0, srcY, imgW, sliceH, 0, 0, imgW, sliceH);
+      } else {
+        // include header + slice content
+        outCanvas.width = imgW;
+        outCanvas.height = Math.min(imgH, headerPx + sliceH);
+        const outCtx = outCanvas.getContext('2d');
+        outCtx.fillStyle = '#ffffff';
+        outCtx.fillRect(0, 0, outCanvas.width, outCanvas.height);
+        // draw header from top of original canvas
+        outCtx.drawImage(canvas, 0, 0, imgW, headerPx, 0, 0, imgW, headerPx);
+        // then draw content slice below header
+        outCtx.drawImage(canvas, 0, srcY, imgW, sliceH, 0, headerPx, imgW, sliceH);
+      }
+
+      // convert canvas slice to image for PDF
+      const imgData = outCanvas.toDataURL('image/png');
+
+      // compute image height in mm
+      const outHeightMM = (outCanvas.height) * pxToMm;
+
+      // Add new page if needed
+      if (!(firstGroup && pageCountForGroup === 0)) doc.addPage();
       firstGroup = false;
 
-      // place the image at the margins
-      doc.addImage(imgData, 'PNG', margin, margin, imgWidthMM, imgSliceHeightMM);
+      // Add the image with margins
+      doc.addImage(imgData, 'PNG', marginMM, marginMM, contentWidthMM, outHeightMM);
 
-      y += sliceHeight;
-      pageIndex++;
+      // Advance srcY and increment page counter
+      srcY = endPx;
+      pageCountForGroup++;
     }
   }
 
+  // Save PDF
   doc.save('transfer_logistics.pdf');
   M.toast({ html: T.toast_pdf_generated });
 });
