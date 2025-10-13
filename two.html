@@ -929,82 +929,83 @@
     });
     
     // -- Export Functions
-      document.getElementById('btn-export-pdf').addEventListener('click', async () => {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF({ orientation: 'l', unit: 'mm', format: 'a4' });
-        const cards = Array.from(document.querySelectorAll('.group-card'));
-        if (cards.length === 0) return;
-        M.toast({ html: translations[state.lang].toast_pdf_generating });
+document.getElementById('btn-export-pdf').addEventListener('click', async () => {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'l', unit: 'mm', format: 'a4' });
+  const lang = state.lang || 'pt';
+  const T = translations[lang];
+  const groups = state.groups || {};
 
-        let isFirstPage = true;
+  if (!Object.keys(groups).length) return;
+  M.toast({ html: T.toast_pdf_generating });
 
-        for (const card of cards) {
-          // Hide controls and convert inputs/selects into readable text
-          const toHide = card.querySelectorAll('.bulk-edit-row, .actions-header, .actions-cell');
-          toHide.forEach(el => el.style.display = 'none');
+  let first = true;
 
-          card.querySelectorAll('tbody tr').forEach(row => {
-            // Replace inputs and selects with text
-            row.querySelectorAll('input, select, textarea').forEach(input => {
-              if (input.tagName === 'TEXTAREA') {
-                const div = document.createElement('div');
-                div.className = 'pdf-text';
-                div.textContent = input.value || '';
-                input.style.display = 'none';
-                input.parentNode.insertBefore(div, input);
-              } else if (input.type === 'date' || input.type === 'time' || input.type === 'text') {
-                const span = document.createElement('span');
-                span.className = 'pdf-text';
-                span.textContent = input.value || '';
-                input.style.display = 'none';
-                input.parentNode.insertBefore(span, input);
-              } else if (input.type === 'checkbox') {
-                const span = document.createElement('span');
-                span.className = 'pdf-text';
-                span.textContent = input.checked ? '✔️' : '';
-                input.parentNode.insertBefore(span, input);
-                input.style.display = 'none';
-              }
-            });
+  // Loop through each group (origin → destination)
+  for (const key of Object.keys(groups)) {
+    if (!first) doc.addPage();
+    first = false;
 
-            row.querySelectorAll('select').forEach(sel => {
-              const span = document.createElement('span');
-              span.className = 'pdf-text';
-              const selectedText = sel.options[sel.selectedIndex]?.text || '';
-              span.textContent = selectedText;
-              sel.parentNode.insertBefore(span, sel);
-              sel.style.display = 'none';
-            });
-          });
+    const group = groups[key];
+    const tableWrapper = document.createElement('div');
+    tableWrapper.className = 'pdf-table-wrapper';
+    tableWrapper.style.padding = '10px';
+    tableWrapper.style.fontSize = '10px';
+    tableWrapper.innerHTML = `
+      <h5 style="margin-bottom:8px;">${key}</h5>
+      <table class="striped" style="width:100%; border-collapse:collapse;">
+        <thead>
+          <tr style="background:#e0f2f1;">
+            <th>${T.table_header_type}</th>
+            <th>${T.table_header_name}</th>
+            <th>${T.table_header_origin}</th>
+            <th>${T.table_header_destination}</th>
+            <th>${T.table_header_dest_area}</th>
+            <th>${T.table_header_transport}</th>
+            <th>${T.table_header_date}</th>
+            <th>${T.table_header_time}</th>
+            <th>${T.table_header_instructions}</th>
+            <th>${T.table_header_new}</th>
+            <th>${T.table_header_leader}</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${group.map(m => `
+            <tr>
+              <td>${m.type || ''}</td>
+              <td>${m.name || ''}</td>
+              <td>${m.originCity || ''}</td>
+              <td>${m.destinationCity || ''}</td>
+              <td>${m.destinationArea || ''}</td>
+              <td>${T[`transport_${(m.transport||'').toLowerCase().replace('/','_')}`] || m.transport || ''}</td>
+              <td>${m.date || (m.tbd ? T.tbd : '')}</td>
+              <td>${m.time || ''}</td>
+              <td style="white-space:pre-wrap;">${m.instructions || ''}</td>
+              <td>${m.isNew ? '✔️' : ''}</td>
+              <td>${m.leader ? '⭐' : ''}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
 
-          // Add page (after first)
-          if (!isFirstPage) doc.addPage();
-          isFirstPage = false;
+    // Render this table to the PDF (auto page breaks if long)
+    await doc.html(tableWrapper, {
+      x: 10,
+      y: 10,
+      width: 277,
+      html2canvas: {
+        scale: 0.7,
+        useCORS: true,
+      },
+      autoPaging: 'text'
+    });
+  }
 
-          // Render the card to PDF
-          await doc.html(card, {
-            x: 10,
-            y: 10,
-            width: 277,
-            windowWidth: card.scrollWidth,
-            html2canvas: {
-              scale: 0.6,
-              useCORS: true,
-            },
-            autoPaging: 'text'
-          });
+  doc.save('transfer_logistics.pdf');
+  M.toast({ html: T.toast_pdf_generated });
+});
 
-          // Restore original elements
-          toHide.forEach(el => el.style.display = '');
-          card.querySelectorAll('tbody tr').forEach(row => {
-            row.querySelectorAll('.pdf-text').forEach(el => el.remove());
-            row.querySelectorAll('input, select, textarea').forEach(el => el.style.display = '');
-          });
-        }
-
-        doc.save('transfer_logistics.pdf');
-        M.toast({ html: translations[state.lang].toast_pdf_generated });
-      });
 
     document.getElementById('btn-export-csv').addEventListener('click', () => {
         const lang = state.lang || 'pt';
