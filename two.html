@@ -52,7 +52,7 @@
             <h5 data-translate="upload_title">Upload transferboards</h5>
           </div>
           <div class="col s6 input-field" style="max-width: 250px; margin-left: auto;">
-            <select id="lang-select">
+            <select class="lang-select">
               <option value="en">English</option>
               <option value="pt">Português</option>
             </select>
@@ -229,6 +229,15 @@
   <div id="modal-settings" class="modal">
     <div class="modal-content">
       <h5 data-translate="settings">Settings</h5>
+      <div class="row">
+          <div class="input-field col s6">
+              <select class="lang-select">
+                <option value="en">English</option>
+                <option value="pt">Português</option>
+              </select>
+              <label data-translate="language">Language</label>
+          </div>
+      </div>
       <h6 data-translate="exceptions_title">Area/District Exceptions</h6>
       <div id="exceptions-list"></div>
       <div class="section">
@@ -463,11 +472,10 @@
                 el.textContent = translations[lang][key];
             }
         });
-        const langSelect = document.getElementById('lang-select');
-        if (langSelect) {
-            langSelect.value = lang;
-            M.FormSelect.init(langSelect);
-        }
+        document.querySelectorAll('.lang-select').forEach(sel => {
+            sel.value = lang;
+            M.FormSelect.init(sel);
+        });
         populateTransportDropdowns();
         renderGroups();
     }
@@ -878,10 +886,12 @@
     
     document.getElementById('btn-clear-local').addEventListener('click', ()=>{ if(confirm(translations[state.lang].confirm_clear_local)){ localStorage.removeItem(LS_KEY); location.reload(); } });
     
-    document.getElementById('lang-select').addEventListener('change', (e)=>{
-      state.lang = e.target.value;
-      saveToLS();
-      location.reload();
+    document.querySelectorAll('.lang-select').forEach(sel => {
+        sel.addEventListener('change', (e)=>{
+          state.lang = e.target.value;
+          saveToLS();
+          location.reload();
+        });
     });
     
     // -- Export Functions
