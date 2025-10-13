@@ -7,6 +7,11 @@
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
   <style>
     body { 
         padding: 16px; 
@@ -53,7 +58,7 @@
       <div id="upload-section">
         <div class="row valign-wrapper">
           <div class="col s6">
-            <h5 data-translate="upload_title">Upload transferboards</h5>
+            <h5 data-translate="upload_title">Start New Plan</h5>
           </div>
           <div class="col s6 input-field" style="max-width: 250px; margin-left: auto;">
             <select class="lang-select">
@@ -74,6 +79,17 @@
           </div>
         </div>
         <a id="btn-process" class="btn" data-translate="process_upload">Process upload</a>
+        <hr style="margin: 30px 0;">
+        <h5 data-translate="restore_title">Restore Plan from CSV</h5>
+        <div class="row">
+            <div class="col s12 m8">
+                <label data-translate="restore_desc">Upload travel_plans.csv file to restore progress</label>
+                <input id="file-restore" type="file" accept=".csv" />
+            </div>
+            <div class="col s12 m4" style="padding-top: 25px;">
+                <a id="btn-restore" class="btn" data-translate="restore_button">Restore</a>
+            </div>
+        </div>
       </div>
 
       <div class="btn-group">
@@ -297,11 +313,6 @@
     </div>
   </div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
   <script>
     // -- Constants, Defaults & State
     const LS_KEY = 'transfer_logistics_data_v1';
@@ -326,7 +337,7 @@
     const translations = {
         en: {
             app_title: "Transfer Logistics",
-            upload_title: "Upload transferboards",
+            upload_title: "Start New Plan",
             old_board_label: "Old transferboard (from)",
             new_board_label: "New transferboard (to)",
             process_upload: "Process upload",
@@ -351,6 +362,9 @@
             save: "Save",
             settings: "Settings",
             language: "Language",
+            restore_title: "Restore Plan from CSV",
+            restore_desc: "Upload travel_plans.csv file to restore progress",
+            restore_button: "Restore",
             delete_all_travel: "Delete All Missionary Travel",
             exceptions_title: "Area/District Exceptions",
             add_exception_title: "Add New Exception",
@@ -380,6 +394,7 @@
             toast_select_files: "Please select both files",
             toast_processed: "Processed {count} missionaries (transfers and new arrivals).",
             toast_added: "Added",
+            toast_restored: "Plan restored successfully.",
             toast_updated: "Updated {field} for all in group.",
             toast_pdf_generating: "Generating PDF... Please wait.",
             toast_pdf_generated: "PDF generated successfully.",
@@ -396,7 +411,7 @@
         },
         pt: {
             app_title: "Logística de Transferência",
-            upload_title: "Carregar quadros de transferência",
+            upload_title: "Iniciar Novo Plano",
             old_board_label: "Quadro de transferência antigo (de)",
             new_board_label: "Quadro de transferência novo (para)",
             process_upload: "Processar carregamento",
@@ -421,6 +436,9 @@
             save: "Guardar",
             settings: "Definições",
             language: "Idioma",
+            restore_title: "Restaurar Plano do CSV",
+            restore_desc: "Carregar ficheiro travel_plans.csv para restaurar o progresso",
+            restore_button: "Restaurar",
             delete_all_travel: "Apagar Todas as Viagens de Missionários",
             exceptions_title: "Exceções de Área/Distrito",
             add_exception_title: "Adicionar Nova Exceção",
@@ -450,6 +468,7 @@
             toast_select_files: "Por favor, selecione ambos os ficheiros",
             toast_processed: "Processados {count} missionários (transferências e novas chegadas).",
             toast_added: "Adicionado",
+            toast_restored: "Plano restaurado com sucesso.",
             toast_updated: "{field} atualizado para todos no grupo.",
             toast_pdf_generating: "A gerar PDF... Por favor, aguarde.",
             toast_pdf_generated: "PDF gerado com sucesso.",
