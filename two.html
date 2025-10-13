@@ -929,82 +929,139 @@
     });
     
     // -- Export Functions
+// -- Export Functions (replacement - canvas slice method for clean multi-page tables)
 document.getElementById('btn-export-pdf').addEventListener('click', async () => {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation: 'l', unit: 'mm', format: 'a4' });
   const lang = state.lang || 'pt';
   const T = translations[lang];
   const groups = state.groups || {};
-
   if (!Object.keys(groups).length) return;
   M.toast({ html: T.toast_pdf_generating });
 
-  let first = true;
+  // PDF page inner width/height (leave 10mm margin on each side)
+  const margin = 10;
+  const pageWidthMM = doc.internal.pageSize.getWidth();
+  const pageHeightMM = doc.internal.pageSize.getHeight();
+  const contentWidthMM = pageWidthMM - margin * 2;
 
-  // Loop through each group (origin → destination)
-  for (const key of Object.keys(groups)) {
-    if (!first) doc.addPage();
-    first = false;
+  let firstGroup = true;
 
-    const group = groups[key];
-    const tableWrapper = document.createElement('div');
-    tableWrapper.className = 'pdf-table-wrapper';
-    tableWrapper.style.padding = '10px';
-    tableWrapper.style.fontSize = '10px';
-    tableWrapper.innerHTML = `
-      <h5 style="margin-bottom:8px;">${key}</h5>
-      <table class="striped" style="width:100%; border-collapse:collapse;">
+  // helper to build a clean table element for a group
+  function buildTableElement(groupKey, group) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'pdf-table-wrapper';
+    wrapper.style.boxSizing = 'border-box';
+    wrapper.style.padding = '8px';
+    wrapper.style.background = '#ffffff';
+    wrapper.style.fontFamily = 'sans-serif';
+    wrapper.style.color = '#000';
+    // Give it a pixel width that renders well in canvas; we'll scale later.
+    wrapper.style.width = '1200px';
+    wrapper.innerHTML = `
+      <h4 style="margin:0 0 6px 0; font-size:18px;">${groupKey}</h4>
+      <table style="width:100%; border-collapse:collapse; font-size:12px;">
         <thead>
           <tr style="background:#e0f2f1;">
-            <th>${T.table_header_type}</th>
-            <th>${T.table_header_name}</th>
-            <th>${T.table_header_origin}</th>
-            <th>${T.table_header_destination}</th>
-            <th>${T.table_header_dest_area}</th>
-            <th>${T.table_header_transport}</th>
-            <th>${T.table_header_date}</th>
-            <th>${T.table_header_time}</th>
-            <th>${T.table_header_instructions}</th>
-            <th>${T.table_header_new}</th>
-            <th>${T.table_header_leader}</th>
+            <th style="padding:6px; border:1px solid #ddd;">${T.table_header_type}</th>
+            <th style="padding:6px; border:1px solid #ddd;">${T.table_header_name}</th>
+            <th style="padding:6px; border:1px solid #ddd;">${T.table_header_origin}</th>
+            <th style="padding:6px; border:1px solid #ddd;">${T.table_header_destination}</th>
+            <th style="padding:6px; border:1px solid #ddd;">${T.table_header_dest_area}</th>
+            <th style="padding:6px; border:1px solid #ddd;">${T.table_header_transport}</th>
+            <th style="padding:6px; border:1px solid #ddd;">${T.table_header_date}</th>
+            <th style="padding:6px; border:1px solid #ddd;">${T.table_header_time}</th>
+            <th style="padding:6px; border:1px solid #ddd;">${T.table_header_instructions}</th>
+            <th style="padding:6px; border:1px solid #ddd;">${T.table_header_new}</th>
+            <th style="padding:6px; border:1px solid #ddd;">${T.table_header_leader}</th>
           </tr>
         </thead>
         <tbody>
           ${group.map(m => `
             <tr>
-              <td>${m.type || ''}</td>
-              <td>${m.name || ''}</td>
-              <td>${m.originCity || ''}</td>
-              <td>${m.destinationCity || ''}</td>
-              <td>${m.destinationArea || ''}</td>
-              <td>${T[`transport_${(m.transport||'').toLowerCase().replace('/','_')}`] || m.transport || ''}</td>
-              <td>${m.date || (m.tbd ? T.tbd : '')}</td>
-              <td>${m.time || ''}</td>
-              <td style="white-space:pre-wrap;">${m.instructions || ''}</td>
-              <td>${m.isNew ? '✔️' : ''}</td>
-              <td>${m.leader ? '⭐' : ''}</td>
-            </tr>
-          `).join('')}
+              <td style="padding:6px; border:1px solid #ddd;">${m.type || ''}</td>
+              <td style="padding:6px; border:1px solid #ddd;">${(m.name||'')}</td>
+              <td style="padding:6px; border:1px solid #ddd;">${m.originCity || ''}</td>
+              <td style="padding:6px; border:1px solid #ddd;">${m.destinationCity || ''}</td>
+              <td style="padding:6px; border:1px solid #ddd;">${m.destinationArea || ''}</td>
+              <td style="padding:6px; border:1px solid #ddd;">${T[`transport_${(m.transport||'').toLowerCase().replace('/','_')}`] || m.transport || ''}</td>
+              <td style="padding:6px; border:1px solid #ddd;">${m.date || (m.tbd ? T.tbd : '')}</td>
+              <td style="padding:6px; border:1px solid #ddd;">${m.time || ''}</td>
+              <td style="padding:6px; border:1px solid #ddd; white-space:pre-wrap;">${(m.instructions||'')}</td>
+              <td style="padding:6px; border:1px solid #ddd; text-align:center;">${m.isNew ? '✔️' : ''}</td>
+              <td style="padding:6px; border:1px solid #ddd; text-align:center;">${m.leader ? '⭐' : ''}</td>
+            </tr>`).join('')}
         </tbody>
       </table>
     `;
+    return wrapper;
+  }
 
-    // Render this table to the PDF (auto page breaks if long)
-    await doc.html(tableWrapper, {
-      x: 10,
-      y: 10,
-      width: 277,
-      html2canvas: {
-        scale: 0.7,
-        useCORS: true,
-      },
-      autoPaging: 'text'
-    });
+  // For each group, render and slice
+  for (const key of Object.keys(groups)) {
+    const group = groups[key];
+
+    // Build offscreen table and append to body (hidden)
+    const tableEl = buildTableElement(key, group);
+    tableEl.style.position = 'fixed';
+    tableEl.style.left = '-5000px';
+    tableEl.style.top = '0';
+    document.body.appendChild(tableEl);
+
+    // Render with html2canvas at 2x for quality (adjust scale if needed)
+    // useCORS true helps if any external images/styles required
+    const canvas = await html2canvas(tableEl, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+
+    // remove offscreen element
+    document.body.removeChild(tableEl);
+
+    // Determine scaling: map canvas width -> contentWidthMM in PDF
+    const imgWidthPx = canvas.width;
+    const imgHeightPx = canvas.height;
+    const imgWidthMM = contentWidthMM; // we want to fit into content width in mm
+    const pxToMm = imgWidthMM / imgWidthPx; // mm per pixel
+    const fullImgHeightMM = imgHeightPx * pxToMm;
+
+    // Page height available for content (leave vertical margins)
+    const contentPageHeightMM = pageHeightMM - margin * 2;
+
+    // Convert that to pixels on the canvas scale so we can slice
+    const sliceHeightPx = Math.floor(contentPageHeightMM / pxToMm);
+
+    // Slice the canvas vertically and add each slice as a page
+    let y = 0;
+    let pageIndex = 0;
+    while (y < imgHeightPx) {
+      const sliceHeight = Math.min(sliceHeightPx, imgHeightPx - y);
+      // create temporary canvas for slice
+      const tmpCanvas = document.createElement('canvas');
+      tmpCanvas.width = imgWidthPx;
+      tmpCanvas.height = sliceHeight;
+      const tctx = tmpCanvas.getContext('2d');
+      tctx.fillStyle = '#ffffff';
+      tctx.fillRect(0, 0, tmpCanvas.width, tmpCanvas.height);
+      tctx.drawImage(canvas, 0, y, imgWidthPx, sliceHeight, 0, 0, imgWidthPx, sliceHeight);
+
+      const imgData = tmpCanvas.toDataURL('image/png');
+      const imgSliceHeightMM = sliceHeight * pxToMm;
+
+      if (!(firstGroup && pageIndex === 0)) {
+        doc.addPage();
+      }
+      firstGroup = false;
+
+      // place the image at the margins
+      doc.addImage(imgData, 'PNG', margin, margin, imgWidthMM, imgSliceHeightMM);
+
+      y += sliceHeight;
+      pageIndex++;
+    }
   }
 
   doc.save('transfer_logistics.pdf');
   M.toast({ html: T.toast_pdf_generated });
 });
+
 
 
     document.getElementById('btn-export-csv').addEventListener('click', () => {
