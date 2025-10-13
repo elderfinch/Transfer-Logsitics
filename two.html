@@ -266,6 +266,17 @@
       <a id="btn-exceptions-apply" class="modal-close btn" data-translate="save_exceptions">Save Exceptions</a>
     </div>
   </div>
+  
+  <div id="modal-transport-defaults" class="modal modal-fixed-footer">
+    <div class="modal-content">
+      <h5 data-translate="transport_defaults_title">Set Default Transportation</h5>
+      <p data-translate="transport_defaults_desc">Select the default mode of transport for each travel group. This will be applied to all missionaries in that group.</p>
+      <div id="transport-defaults-list"></div>
+    </div>
+    <div class="modal-footer">
+      <a id="btn-transport-apply" class="modal-close btn">Apply & Process</a>
+    </div>
+  </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -289,6 +300,7 @@
     let state = loadFromLS() || { groups: {}, exceptions: defaults.exceptions, lang: 'pt' };
     let fileOldRows = null; let fileNewRows = null;
     let mapping = { name: null, type: null, area: null, district: null, zone: null };
+    let pendingMissionaries = [];
 
     // -- Translations
     const translations = {
@@ -330,8 +342,11 @@
             assign_exceptions_title: "Assign exceptions (areas/districts that map to a different city)",
             assign_exceptions_desc: "For any area or zone below, you can enter a city name to override the default. Check 'Apply' to save the exception.",
             save_exceptions: "Save Exceptions",
+            transport_defaults_title: "Set Default Transportation",
+            transport_defaults_desc: "Select the default mode of transport for each travel group. This will be applied to all missionaries in that group.",
             table_header_type: "Type",
             table_header_name: "Name",
+            table_header_new: "New",
             table_header_origin: "Origin City",
             table_header_destination: "Destination City",
             table_header_dest_area: "Destination Area",
@@ -398,8 +413,11 @@
             assign_exceptions_title: "Atribuir exceções (áreas/distritos que mapeiam para uma cidade diferente)",
             assign_exceptions_desc: "Para qualquer área ou zona abaixo, pode inserir um nome de cidade para substituir o padrão. Marque 'Aplicar' para guardar a exceção.",
             save_exceptions: "Guardar Exceções",
+            transport_defaults_title: "Definir Transporte Padrão",
+            transport_defaults_desc: "Selecione o modo de transporte padrão para cada grupo de viagem. Isso será aplicado a todos os missionários desse grupo.",
             table_header_type: "Tipo",
             table_header_name: "Nome",
+            table_header_new: "Novo",
             table_header_origin: "Cidade Origem",
             table_header_destination: "Cidade Destino",
             table_header_dest_area: "Área Destino",
@@ -472,7 +490,7 @@
         element.style.height = 'auto';
         element.style.height = (element.scrollHeight) + 'px';
     }
-    function determineCity(loc) { // loc = { area, district, zone }
+    function determineCity(loc) {
         if (loc.area && state.exceptions[loc.area]) return state.exceptions[loc.area].city;
         if (loc.district && state.exceptions[loc.district]) return state.exceptions[loc.district].city;
         if (loc.zone && state.exceptions[loc.zone]) return state.exceptions[loc.zone].city;
@@ -521,7 +539,7 @@
       }); });
       const container = document.getElementById('exceptions-assign'); container.innerHTML='';
       const createSection = (title, list) => {
-        if (list.length === 0) return;
+        if (list.size === 0) return;
         const titleEl = document.createElement('h5'); titleEl.textContent = title; container.appendChild(titleEl);
         Array.from(list).sort((x,y)=>x.localeCompare(y)).forEach(val=>{
           const row = document.createElement('div'); row.className='row valign-wrapper'; row.style.marginBottom = '0px';
@@ -540,61 +558,103 @@
     document.getElementById('btn-exceptions-apply').addEventListener('click', ()=>{
       document.querySelectorAll('.ex-apply').forEach(chk => {
           const key = chk.dataset.key; const cityInput = document.querySelector(`.ex-city[data-key="${key}"]`); const city = cityInput.value.trim();
-          if (chk.checked && city) { state.exceptions[key] = { city: city }; } else { if (state.exceptions[key]) { delete state.exceptions[key]; } }
+          if (chk.checked && city) { state.exceptions[key] = { city: city }; } else { if (state.exceptions[key] && !defaults.exceptions[key]) { delete state.exceptions[key]; } }
       });
       state.exceptions = Object.assign({}, defaults.exceptions, state.exceptions);
       saveToLS();
-      processTransfers();
-      location.reload();
+      prepareAndShowTransportModal();
     });
-
-    function processTransfers(){
-      const oldIdx = {};
-      (fileOldRows||[]).forEach(r=>{ const nameVal = mapping.name ? (r[mapping.name]||'') : ''; const key = nameVal.toString().trim().toLowerCase(); if(key) oldIdx[key]=r; });
-      const processedMissionaries = [];
-      (fileNewRows||[]).forEach(r=>{
-        const nameVal = (mapping.name ? r[mapping.name] : '').toString().trim();
-        const key = nameVal.toLowerCase();
-        if(!key) return;
-        const old = oldIdx[key];
+    
+    function prepareAndShowTransportModal() {
+        const oldIdx = {};
+        (fileOldRows||[]).forEach(r=>{ const nameVal = mapping.name ? (r[mapping.name]||'') : ''; const key = nameVal.toString().trim().toLowerCase(); if(key) oldIdx[key]=r; });
         
-        const newZone = (mapping.zone ? r[mapping.zone] : '').toString();
-        const newDistrict = (mapping.district ? r[mapping.district] : '').toString();
-        const newArea = (mapping.area ? r[mapping.area] : '').toString();
+        pendingMissionaries = [];
+        (fileNewRows||[]).forEach(r=>{
+            const nameVal = (mapping.name ? r[mapping.name] : '').toString().trim();
+            const key = nameVal.toLowerCase();
+            if(!key) return;
+            const old = oldIdx[key];
+            
+            const rawType = (r[mapping.type]||'').toString().trim();
+            const finalType = /^(elder|sister)$/i.test(rawType) ? rawType : '';
+            
+            const newLoc = {
+                zone: (mapping.zone ? r[mapping.zone] : '').toString(),
+                district: (mapping.district ? r[mapping.district] : '').toString(),
+                area: (mapping.area ? r[mapping.area] : '').toString()
+            };
 
-        if (old) { // Missionary existed before, check for transfer
-            const oldZone = (mapping.zone ? old[mapping.zone] : '').toString();
-            const oldDistrict = (mapping.district ? old[mapping.district] : '').toString();
-            const oldArea = (mapping.area ? old[mapping.area] : '').toString();
-            if (oldZone !== newZone || oldDistrict !== newDistrict || oldArea !== newArea) {
-                const originCity = determineCity({ area: oldArea, district: oldDistrict, zone: oldZone });
-                const destinationCity = determineCity({ area: newArea, district: newDistrict, zone: newZone });
-                processedMissionaries.push({
-                    id: key, name: nameVal, type: (r[mapping.type]||'').toString(),
-                    originCity: originCity, destinationCity: destinationCity, destinationArea: newArea,
-                    transport: defaultTransportForPair(originCity, destinationCity),
-                    date: '', tbd: false, time: '', instructions:'', leader:false
-                });
+            if (old) {
+                const oldLoc = {
+                    zone: (mapping.zone ? old[mapping.zone] : '').toString(),
+                    district: (mapping.district ? old[mapping.district] : '').toString(),
+                    area: (mapping.area ? old[mapping.area] : '').toString()
+                };
+                if (oldLoc.zone !== newLoc.zone || oldLoc.district !== newLoc.district || oldLoc.area !== newLoc.area) {
+                    const originCity = determineCity(oldLoc);
+                    const destinationCity = determineCity(newLoc);
+                    pendingMissionaries.push({ id: key, name: nameVal, type: finalType, originCity, destinationCity, destinationArea: newLoc.area, isNew: false, date: '', tbd: false, time: '', instructions:'', leader:false });
+                }
+            } else {
+                const destinationCity = determineCity(newLoc);
+                pendingMissionaries.push({ id: key, name: nameVal, type: finalType, originCity: 'Beira', destinationCity, destinationArea: newLoc.area, isNew: true, date: '', tbd: true, time: '', instructions:'', leader:false });
             }
-        } else { // New missionary
-            const destinationCity = determineCity({ area: newArea, district: newDistrict, zone: newZone });
-            processedMissionaries.push({
-                id: key, name: nameVal, type: (r[mapping.type]||'').toString(),
-                originCity: 'Beira', destinationCity: destinationCity, destinationArea: newArea,
-                transport: defaultTransportForPair('Beira', destinationCity),
-                date: '', tbd: true, time: '', instructions:'', leader:false
-            });
-        }
-      });
-      state.groups = {};
-      processedMissionaries.forEach(m=>{ const key = `${m.originCity} -> ${m.destinationCity}`; if(!state.groups[key]) state.groups[key]=[]; state.groups[key].push(m); });
-      saveToLS(); 
-      M.toast({html: translations[state.lang].toast_processed.replace('{count}', processedMissionaries.length)});
+        });
+
+        const uniqueRoutes = new Set();
+        pendingMissionaries.forEach(m => { uniqueRoutes.add(`${m.originCity} -> ${m.destinationCity}`); });
+
+        const container = document.getElementById('transport-defaults-list');
+        container.innerHTML = '';
+        const lang = state.lang || 'pt';
+        const T = translations[lang];
+        const transportOptions = `<option value="Bus">${T.transport_bus}</option><option value="Plane">${T.transport_plane}</option><option value="Chapa">${T.transport_chapa}</option><option value="Txopela/Taxi">${T.transport_taxi}</option><option value="Ride">${T.transport_ride}</option>`;
+
+        Array.from(uniqueRoutes).sort().forEach(route => {
+            const [origin, destination] = route.split(' -> ');
+            const defaultTransport = defaultTransportForPair(origin, destination);
+            const row = document.createElement('div');
+            row.className = 'row valign-wrapper';
+            row.innerHTML = `<div class="col s6"><h6>${route}</h6></div><div class="col s6"><select class="browser-default transport-default-select" data-route="${route}">${transportOptions}</select></div>`;
+            container.appendChild(row);
+            row.querySelector('select').value = defaultTransport;
+        });
+
+        M.Modal.getInstance(document.getElementById('modal-transport-defaults')).open();
     }
 
+    document.getElementById('btn-transport-apply').addEventListener('click', () => {
+        const transportDefaults = {};
+        document.querySelectorAll('.transport-default-select').forEach(sel => {
+            transportDefaults[sel.dataset.route] = sel.value;
+        });
+
+        pendingMissionaries.forEach(m => {
+            const routeKey = `${m.originCity} -> ${m.destinationCity}`;
+            m.transport = transportDefaults[routeKey] || defaultTransportForPair(m.originCity, m.destinationCity);
+        });
+
+        state.groups = {};
+        pendingMissionaries.forEach(m => {
+            const key = `${m.originCity} -> ${m.destinationCity}`;
+            if (!state.groups[key]) state.groups[key] = [];
+            state.groups[key].push(m);
+        });
+
+        saveToLS();
+        M.toast({html: translations[state.lang].toast_processed.replace('{count}', pendingMissionaries.length)});
+        location.reload();
+    });
+
     function defaultTransportForPair(from, to){
-      const f = (from||'').toLowerCase(), t = (to||'').toLowerCase(); const main = ['tete','chimoio','beira'];
-      if(main.includes(f) && main.includes(t) && f !== t) return 'Bus'; if((f==='quelimane' && t==='nampula') || (f==='nampula' && t==='quelimane')) return 'Bus'; if((['tete','chimoio','beira'].includes(f) && t==='nampula')) return 'Plane'; if(f === t){ if(f==='beira') return 'Ride'; return 'Txopela/Taxi'; } return 'Bus';
+      const f = (from||'').toLowerCase(), t = (to||'').toLowerCase();
+      if((f === 'nampula' && t === 'quelimane') || (t === 'nampula' && f === 'quelimane')) return 'Bus';
+      if (f === 'nampula' || t === 'nampula') return 'Plane';
+      const main = ['tete','chimoio','beira'];
+      if(main.includes(f) && main.includes(t) && f !== t) return 'Bus';
+      if(f === t){ if(f==='beira') return 'Ride'; return 'Txopela/Taxi'; }
+      return 'Bus';
     }
 
     // -- UI Rendering
@@ -609,9 +669,9 @@
             <tr class="bulk-edit-row">
               <th colspan="5">${T.bulk_edit_title}</th>
               <th><select class="bulk-transport-select browser-default" title="${T.bulk_edit_transport_placeholder}"><option value="" selected disabled>${T.bulk_edit_transport_placeholder}</option><option value="Bus">${T.transport_bus}</option><option value="Plane">${T.transport_plane}</option><option value="Chapa">${T.transport_chapa}</option><option value="Txopela/Taxi">${T.transport_taxi}</option><option value="Ride">${T.transport_ride}</option></select></th>
-              <th><input type="date" class="bulk-date-input"></th><th><input type="time" class="bulk-time-input"></th><th><textarea class="materialize-textarea bulk-instr-input" placeholder="${T.bulk_edit_instructions_placeholder}"></textarea></th><th class="actions-header" colspan="2"></th>
+              <th><input type="date" class="bulk-date-input"></th><th><input type="time" class="bulk-time-input"></th><th><textarea class="materialize-textarea bulk-instr-input" placeholder="${T.bulk_edit_instructions_placeholder}"></textarea></th><th class="actions-header" colspan="3"></th>
             </tr>
-            <tr><th>${T.table_header_type}</th><th>${T.table_header_name}</th><th>${T.table_header_origin}</th><th>${T.table_header_destination}</th><th>${T.table_header_dest_area}</th><th>${T.table_header_transport}</th><th>${T.table_header_date}</th><th>${T.table_header_time}</th><th>${T.table_header_instructions}</th><th>${T.table_header_leader}</th><th class="actions-header">${T.table_header_actions}</th></tr>
+            <tr><th>${T.table_header_type}</th><th>${T.table_header_name}</th><th>${T.table_header_origin}</th><th>${T.table_header_destination}</th><th>${T.table_header_dest_area}</th><th>${T.table_header_transport}</th><th>${T.table_header_date}</th><th>${T.table_header_time}</th><th>${T.table_header_instructions}</th><th>${T.table_header_new}</th><th>${T.table_header_leader}</th><th class="actions-header">${T.table_header_actions}</th></tr>
           </thead>`;
         const tbody = document.createElement('tbody');
         state.groups[key].forEach((m, idx)=>{
@@ -619,7 +679,9 @@
           tr.innerHTML = `<td>${m.type}</td><td>${getLastName(m.name)}</td><td>${m.originCity}</td><td>${m.destinationCity}</td><td>${m.destinationArea}</td>
             <td><select class="transport-select browser-default"><option value="Bus">${T.transport_bus}</option><option value="Plane">${T.transport_plane}</option><option value="Chapa">${T.transport_chapa}</option><option value="Txopela/Taxi">${T.transport_taxi}</option><option value="Ride">${T.transport_ride}</option></select></td>
             <td><input type="date" class="date-input" value="${m.date}"><p class="tbd-wrapper" style="margin-top:5px;"><label><input type="checkbox" class="tbd-checkbox" ${m.tbd? 'checked':''}><span>${T.tbd}</span></label></p></td><td><input type="time" class="time-input" value="${m.time}"></td>
-            <td><textarea class="instr-input materialize-textarea">${m.instructions || ''}</textarea><div class="pdf-instr-wrap">${m.instructions || ''}</div></td><td><label><input type="checkbox" class="leader-checkbox" ${m.leader ? 'checked':''}><span></span></label></td>
+            <td><textarea class="instr-input materialize-textarea">${m.instructions || ''}</textarea><div class="pdf-instr-wrap">${m.instructions || ''}</div></td>
+            <td class="new-status-cell">${m.isNew ? '✔️' : ''}</td>
+            <td><label><input type="checkbox" class="leader-checkbox" ${m.leader ? 'checked':''}><span></span></label></td>
             <td class="actions-cell"><div class="action-buttons"><a class="btn-small blue edit-btn"><i class="fa fa-pencil"></i></a><a class="btn-small red remove-btn"><i class="fa fa-trash"></i></a></div></td>`;
           tbody.appendChild(tr);
 
@@ -687,7 +749,7 @@
     document.getElementById('btn-add-save').addEventListener('click', ()=>{
       const m = {
         id: document.getElementById('add-name').value.trim().toLowerCase(), type: document.getElementById('add-type').value, name: document.getElementById('add-name').value.trim(), originCity: normalizeZoneName(document.getElementById('add-origin').value), destinationCity: normalizeZoneName(document.getElementById('add-dest').value),
-        destinationArea: document.getElementById('add-destarea').value, transport: document.getElementById('add-transport').value, date: document.getElementById('add-date').value, tbd: document.getElementById('add-tbd').checked, time: document.getElementById('add-time').value, instructions: document.getElementById('add-instructions').value, leader: document.getElementById('add-leader').checked
+        destinationArea: document.getElementById('add-destarea').value, transport: document.getElementById('add-transport').value, date: document.getElementById('add-date').value, tbd: document.getElementById('add-tbd').checked, time: document.getElementById('add-time').value, instructions: document.getElementById('add-instructions').value, leader: document.getElementById('add-leader').checked, isNew: true
       };
       const key = `${m.originCity} -> ${m.destinationCity}`; if(!state.groups[key]) state.groups[key]=[]; state.groups[key].push(m);
       saveToLS();
@@ -698,8 +760,10 @@
     document.getElementById('btn-edit-save').addEventListener('click', () => {
         const originalGroupKey = document.getElementById('edit-original-group-key').value;
         const index = parseInt(document.getElementById('edit-missionary-index').value, 10);
+        const originalMissionary = state.groups[originalGroupKey][index];
         
         const missionary = {
+            ...originalMissionary, // Preserve properties like isNew
             id: document.getElementById('edit-name').value.trim().toLowerCase(),
             name: document.getElementById('edit-name').value.trim(),
             type: document.getElementById('edit-type').value,
@@ -754,6 +818,7 @@
       
       for (let i = 0; i < cards.length; i++) {
         const card = cards[i];
+        
         const toHide = card.querySelectorAll('.bulk-edit-row, .actions-header, .actions-cell');
         toHide.forEach(el => el.style.display = 'none');
         
@@ -797,18 +862,19 @@
         const lang = state.lang || 'pt';
         const T = translations[lang];
         const delimiter = ';';
-        const headers = [T.table_header_type, T.table_header_name, T.table_header_origin, T.table_header_destination, T.table_header_dest_area, T.table_header_transport, T.table_header_date, T.table_header_time, T.table_header_instructions, T.table_header_leader];
+        const headers = [T.table_header_type, T.table_header_name, T.table_header_origin, T.table_header_destination, T.table_header_dest_area, T.table_header_transport, T.table_header_date, T.table_header_time, T.table_header_instructions, T.table_header_new, T.table_header_leader];
         let csvContent = "data:text/csv;charset=utf-8," + headers.join(delimiter) + "\n";
         const allMissionaries = Object.values(state.groups || {}).flat();
         
         allMissionaries.forEach(m => {
             const transportText = m.transport ? (T[`transport_${m.transport.toLowerCase().replace('/','_')}`] || m.transport) : '';
             const leaderText = m.leader ? 'Yes' : 'No';
+            const newText = m.isNew ? 'Yes' : 'No';
             const sanitizedInstructions = (m.instructions || '').replace(/"/g, '""');
             const sanitizedName = (m.name || '').replace(/"/g, '""');
             const sanitizedArea = (m.destinationArea || '').replace(/"/g, '""');
             
-            const row = [m.type, `"${sanitizedName}"`, m.originCity, m.destinationCity, `"${sanitizedArea}"`, transportText, m.date, m.time, `"${sanitizedInstructions}"`, leaderText];
+            const row = [m.type, `"${sanitizedName}"`, m.originCity, m.destinationCity, `"${sanitizedArea}"`, transportText, m.date, m.time, `"${sanitizedInstructions}"`, newText, leaderText];
             csvContent += row.join(delimiter) + "\n";
         });
 
