@@ -7,7 +7,6 @@
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>  
 <style>
     body { 
         padding: 16px; 
@@ -38,6 +37,7 @@
     .hidden-input { display: none; margin-top: 10px !important; }
     .narrow-select { width: 110px; }
   </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/5.0.2/jspdf.plugin.autotable.min.js" integrity="sha512-JizZOUNesiGhMcp9fsA/9W31FOat6QysBM8hSj6ir8iIANIUJ2mhko7Lo1+j0ErftmJ8SebMZLm9iielKjeIEQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 </head>
 <body>
   <nav>
@@ -929,9 +929,8 @@
         });
     });
     
-    // -- Export Functions
-// -- Export Functions (replacement - canvas slice method for clean multi-page tables)
-document.getElementById('btn-export-pdf').addEventListener('click', () => {
+// -- Export Functions
+    document.getElementById('btn-export-pdf').addEventListener('click', () => {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF({ orientation: 'l', unit: 'mm', format: 'a4' });
         const lang = state.lang || 'pt';
