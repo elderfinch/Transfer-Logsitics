@@ -7,7 +7,12 @@
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-<style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+  <style>
     body { 
         padding: 16px; 
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
@@ -18,7 +23,7 @@
     .small-input { width:120px }
     .time-input { width:140px }
     .btn-group { margin-top: 10px; }
-    .btn-group .btn { margin-right: 8px; }
+    .btn-group .btn { margin-right: 8px; margin-bottom: 8px; }
     #modal-add h6, #modal-edit h6 { margin: 10px 0 2px 0; font-size: 0.9rem; color: #555; }
     .bulk-instr-input, .instr-input {
         min-height: 45px;
@@ -36,6 +41,7 @@
     .action-buttons a { margin: 0 4px; }
     .hidden-input { display: none; margin-top: 10px !important; }
     .narrow-select { width: 110px; }
+    .hidden-file-input { display: none; }
   </style>
 </head>
 <body>
@@ -53,7 +59,7 @@
       <div id="upload-section">
         <div class="row valign-wrapper">
           <div class="col s6">
-            <h5 data-translate="upload_title">Upload transferboards</h5>
+            <h5 data-translate="upload_title">Start New Plan</h5>
           </div>
           <div class="col s6 input-field" style="max-width: 250px; margin-left: auto;">
             <select class="lang-select">
@@ -74,11 +80,24 @@
           </div>
         </div>
         <a id="btn-process" class="btn" data-translate="process_upload">Process upload</a>
+        <hr style="margin: 30px 0;">
+        <h5 data-translate="restore_title">Restore Plan from CSV</h5>
+        <div class="row">
+            <div class="col s12 m8">
+                <label data-translate="restore_desc">Upload travel_plans.csv file to restore progress</label>
+                <input id="file-restore" type="file" accept=".csv" />
+            </div>
+            <div class="col s12 m4" style="padding-top: 25px;">
+                <a id="btn-restore" class="btn" data-translate="restore_button">Restore</a>
+            </div>
+        </div>
       </div>
 
       <div class="btn-group">
           <a id="btn-export-pdf" class="btn green" data-translate="export_pdf">Export PDF</a>
           <a id="btn-export-csv" class="btn blue" data-translate="export_csv">Export CSV</a>
+          <a id="btn-update-origins" class="btn orange" data-translate="update_origin_areas_btn">Update Origin Areas</a>
+          <input type="file" id="file-update-origin" class="hidden-file-input" accept=".xlsx,.xls,.csv" />
           <a id="btn-clear-local" class="btn red" data-translate="clear_all_travel">Clear All Saved Travel</a>
       </div>
     </div>
@@ -121,7 +140,11 @@
         </div>
       </div>
       <div class="row">
-        <div class="col s4">
+        <div class="col s3">
+            <h6 data-translate="origin_area">Origin Area</h6>
+            <input id="add-originarea">
+        </div>
+        <div class="col s3">
           <h6 data-translate="dest_area">Destination Area</h6>
           <input id="add-destarea">
         </div>
@@ -133,21 +156,21 @@
           <h6 data-translate="date">Date</h6>
           <input id="add-date" type="date">
         </div>
-        <div class="col s1" style="padding-top: 30px;">
-          <label><input type="checkbox" id="add-tbd" /> <span data-translate="tbd">TBD</span></label>
-        </div>
-        <div class="col s1" style="padding-top: 30px;">
-          <label><input type="checkbox" id="add-new" /> <span data-translate="table_header_new">New</span></label>
-        </div>
       </div>
       <div class="row">
         <div class="col s3">
           <h6 data-translate="departure_time">Departure Time</h6>
           <input id="add-time" type="time">
         </div>
-        <div class="col s7">
+        <div class="col s5">
           <h6 data-translate="travel_instructions">Travel Instructions</h6>
           <input id="add-instructions">
+        </div>
+         <div class="col s1" style="padding-top: 30px;">
+          <label><input type="checkbox" id="add-tbd" /> <span data-translate="tbd">TBD</span></label>
+        </div>
+        <div class="col s1" style="padding-top: 30px;">
+          <label><input type="checkbox" id="add-new" /> <span data-translate="table_header_new">New</span></label>
         </div>
         <div class="col s2" style="padding-top: 30px;">
           <label>
@@ -191,7 +214,11 @@
         </div>
       </div>
       <div class="row">
-        <div class="col s4">
+        <div class="col s3">
+            <h6 data-translate="origin_area">Origin Area</h6>
+            <input id="edit-originarea">
+        </div>
+        <div class="col s3">
           <h6 data-translate="dest_area">Destination Area</h6>
           <input id="edit-destarea">
         </div>
@@ -203,12 +230,6 @@
           <h6 data-translate="date">Date</h6>
           <input id="edit-date" type="date">
         </div>
-        <div class="col s2" style="padding-top: 30px;">
-          <label>
-            <input type="checkbox" id="edit-tbd" />
-            <span data-translate="tbd">TBD</span>
-          </label>
-        </div>
       </div>
       <div class="row">
         <div class="col s3">
@@ -218,6 +239,12 @@
         <div class="col s5">
           <h6 data-translate="travel_instructions">Travel Instructions</h6>
           <input id="edit-instructions">
+        </div>
+        <div class="col s2" style="padding-top: 30px;">
+          <label>
+            <input type="checkbox" id="edit-tbd" />
+            <span data-translate="tbd">TBD</span>
+          </label>
         </div>
         <div class="col s2" style="padding-top: 30px;">
           <label>
@@ -275,6 +302,17 @@
     </div>
   </div>
 
+    <div id="modal-map-update" class="modal">
+    <div class="modal-content">
+        <h5 data-translate="map_origin_areas_title">Map Origin Area Columns</h5>
+        <p data-translate="map_origin_areas_desc">Select the columns for Missionary Name and their Origin Area.</p>
+        <div id="mapping-forms-update"></div>
+    </div>
+    <div class="modal-footer">
+        <a id="btn-map-update-apply" class="modal-close btn">Apply Update</a>
+    </div>
+  </div>
+
   <div id="modal-exceptions" class="modal modal-fixed-footer">
     <div class="modal-content">
       <h5 data-translate="assign_exceptions_title">Assign exceptions...</h5>
@@ -297,11 +335,6 @@
     </div>
   </div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
   <script>
     // -- Constants, Defaults & State
     const LS_KEY = 'transfer_logistics_data_v1';
@@ -326,12 +359,16 @@
     const translations = {
         en: {
             app_title: "Transfer Logistics",
-            upload_title: "Upload transferboards",
+            upload_title: "Start New Plan",
+            restore_title: "Restore Plan from CSV",
+            restore_desc: "Upload travel_plans.csv file to restore progress",
+            restore_button: "Restore",
             old_board_label: "Old transferboard (from)",
             new_board_label: "New transferboard (to)",
             process_upload: "Process upload",
             export_pdf: "Export PDF",
             export_csv: "Export CSV",
+            update_origin_areas_btn: "Update Origin Areas",
             clear_all_travel: "Clear All Saved Travel",
             groups_title: "Groups",
             add_missionary_title: "Add Missionary",
@@ -340,6 +377,7 @@
             name: "Name",
             origin_city: "Origin City",
             dest_city: "Destination City",
+            origin_area: "Origin Area",
             dest_area: "Destination Area",
             transportation: "Transportation",
             date: "Date",
@@ -356,6 +394,8 @@
             area_zone_name: "Area/District/Zone Name",
             override_city: "Override City",
             map_columns_title: "Map columns (choose which column in your spreadsheet corresponds to these fields)",
+            map_origin_areas_title: "Map Origin Area Columns",
+            map_origin_areas_desc: "Select the columns for Missionary Name and their Origin Area.",
             apply_mapping: "Apply Mapping",
             assign_exceptions_title: "Assign exceptions (areas/districts that map to a different city)",
             assign_exceptions_desc: "For any area or zone below, you can enter a city name to override the default. Check 'Apply' to save the exception.",
@@ -365,8 +405,7 @@
             table_header_type: "Type",
             table_header_name: "Name",
             table_header_new: "New",
-            table_header_origin: "Origin City",
-            table_header_destination: "Destination City",
+            table_header_origin_area: "Origin Area",
             table_header_dest_area: "Destination Area",
             table_header_transport: "Transportation",
             table_header_date: "Date",
@@ -378,8 +417,11 @@
             bulk_edit_instructions_placeholder: "Set instructions for all",
             bulk_edit_transport_placeholder: "Set Transport",
             toast_select_files: "Please select both files",
+            toast_restore_file: "Please select a CSV file to restore",
             toast_processed: "Processed {count} missionaries (transfers and new arrivals).",
             toast_added: "Added",
+            toast_restored: "Plan restored successfully.",
+            toast_origins_updated: "Origin areas updated successfully.",
             toast_updated: "Updated {field} for all in group.",
             toast_pdf_generating: "Generating PDF... Please wait.",
             toast_pdf_generated: "PDF generated successfully.",
@@ -396,12 +438,16 @@
         },
         pt: {
             app_title: "Logística de Transferência",
-            upload_title: "Carregar quadros de transferência",
+            upload_title: "Iniciar Novo Plano",
+            restore_title: "Restaurar Plano do CSV",
+            restore_desc: "Carregar ficheiro travel_plans.csv para restaurar o progresso",
+            restore_button: "Restaurar",
             old_board_label: "Quadro de transferência antigo (de)",
             new_board_label: "Quadro de transferência novo (para)",
             process_upload: "Processar carregamento",
             export_pdf: "Exportar PDF",
             export_csv: "Exportar CSV",
+            update_origin_areas_btn: "Atualizar Áreas de Origem",
             clear_all_travel: "Limpar Viagens Guardadas",
             groups_title: "Grupos",
             add_missionary_title: "Adicionar Missionário",
@@ -410,6 +456,7 @@
             name: "Nome",
             origin_city: "Cidade de Origem",
             dest_city: "Cidade de Destino",
+            origin_area: "Área de Origem",
             dest_area: "Área de Destino",
             transportation: "Transporte",
             date: "Data",
@@ -426,6 +473,8 @@
             area_zone_name: "Nome da Área/Distrito/Zona",
             override_city: "Cidade Alternativa",
             map_columns_title: "Mapear colunas (escolha qual coluna da sua planilha corresponde a estes campos)",
+            map_origin_areas_title: "Mapear Colunas da Área de Origem",
+            map_origin_areas_desc: "Selecione as colunas para o Nome do Missionário e a sua Área de Origem.",
             apply_mapping: "Aplicar Mapeamento",
             assign_exceptions_title: "Atribuir exceções (áreas/distritos que mapeiam para uma cidade diferente)",
             assign_exceptions_desc: "Para qualquer área ou zona abaixo, pode inserir um nome de cidade para substituir o padrão. Marque 'Aplicar' para guardar a exceção.",
@@ -435,9 +484,8 @@
             table_header_type: "Tipo",
             table_header_name: "Nome",
             table_header_new: "Novo",
-            table_header_origin: "Cidade Origem",
-            table_header_destination: "Cidade Destino",
-            table_header_dest_area: "Área Destino",
+            table_header_origin_area: "Área de Origem",
+            table_header_dest_area: "Área de Destino",
             table_header_transport: "Transporte",
             table_header_date: "Data",
             table_header_time: "Hora",
@@ -448,8 +496,11 @@
             bulk_edit_instructions_placeholder: "Definir instruções para todos",
             bulk_edit_transport_placeholder: "Definir Transporte",
             toast_select_files: "Por favor, selecione ambos os ficheiros",
+            toast_restore_file: "Por favor, selecione um ficheiro CSV para restaurar",
             toast_processed: "Processados {count} missionários (transferências e novas chegadas).",
             toast_added: "Adicionado",
+            toast_restored: "Plano restaurado com sucesso.",
+            toast_origins_updated: "Áreas de origem atualizadas com sucesso.",
             toast_updated: "{field} atualizado para todos no grupo.",
             toast_pdf_generating: "A gerar PDF... Por favor, aguarde.",
             toast_pdf_generated: "PDF gerado com sucesso.",
@@ -619,11 +670,11 @@
                 if (oldLoc.zone !== newLoc.zone || oldLoc.district !== newLoc.district || oldLoc.area !== newLoc.area) {
                     const originCity = determineCity(oldLoc);
                     const destinationCity = determineCity(newLoc);
-                    pendingMissionaries.push({ id: key, name: nameVal, type: finalType, originCity, destinationCity, destinationArea: newLoc.area, isNew: false, date: '', tbd: false, time: '', instructions:'', leader:false });
+                    pendingMissionaries.push({ id: key, name: nameVal, type: finalType, originCity, originArea: oldLoc.area, originDistrict: oldLoc.district, originZone: oldLoc.zone, destinationCity, destinationArea: newLoc.area, destinationDistrict: newLoc.district, destinationZone: newLoc.zone, isNew: false, date: '', tbd: false, time: '', instructions:'', leader:false });
                 }
             } else {
                 const destinationCity = determineCity(newLoc);
-                pendingMissionaries.push({ id: key, name: nameVal, type: finalType, originCity: 'Beira', destinationCity, destinationArea: newLoc.area, isNew: true, date: '', tbd: false, time: '', instructions:'', leader:false });
+                pendingMissionaries.push({ id: key, name: nameVal, type: finalType, originCity: 'Beira', originArea: '', originDistrict: '', originZone: '', destinationCity, destinationArea: newLoc.area, destinationDistrict: newLoc.district, destinationZone: newLoc.zone, isNew: true, date: '', tbd: false, time: '', instructions:'', leader:false });
             }
         });
 
@@ -692,11 +743,11 @@
         table.innerHTML = `
           <thead>
             <tr class="bulk-edit-row">
-              <th colspan="5">${T.bulk_edit_title}</th>
+              <th colspan="4">${T.bulk_edit_title}</th>
               <th><select class="bulk-transport-select browser-default" title="${T.bulk_edit_transport_placeholder}"><option value="" selected disabled>${T.bulk_edit_transport_placeholder}</option><option value="Bus">${T.transport_bus}</option><option value="Plane">${T.transport_plane}</option><option value="Chapa">${T.transport_chapa}</option><option value="Txopela/Taxi">${T.transport_taxi}</option><option value="Ride">${T.transport_ride}</option></select></th>
               <th><input type="date" class="bulk-date-input"></th><th><input type="time" class="bulk-time-input"></th><th><textarea class="materialize-textarea bulk-instr-input" placeholder="${T.bulk_edit_instructions_placeholder}"></textarea></th><th class="actions-header" colspan="3"></th>
             </tr>
-            <tr><th>${T.table_header_type}</th><th>${T.table_header_name}</th><th>${T.table_header_origin}</th><th>${T.table_header_destination}</th><th>${T.table_header_dest_area}</th><th>${T.table_header_transport}</th><th>${T.table_header_date}</th><th>${T.table_header_time}</th><th>${T.table_header_instructions}</th><th>${T.table_header_new}</th><th>${T.table_header_leader}</th><th class="actions-header">${T.table_header_actions}</th></tr>
+            <tr><th>${T.table_header_type}</th><th>${T.table_header_name}</th><th>${T.table_header_origin_area}</th><th>${T.table_header_dest_area}</th><th>${T.table_header_transport}</th><th>${T.table_header_date}</th><th>${T.table_header_time}</th><th>${T.table_header_instructions}</th><th>${T.table_header_new}</th><th>${T.table_header_leader}</th><th class="actions-header">${T.table_header_actions}</th></tr>
           </thead>`;
         const tbody = document.createElement('tbody');
         const group = state.groups[key];
@@ -714,7 +765,7 @@
                 ${typeIsEditable ? typeSelectHTML : `<span>${m.type}</span>`}
             </td>`;
 
-          tr.innerHTML = `${typeCellHTML}<td>${getLastName(m.name)}</td><td>${m.originCity}</td><td>${m.destinationCity}</td><td>${m.destinationArea}</td>
+          tr.innerHTML = `${typeCellHTML}<td>${getLastName(m.name)}</td><td>${m.originArea || ''}</td><td>${m.destinationArea}</td>
             <td><select class="transport-select browser-default"><option value="Bus">${T.transport_bus}</option><option value="Plane">${T.transport_plane}</option><option value="Chapa">${T.transport_chapa}</option><option value="Txopela/Taxi">${T.transport_taxi}</option><option value="Ride">${T.transport_ride}</option></select></td>
             <td><input type="date" class="date-input" value="${m.date}"><p class="tbd-wrapper" style="margin-top:5px;"><label><input type="checkbox" class="tbd-checkbox" ${m.tbd? 'checked':''}><span>${T.tbd}</span></label></p></td><td><input type="time" class="time-input" value="${m.time}"></td>
             <td><textarea class="instr-input materialize-textarea">${m.instructions || ''}</textarea><div class="pdf-instr-wrap">${m.instructions || ''}</div></td>
@@ -818,7 +869,6 @@
 
     function openEditModal(groupKey, index) {
         const missionary = state.groups[groupKey][index];
-        const lang = state.lang || 'pt';
         
         document.getElementById('edit-original-group-key').value = groupKey;
         document.getElementById('edit-missionary-index').value = index;
@@ -847,6 +897,7 @@
             destOther.style.display = 'block';
         }
 
+        document.getElementById('edit-originarea').value = missionary.originArea || '';
         document.getElementById('edit-destarea').value = missionary.destinationArea;
         document.getElementById('edit-transport').value = missionary.transport;
         document.getElementById('edit-date').value = missionary.date;
@@ -877,7 +928,7 @@
 
       const m = {
         id: document.getElementById('add-name').value.trim().toLowerCase(), type: document.getElementById('add-type').value, name: document.getElementById('add-name').value.trim(), originCity: normalizeZoneName(originCity), destinationCity: normalizeZoneName(destCity),
-        destinationArea: document.getElementById('add-destarea').value, transport: document.getElementById('add-transport').value, date: document.getElementById('add-date').value, tbd: document.getElementById('add-tbd').checked, time: document.getElementById('add-time').value, instructions: document.getElementById('add-instructions').value, leader: document.getElementById('add-leader').checked, isNew: document.getElementById('add-new').checked
+        originArea: document.getElementById('add-originarea').value, destinationArea: document.getElementById('add-destarea').value, transport: document.getElementById('add-transport').value, date: document.getElementById('add-date').value, tbd: document.getElementById('add-tbd').checked, time: document.getElementById('add-time').value, instructions: document.getElementById('add-instructions').value, leader: document.getElementById('add-leader').checked, isNew: document.getElementById('add-new').checked
       };
       const key = `${m.originCity} -> ${m.destinationCity}`; if(!state.groups[key]) state.groups[key]=[]; state.groups[key].push(m);
       saveToLS();
@@ -897,7 +948,7 @@
 
         const missionary = { ...originalMissionary,
             id: document.getElementById('edit-name').value.trim().toLowerCase(), name: document.getElementById('edit-name').value.trim(), type: document.getElementById('edit-type').value, originCity: normalizeZoneName(originCity), destinationCity: normalizeZoneName(destCity),
-            destinationArea: document.getElementById('edit-destarea').value, transport: document.getElementById('edit-transport').value, date: document.getElementById('edit-date').value, tbd: document.getElementById('edit-tbd').checked, time: document.getElementById('edit-time').value, instructions: document.getElementById('edit-instructions').value, leader: document.getElementById('edit-leader').checked
+            originArea: document.getElementById('edit-originarea').value, destinationArea: document.getElementById('edit-destarea').value, transport: document.getElementById('edit-transport').value, date: document.getElementById('edit-date').value, tbd: document.getElementById('edit-tbd').checked, time: document.getElementById('edit-time').value, instructions: document.getElementById('edit-instructions').value, leader: document.getElementById('edit-leader').checked
         };
 
         state.groups[originalGroupKey].splice(index, 1);
@@ -929,7 +980,7 @@
         });
     });
     
-// -- Export Functions
+    // -- Export and Update Functions
     document.getElementById('btn-export-pdf').addEventListener('click', () => {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF({ orientation: 'l', unit: 'mm', format: 'a4' });
@@ -941,27 +992,29 @@
 
         M.toast({ html: T.toast_pdf_generating });
 
+        let finalY = 15;
+
         groups.forEach((groupKey, index) => {
             if (index > 0) {
-                doc.addPage(); // Add a page break before each new table (except the first one)
+                doc.addPage();
+                finalY = 15;
             }
 
             const group = state.groups[groupKey];
             const sortedGroup = [...group].sort((a, b) => (a.isNew ? 1 : -1) - (b.isNew ? 1 : -1));
 
             const head = [[
-                T.table_header_type, T.table_header_name, T.table_header_origin, T.table_header_destination, 
-                T.table_header_dest_area, T.table_header_transport, T.table_header_date, T.table_header_time, 
+                T.table_header_type, T.table_header_name, T.table_header_origin_area, T.table_header_dest_area,
+                T.table_header_transport, T.table_header_date, T.table_header_time,
                 T.table_header_instructions, T.table_header_new, T.table_header_leader
             ]];
 
             const body = sortedGroup.map(m => {
                 const transportText = m.transport ? (translations[lang][`transport_${m.transport.toLowerCase().replace('/','_')}`] || m.transport) : '';
                 return [
-                    m.type,
+                    m.type || '',
                     getLastName(m.name),
-                    m.originCity,
-                    m.destinationCity,
+                    m.originArea || '',
                     m.destinationArea,
                     transportText,
                     m.tbd ? T.tbd : m.date,
@@ -972,31 +1025,45 @@
                 ];
             });
 
-            // Add a title for the group at the top of the page
             doc.setFontSize(16);
-            doc.text(groupKey, 14, 15);
+            doc.text(groupKey, 14, finalY);
+            finalY += 8;
 
             doc.autoTable({
                 head: head,
                 body: body,
-                startY: 23, // Start table below the title
+                startY: finalY,
                 theme: 'striped',
                 headStyles: { fillColor: [0, 150, 136] }, // Teal color for header
                 columnStyles: {
-                    8: { cellWidth: 50 }, // Instructions column
+                    0: { cellWidth: 18 }, // Type
+                    1: { cellWidth: 30 }, // Name
+                    2: { cellWidth: 30 }, // Origin Area
+                    3: { cellWidth: 30 }, // Dest Area
+                    4: { cellWidth: 25 }, // Transport
+                    5: { cellWidth: 22 }, // Date
+                    6: { cellWidth: 17 }, // Time
+                    7: { cellWidth: 'auto' }, // Instructions
+                    8: { cellWidth: 12, halign: 'center' }, // New
+                    9: { cellWidth: 15, halign: 'center' }, // Leader
+                },
+                didDrawPage: (data) => {
+                    finalY = data.cursor.y + 15;
                 }
             });
+             finalY = doc.previousAutoTable.finalY + 15;
         });
 
         doc.save('transfer_logistics.pdf');
         M.toast({ html: T.toast_pdf_generated });
     });
 
+
     document.getElementById('btn-export-csv').addEventListener('click', () => {
         const lang = state.lang || 'pt';
         const T = translations[lang];
         const delimiter = ';';
-        const headers = [T.table_header_type, T.table_header_name, T.table_header_origin, T.table_header_destination, T.table_header_dest_area, T.table_header_transport, T.table_header_date, T.table_header_time, T.table_header_instructions, T.table_header_new, T.table_header_leader];
+        const headers = [T.table_header_type, T.table_header_name, "Origin City", "Origin District", "Origin Zone", T.table_header_origin_area, "Destination City", "Destination District", "Destination Zone", T.table_header_dest_area, T.table_header_transport, T.table_header_date, T.table_header_time, T.table_header_instructions, T.table_header_new, T.table_header_leader];
         let csvContent = "data:text/csv;charset=utf-8," + headers.join(delimiter) + "\n";
         const allMissionaries = Object.values(state.groups || {}).flat();
         
@@ -1004,11 +1071,9 @@
             const transportText = m.transport ? (T[`transport_${m.transport.toLowerCase().replace('/','_')}`] || m.transport) : '';
             const leaderText = m.leader ? 'Yes' : 'No';
             const newText = m.isNew ? 'Yes' : 'No';
-            const sanitizedInstructions = (m.instructions || '').replace(/"/g, '""');
-            const sanitizedName = (m.name || '').replace(/"/g, '""');
-            const sanitizedArea = (m.destinationArea || '').replace(/"/g, '""');
+            const sanitize = (str) => `"${(str || '').replace(/"/g, '""')}"`;
             
-            const row = [m.type, `"${sanitizedName}"`, m.originCity, m.destinationCity, `"${sanitizedArea}"`, transportText, m.date, m.time, `"${sanitizedInstructions}"`, newText, leaderText];
+            const row = [ m.type, sanitize(m.name), m.originCity, sanitize(m.originDistrict), sanitize(m.originZone), sanitize(m.originArea), m.destinationCity, sanitize(m.destinationDistrict), sanitize(m.destinationZone), sanitize(m.destinationArea), transportText, m.date, m.time, sanitize(m.instructions), newText, leaderText];
             csvContent += row.join(delimiter) + "\n";
         });
 
@@ -1019,6 +1084,105 @@
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+    });
+
+    document.getElementById('btn-restore').addEventListener('click', async () => {
+        const file = document.getElementById('file-restore').files[0];
+        if (!file) {
+            M.toast({ html: translations[state.lang].toast_restore_file });
+            return;
+        }
+
+        const data = await file.text();
+        const rows = data.split('\n').slice(1); // Skip header row
+        const restoredMissionaries = [];
+        
+        // This is a simplified restore, more robust header mapping could be added if needed
+        for (const row of rows) {
+            if (!row.trim()) continue;
+            const cols = row.split(';').map(col => col.startsWith('"') && col.endsWith('"') ? col.slice(1, -1).replace(/""/g, '"') : col);
+            
+            const transportValEN = Object.keys(translations.en).find(key => translations.en[key] === cols[10]);
+            const transportValPT = Object.keys(translations.pt).find(key => translations.pt[key] === cols[10]);
+            const transportKey = (transportValEN || transportValPT || '').replace('transport_', '');
+
+            const missionary = {
+                type: cols[0], name: cols[1], originCity: cols[2], originDistrict: cols[3], originZone: cols[4], originArea: cols[5],
+                destinationCity: cols[6], destinationDistrict: cols[7], destinationZone: cols[8], destinationArea: cols[9],
+                transport: transportKey, date: cols[11], time: cols[12], instructions: cols[13],
+                isNew: cols[14]?.toLowerCase() === 'yes', leader: cols[15]?.toLowerCase() === 'yes',
+                id: (cols[1] || '').toLowerCase(),
+                tbd: cols[11] === translations.en.tbd || cols[11] === translations.pt.tbd
+            };
+            restoredMissionaries.push(missionary);
+        }
+
+        state.groups = {};
+        restoredMissionaries.forEach(m => {
+            const key = `${m.originCity} -> ${m.destinationCity}`;
+            if (!state.groups[key]) state.groups[key] = [];
+            state.groups[key].push(m);
+        });
+
+        saveToLS();
+        M.toast({ html: translations[state.lang].toast_restored });
+        location.reload();
+    });
+
+    document.getElementById('btn-update-origins').addEventListener('click', () => {
+        document.getElementById('file-update-origin').click();
+    });
+
+    document.getElementById('file-update-origin').addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const rows = await readFileRows(file);
+        const container = document.getElementById('mapping-forms-update');
+        container.innerHTML = '';
+        const keys = Object.keys(rows[0] || {});
+        const fields = [{ id: 'name', label: 'Missionary Name' }, { id: 'originArea', label: 'Origin Area' }];
+
+        fields.forEach(f => {
+            const div = document.createElement('div');
+            div.style.marginBottom = '20px';
+            const h6 = document.createElement('h6');
+            h6.textContent = f.label;
+            const select = document.createElement('select');
+            select.id = 'map-update-' + f.id;
+            select.className = 'browser-default';
+            select.innerHTML = `<option value="">-- Select column --</option>` + keys.map(k => `<option value="${k}">${k}</option>`).join('');
+            div.appendChild(h6);
+            div.appendChild(select);
+            container.appendChild(div);
+        });
+
+        M.Modal.getInstance(document.getElementById('modal-map-update')).open();
+
+        document.getElementById('btn-map-update-apply').onclick = () => {
+            const nameCol = document.getElementById('map-update-name').value;
+            const areaCol = document.getElementById('map-update-originArea').value;
+            if (!nameCol || !areaCol) return;
+
+            const originAreaMap = {};
+            rows.forEach(row => {
+                const name = (row[nameCol] || '').toString().trim().toLowerCase();
+                if (name) {
+                    originAreaMap[name] = (row[areaCol] || '').toString().trim();
+                }
+            });
+
+            Object.values(state.groups).flat().forEach(missionary => {
+                if (originAreaMap[missionary.id]) {
+                    missionary.originArea = originAreaMap[missionary.id];
+                }
+            });
+
+            saveToLS();
+            M.toast({ html: translations[state.lang].toast_origins_updated });
+            location.reload();
+        };
+        e.target.value = ''; // Reset file input
     });
 
     // -- Initial Load
