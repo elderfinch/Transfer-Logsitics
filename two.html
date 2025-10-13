@@ -941,9 +941,11 @@
 
         M.toast({ html: T.toast_pdf_generating });
 
-        let finalY = 15; // Initial Y position for the first table
-
         groups.forEach((groupKey, index) => {
+            if (index > 0) {
+                doc.addPage(); // Add a page break before each new table (except the first one)
+            }
+
             const group = state.groups[groupKey];
             const sortedGroup = [...group].sort((a, b) => (a.isNew ? 1 : -1) - (b.isNew ? 1 : -1));
 
@@ -970,25 +972,20 @@
                 ];
             });
 
-            // Add a title for the group
+            // Add a title for the group at the top of the page
             doc.setFontSize(16);
-            doc.text(groupKey, 14, finalY);
-            finalY += 8;
+            doc.text(groupKey, 14, 15);
 
             doc.autoTable({
                 head: head,
                 body: body,
-                startY: finalY,
+                startY: 23, // Start table below the title
                 theme: 'striped',
                 headStyles: { fillColor: [0, 150, 136] }, // Teal color for header
                 columnStyles: {
                     8: { cellWidth: 50 }, // Instructions column
-                },
-                didDrawPage: (data) => {
-                    finalY = data.cursor.y + 15; // Set Y for the next table
                 }
             });
-             finalY = doc.previousAutoTable.finalY + 15;
         });
 
         doc.save('transfer_logistics.pdf');
