@@ -277,6 +277,7 @@
     const defaults = {
       exceptions: {
         'Quelimane': { city: 'Quelimane' },
+        'Quelimane District': { city: 'Quelimane' },
         'Nhamatanda': { city: 'Nhamatanda' },
         'Marromeu': { city: 'Marromeu' },
         'Caia': { city: 'Caia' },
@@ -287,7 +288,7 @@
     };
     let state = loadFromLS() || { groups: {}, exceptions: defaults.exceptions, lang: 'pt' };
     let fileOldRows = null; let fileNewRows = null;
-    let mapping = { name: null, type: null, area: null, zone: null };
+    let mapping = { name: null, type: null, area: null, district: null, zone: null };
 
     // -- Translations
     const translations = {
@@ -344,7 +345,7 @@
             bulk_edit_instructions_placeholder: "Set instructions for all",
             bulk_edit_transport_placeholder: "Set Transport",
             toast_select_files: "Please select both files",
-            toast_processed: "Processed {count} transfers.",
+            toast_processed: "Processed {count} missionaries (transfers and new arrivals).",
             toast_added: "Added",
             toast_updated: "Updated {field} for all in group.",
             toast_pdf_generating: "Generating PDF... Please wait.",
@@ -412,7 +413,7 @@
             bulk_edit_instructions_placeholder: "Definir instruções para todos",
             bulk_edit_transport_placeholder: "Definir Transporte",
             toast_select_files: "Por favor, selecione ambos os ficheiros",
-            toast_processed: "Processadas {count} transferências.",
+            toast_processed: "Processados {count} missionários (transferências e novas chegadas).",
             toast_added: "Adicionado",
             toast_updated: "{field} atualizado para todos no grupo.",
             toast_pdf_generating: "A gerar PDF... Por favor, aguarde.",
@@ -467,10 +468,15 @@
     // -- Helpers
     function getLastName(fullName) { if (!fullName) return ''; return fullName.split(',')[0].trim(); }
     function normalizeZoneName(name){ if(!name) return ''; name = name.replace(/ZONA/i,'').trim(); return name.charAt(0).toUpperCase()+name.slice(1).toLowerCase(); }
-    function areaToCity(area){ if(!area) return ''; for(const key of Object.keys(state.exceptions||{})){ if(key.toLowerCase() === area.toLowerCase()){ return state.exceptions[key].city || key; } } return normalizeZoneName(area); }
     function autoResizeTextarea(element) {
         element.style.height = 'auto';
         element.style.height = (element.scrollHeight) + 'px';
+    }
+    function determineCity(loc) { // loc = { area, district, zone }
+        if (loc.area && state.exceptions[loc.area]) return state.exceptions[loc.area].city;
+        if (loc.district && state.exceptions[loc.district]) return state.exceptions[loc.district].city;
+        if (loc.zone && state.exceptions[loc.zone]) return state.exceptions[loc.zone].city;
+        return normalizeZoneName(loc.zone || loc.district || loc.area);
     }
 
     // -- File Processing
@@ -488,7 +494,7 @@
     function showMappingModal(sampleRow){
       const container = document.getElementById('mapping-forms'); container.innerHTML = '';
       const keys = Object.keys(sampleRow || {});
-      const fields = [ {id:'name', label:'Name'}, {id:'type', label:'Type (Elder/Sister)'}, {id:'area', label:'Area/Neighborhood'}, {id:'zone', label:'Zone (this becomes City by default)'} ];
+      const fields = [ {id:'name', label:'Name'}, {id:'type', label:'Type (Elder/Sister)'}, {id:'area', label:'Area/Neighborhood'}, {id:'district', label:'District'}, {id:'zone', label:'Zone'} ];
       fields.forEach(f=>{
         const div = document.createElement('div'); div.style.marginBottom = '20px';
         const h6 = document.createElement('h6'); h6.textContent = f.label;
@@ -501,24 +507,23 @@
     }
 
     document.getElementById('btn-map-apply').addEventListener('click', ()=>{
-      ['name','type','area','zone'].forEach(f=>mapping[f]=document.getElementById('map-'+f).value || null);
+      ['name','type','area', 'district', 'zone'].forEach(f=>mapping[f]=document.getElementById('map-'+f).value || null);
       prepareExceptionsAssignment();
     });
 
     function prepareExceptionsAssignment(){
-      const uniqueZones = new Set(); const uniqueAreas = new Set();
+      const uniqueZones = new Set(); const uniqueDistricts = new Set(); const uniqueAreas = new Set();
       [fileOldRows,fileNewRows].forEach(rows=>{ (rows||[]).forEach(r=>{
-        const z = mapping.zone ? (r[mapping.zone]||'').toString().trim() : '';
-        const a = mapping.area ? (r[mapping.area]||'').toString().trim() : '';
-        if(z) uniqueZones.add(z); if(a) uniqueAreas.add(a);
+        const z = (mapping.zone ? r[mapping.zone] : '').toString().trim();
+        const d = (mapping.district ? r[mapping.district] : '').toString().trim();
+        const a = (mapping.area ? r[mapping.area] : '').toString().trim();
+        if(z) uniqueZones.add(z); if(d) uniqueDistricts.add(d); if(a) uniqueAreas.add(a);
       }); });
-      const listZones = Array.from(uniqueZones).sort((x,y)=>x.localeCompare(y));
-      const listAreas = Array.from(uniqueAreas).sort((x,y)=>x.localeCompare(y));
       const container = document.getElementById('exceptions-assign'); container.innerHTML='';
       const createSection = (title, list) => {
         if (list.length === 0) return;
         const titleEl = document.createElement('h5'); titleEl.textContent = title; container.appendChild(titleEl);
-        list.forEach(val=>{
+        Array.from(list).sort((x,y)=>x.localeCompare(y)).forEach(val=>{
           const row = document.createElement('div'); row.className='row valign-wrapper'; row.style.marginBottom = '0px';
           const existingCity = state.exceptions[val]?.city || '';
           row.innerHTML = `<div class="input-field col s5"> <input value="${val}" readonly> <label class="active">Source Name</label></div><div class="input-field col s5"> <input class="ex-city" data-key="${val}" value="${existingCity}" placeholder="e.g., Beira" /> <label class="active">Override City</label></div><div class="col s2"> <label><input type="checkbox" class="ex-apply" data-key="${val}" ${existingCity ? 'checked' : ''} /><span>Apply</span></label></div>`;
@@ -526,7 +531,9 @@
         });
         container.appendChild(document.createElement('div')).className = 'divider';
       };
-      createSection('Zone Overrides', listZones); createSection('Area Overrides', listAreas);
+      createSection('Area Overrides', uniqueAreas);
+      createSection('District Overrides', uniqueDistricts);
+      createSection('Zone Overrides', uniqueZones);
       M.AutoInit(); M.Modal.getInstance(document.getElementById('modal-exceptions')).open();
     }
 
@@ -544,26 +551,45 @@
     function processTransfers(){
       const oldIdx = {};
       (fileOldRows||[]).forEach(r=>{ const nameVal = mapping.name ? (r[mapping.name]||'') : ''; const key = nameVal.toString().trim().toLowerCase(); if(key) oldIdx[key]=r; });
-      const transfers = [];
+      const processedMissionaries = [];
       (fileNewRows||[]).forEach(r=>{
-        const nameVal = mapping.name ? (r[mapping.name]||'') : ''; const key = nameVal.toString().trim().toLowerCase(); const old = oldIdx[key]; if(!old) return;
-        const oldZone = (mapping.zone ? old[mapping.zone] : '').toString(); const newZone = (mapping.zone ? r[mapping.zone] : '').toString();
-        const oldArea = (mapping.area ? old[mapping.area] : '').toString(); const newArea = (mapping.area ? r[mapping.area] : '').toString();
-        if(oldZone !== newZone || oldArea !== newArea){
-          const originCity = areaToCity(oldZone || oldArea); const destinationCity = areaToCity(newZone || newArea);
-          transfers.push({
-            id: key, type: (r[mapping.type]||'').toString(), name: (r[mapping.name]||'').toString(),
-            originZone: oldZone, destinationZone: newZone, originArea: oldArea, destinationArea: newArea,
-            originCity: originCity || normalizeZoneName(oldZone || oldArea), destinationCity: destinationCity || normalizeZoneName(newZone || newArea),
-            transport: defaultTransportForPair(originCity || normalizeZoneName(oldZone||oldArea), destinationCity || normalizeZoneName(newZone||newArea)),
-            date: '', tbd: false, time: '', instructions:'', leader:false
-          });
+        const nameVal = (mapping.name ? r[mapping.name] : '').toString().trim();
+        const key = nameVal.toLowerCase();
+        if(!key) return;
+        const old = oldIdx[key];
+        
+        const newZone = (mapping.zone ? r[mapping.zone] : '').toString();
+        const newDistrict = (mapping.district ? r[mapping.district] : '').toString();
+        const newArea = (mapping.area ? r[mapping.area] : '').toString();
+
+        if (old) { // Missionary existed before, check for transfer
+            const oldZone = (mapping.zone ? old[mapping.zone] : '').toString();
+            const oldDistrict = (mapping.district ? old[mapping.district] : '').toString();
+            const oldArea = (mapping.area ? old[mapping.area] : '').toString();
+            if (oldZone !== newZone || oldDistrict !== newDistrict || oldArea !== newArea) {
+                const originCity = determineCity({ area: oldArea, district: oldDistrict, zone: oldZone });
+                const destinationCity = determineCity({ area: newArea, district: newDistrict, zone: newZone });
+                processedMissionaries.push({
+                    id: key, name: nameVal, type: (r[mapping.type]||'').toString(),
+                    originCity: originCity, destinationCity: destinationCity, destinationArea: newArea,
+                    transport: defaultTransportForPair(originCity, destinationCity),
+                    date: '', tbd: false, time: '', instructions:'', leader:false
+                });
+            }
+        } else { // New missionary
+            const destinationCity = determineCity({ area: newArea, district: newDistrict, zone: newZone });
+            processedMissionaries.push({
+                id: key, name: nameVal, type: (r[mapping.type]||'').toString(),
+                originCity: 'Beira', destinationCity: destinationCity, destinationArea: newArea,
+                transport: defaultTransportForPair('Beira', destinationCity),
+                date: '', tbd: true, time: '', instructions:'', leader:false
+            });
         }
       });
       state.groups = {};
-      transfers.forEach(m=>{ const key = `${m.originCity} -> ${m.destinationCity}`; if(!state.groups[key]) state.groups[key]=[]; state.groups[key].push(m); });
+      processedMissionaries.forEach(m=>{ const key = `${m.originCity} -> ${m.destinationCity}`; if(!state.groups[key]) state.groups[key]=[]; state.groups[key].push(m); });
       saveToLS(); 
-      M.toast({html: translations[state.lang].toast_processed.replace('{count}', transfers.length)});
+      M.toast({html: translations[state.lang].toast_processed.replace('{count}', processedMissionaries.length)});
     }
 
     function defaultTransportForPair(from, to){
@@ -688,19 +714,16 @@
             leader: document.getElementById('edit-leader').checked
         };
 
-        // Remove from old group
         state.groups[originalGroupKey].splice(index, 1);
         if (state.groups[originalGroupKey].length === 0) {
             delete state.groups[originalGroupKey];
         }
 
-        // Add to new group
         const newGroupKey = `${missionary.originCity} -> ${missionary.destinationCity}`;
         if (!state.groups[newGroupKey]) {
             state.groups[newGroupKey] = [];
         }
         state.groups[newGroupKey].push(missionary);
-
         saveToLS();
         location.reload();
     });
@@ -731,8 +754,6 @@
       
       for (let i = 0; i < cards.length; i++) {
         const card = cards[i];
-        
-        // Prepare card for printing
         const toHide = card.querySelectorAll('.bulk-edit-row, .actions-header, .actions-cell');
         toHide.forEach(el => el.style.display = 'none');
         
@@ -742,7 +763,6 @@
                 const tbdWrapper = row.querySelector('.tbd-wrapper');
                 if (tbdWrapper) tbdWrapper.style.display = 'none';
             }
-            // Swap textarea for div for wrapping
             const instrTextarea = row.querySelector('.instr-input');
             const pdfDiv = row.querySelector('.pdf-instr-wrap');
             if (instrTextarea) instrTextarea.style.display = 'none';
@@ -751,7 +771,6 @@
 
         const canvas = await html2canvas(card, { scale: 2 });
         
-        // Restore card to original view
         toHide.forEach(el => el.style.display = '');
         card.querySelectorAll('tbody tr').forEach(row => {
             const tbdWrapper = row.querySelector('.tbd-wrapper');
