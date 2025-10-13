@@ -45,22 +45,36 @@
 
   <div class="container">
     <div class="section">
-      <h5 data-translate="upload_title">Upload transferboards</h5>
-      <div class="row">
-        <div class="col s12 m6">
-          <label data-translate="old_board_label">Old transferboard (from)</label>
-          <input id="file-old" type="file" accept=".xlsx,.xls,.csv" />
+      <div class="row valign-wrapper">
+        <div class="col s6">
+          <h5 data-translate="upload_title">Upload transferboards</h5>
         </div>
-        <div class="col s12 m6">
-          <label data-translate="new_board_label">New transferboard (to)</label>
-          <input id="file-new" type="file" accept=".xlsx,.xls,.csv" />
+        <div class="col s6 input-field" style="max-width: 250px; margin-left: auto;">
+          <select id="lang-select">
+            <option value="en">English</option>
+            <option value="pt">Português</option>
+          </select>
+          <label data-translate="language">Language</label>
         </div>
       </div>
+      
+      <div id="upload-section">
+        <div class="row">
+          <div class="col s12 m6">
+            <label data-translate="old_board_label">Old transferboard (from)</label>
+            <input id="file-old" type="file" accept=".xlsx,.xls,.csv" />
+          </div>
+          <div class="col s12 m6">
+            <label data-translate="new_board_label">New transferboard (to)</label>
+            <input id="file-new" type="file" accept=".xlsx,.xls,.csv" />
+          </div>
+        </div>
+        <a id="btn-process" class="btn" data-translate="process_upload">Process upload</a>
+      </div>
+
       <div class="btn-group">
-          <a id="btn-process" class="btn" data-translate="process_upload">Process upload</a>
           <a id="btn-export-pdf" class="btn green" data-translate="export_pdf">Export PDF</a>
           <a id="btn-export-csv" class="btn blue" data-translate="export_csv">Export CSV</a>
-          <a id="btn-clear-local" class="btn red" data-translate="clear_all_travel">Clear All Saved Travel</a>
       </div>
     </div>
 
@@ -212,18 +226,7 @@
   <div id="modal-settings" class="modal">
     <div class="modal-content">
       <h5 data-translate="settings">Settings</h5>
-      <div class="row">
-        <div class="input-field col s6">
-          <select id="lang-select">
-            <option value="en">English</option>
-            <option value="pt">Português</option>
-          </select>
-          <label data-translate="language">Language</label>
-        </div>
-        <div class="col s6">
-          <a id="btn-delete-all" class="btn red" data-translate="delete_all_travel">Delete All Missionary Travel</a>
-        </div>
-      </div>
+       <a id="btn-clear-local" class="btn red" data-translate="clear_all_travel">Clear All Saved Travel</a>
       <h6 data-translate="exceptions_title">Area/District Exceptions</h6>
       <div id="exceptions-list"></div>
       <div class="section">
@@ -481,7 +484,15 @@
     // -- State Management
     function loadFromLS() { try { return JSON.parse(localStorage.getItem(LS_KEY)); } catch(e){return null} }
     function saveToLS() { localStorage.setItem(LS_KEY, JSON.stringify(state)); }
-    function loadState(){ renderExceptions(); renderGroups(); setLanguage(state.lang || 'pt'); }
+    function loadState(){
+        renderExceptions();
+        renderGroups();
+        setLanguage(state.lang || 'pt');
+        if (Object.keys(state.groups || {}).length > 0) {
+            const uploadSection = document.getElementById('upload-section');
+            if(uploadSection) uploadSection.style.display = 'none';
+        }
+    }
 
     // -- Helpers
     function getLastName(fullName) { if (!fullName) return ''; return fullName.split(',')[0].trim(); }
@@ -674,13 +685,17 @@
             <tr><th>${T.table_header_type}</th><th>${T.table_header_name}</th><th>${T.table_header_origin}</th><th>${T.table_header_destination}</th><th>${T.table_header_dest_area}</th><th>${T.table_header_transport}</th><th>${T.table_header_date}</th><th>${T.table_header_time}</th><th>${T.table_header_instructions}</th><th>${T.table_header_new}</th><th>${T.table_header_leader}</th><th class="actions-header">${T.table_header_actions}</th></tr>
           </thead>`;
         const tbody = document.createElement('tbody');
-        state.groups[key].forEach((m, idx)=>{
+        const group = state.groups[key];
+        const sortedGroup = [...group].sort((a, b) => (a.isNew ? 1 : 0) - (b.isNew ? 1 : 0));
+
+        sortedGroup.forEach(m =>{
           const tr = document.createElement('tr');
+          tr.dataset.id = m.id;
           tr.innerHTML = `<td>${m.type}</td><td>${getLastName(m.name)}</td><td>${m.originCity}</td><td>${m.destinationCity}</td><td>${m.destinationArea}</td>
             <td><select class="transport-select browser-default"><option value="Bus">${T.transport_bus}</option><option value="Plane">${T.transport_plane}</option><option value="Chapa">${T.transport_chapa}</option><option value="Txopela/Taxi">${T.transport_taxi}</option><option value="Ride">${T.transport_ride}</option></select></td>
             <td><input type="date" class="date-input" value="${m.date}"><p class="tbd-wrapper" style="margin-top:5px;"><label><input type="checkbox" class="tbd-checkbox" ${m.tbd? 'checked':''}><span>${T.tbd}</span></label></p></td><td><input type="time" class="time-input" value="${m.time}"></td>
             <td><textarea class="instr-input materialize-textarea">${m.instructions || ''}</textarea><div class="pdf-instr-wrap">${m.instructions || ''}</div></td>
-            <td class="new-status-cell">${m.isNew ? '✔️' : ''}</td>
+            <td class="new-status-cell">${m.isNew ? '<label><input type="checkbox" checked="checked" disabled="disabled" /><span></span></label>' : ''}</td>
             <td><label><input type="checkbox" class="leader-checkbox" ${m.leader ? 'checked':''}><span></span></label></td>
             <td class="actions-cell"><div class="action-buttons"><a class="btn-small blue edit-btn"><i class="fa fa-pencil"></i></a><a class="btn-small red remove-btn"><i class="fa fa-trash"></i></a></div></td>`;
           tbody.appendChild(tr);
@@ -698,13 +713,42 @@
           setTimeout(() => autoResizeTextarea(instrTextarea), 0);
 
           tr.querySelector('.transport-select').value = m.transport;
+          
           tr.querySelectorAll('input, select, textarea').forEach(el=>{
-            el.addEventListener('change', ()=>{
-              const item = state.groups[key][idx]; item.transport = tr.querySelector('.transport-select').value; item.date = dateInput.value; item.tbd = tbdCheckbox.checked; item.time = tr.querySelector('.time-input').value; item.instructions = instrTextarea.value; item.leader = tr.querySelector('.leader-checkbox').checked; saveToLS();
+            el.addEventListener('change', (e)=>{
+              const missionaryId = e.target.closest('tr').dataset.id;
+              const item = group.find(miss => miss.id === missionaryId);
+              if (!item) return;
+              item.transport = tr.querySelector('.transport-select').value; 
+              item.date = dateInput.value; 
+              item.tbd = tbdCheckbox.checked; 
+              item.time = tr.querySelector('.time-input').value; 
+              item.instructions = instrTextarea.value; 
+              item.leader = tr.querySelector('.leader-checkbox').checked; 
+              saveToLS();
             });
           });
-          tr.querySelector('.remove-btn').addEventListener('click', ()=>{ if(confirm(T.confirm_remove_missionary)){ state.groups[key].splice(idx,1); if(state.groups[key].length===0) delete state.groups[key]; saveToLS(); renderGroups(); } });
-          tr.querySelector('.edit-btn').addEventListener('click', () => openEditModal(key, idx));
+
+          tr.querySelector('.remove-btn').addEventListener('click', (e)=>{ 
+            if(confirm(T.confirm_remove_missionary)){
+                const missionaryId = e.currentTarget.closest('tr').dataset.id;
+                const indexToRemove = group.findIndex(miss => miss.id === missionaryId);
+                if(indexToRemove > -1) {
+                    group.splice(indexToRemove, 1);
+                    if(group.length===0) delete state.groups[key];
+                    saveToLS();
+                    renderGroups();
+                }
+            }
+          });
+
+          tr.querySelector('.edit-btn').addEventListener('click', (e) => {
+            const missionaryId = e.currentTarget.closest('tr').dataset.id;
+            const indexToEdit = group.findIndex(miss => miss.id === missionaryId);
+            if(indexToEdit > -1) {
+                openEditModal(key, indexToEdit);
+            }
+          });
         });
         table.appendChild(tbody); content.appendChild(table); card.appendChild(content);
         const bulkUpdate = (field, value) => { if(!value && field !== 'instructions') return; state.groups[key].forEach(m => { m[field] = value; }); saveToLS(); renderGroups(); M.toast({html: T.toast_updated.replace('{field}', field)}); };
@@ -763,7 +807,7 @@
         const originalMissionary = state.groups[originalGroupKey][index];
         
         const missionary = {
-            ...originalMissionary, // Preserve properties like isNew
+            ...originalMissionary,
             id: document.getElementById('edit-name').value.trim().toLowerCase(),
             name: document.getElementById('edit-name').value.trim(),
             type: document.getElementById('edit-type').value,
@@ -799,8 +843,7 @@
 
     function renderExceptions(){ const el = document.getElementById('exceptions-list'); el.innerHTML=''; for(const k of Object.keys(state.exceptions||{})){ const row = document.createElement('div'); row.className='row'; row.innerHTML = `<div class="col s4">${k}</div><div class="col s4">${state.exceptions[k].city || ''}</div><div class="col s4"><a data-key="${k}" class="btn-small red btn-ex-remove">Remove</a></div>`; el.appendChild(row); row.querySelector('.btn-ex-remove').addEventListener('click', (e)=>{ delete state.exceptions[e.currentTarget.dataset.key]; saveToLS(); renderExceptions(); }); } }
     
-    document.getElementById('btn-delete-all').addEventListener('click', ()=>{ if(confirm(translations[state.lang].confirm_delete_all)){ state.groups = {}; saveToLS(); renderGroups(); } });
-    document.getElementById('btn-clear-local').addEventListener('click', ()=>{ if(confirm(translations[state.lang].confirm_clear_local)){ localStorage.removeItem(LS_KEY); state={groups:{},exceptions:defaults.exceptions, lang:'pt'}; loadState(); } });
+    document.getElementById('btn-clear-local').addEventListener('click', ()=>{ if(confirm(translations[state.lang].confirm_clear_local)){ localStorage.removeItem(LS_KEY); location.reload(); } });
     
     document.getElementById('lang-select').addEventListener('change', (e)=>{
       state.lang = e.target.value;
