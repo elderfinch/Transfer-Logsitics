@@ -23,7 +23,7 @@
     .small-input { width:120px }
     .time-input { width:140px }
     .btn-group { margin-top: 10px; }
-    .btn-group .btn { margin-right: 8px; }
+    .btn-group .btn { margin-right: 8px; margin-bottom: 8px; }
     #modal-add h6, #modal-edit h6 { margin: 10px 0 2px 0; font-size: 0.9rem; color: #555; }
     .bulk-instr-input, .instr-input {
         min-height: 45px;
@@ -41,6 +41,7 @@
     .action-buttons a { margin: 0 4px; }
     .hidden-input { display: none; margin-top: 10px !important; }
     .narrow-select { width: 110px; }
+    .hidden-file-input { display: none; }
   </style>
 </head>
 <body>
@@ -95,6 +96,8 @@
       <div class="btn-group">
           <a id="btn-export-pdf" class="btn green" data-translate="export_pdf">Export PDF</a>
           <a id="btn-export-csv" class="btn blue" data-translate="export_csv">Export CSV</a>
+          <a id="btn-update-origins" class="btn orange" data-translate="update_origin_areas_btn">Update Origin Areas</a>
+          <input type="file" id="file-update-origin" class="hidden-file-input" accept=".xlsx,.xls,.csv" />
           <a id="btn-clear-local" class="btn red" data-translate="clear_all_travel">Clear All Saved Travel</a>
       </div>
     </div>
@@ -291,6 +294,17 @@
     </div>
   </div>
 
+  <div id="modal-map-update" class="modal">
+    <div class="modal-content">
+        <h5 data-translate="map_origin_areas_title">Map Origin Area Columns</h5>
+        <p data-translate="map_origin_areas_desc">Select the columns for Missionary Name and their Origin Area.</p>
+        <div id="mapping-forms-update"></div>
+    </div>
+    <div class="modal-footer">
+        <a id="btn-map-update-apply" class="modal-close btn">Apply Update</a>
+    </div>
+  </div>
+
   <div id="modal-exceptions" class="modal modal-fixed-footer">
     <div class="modal-content">
       <h5 data-translate="assign_exceptions_title">Assign exceptions...</h5>
@@ -338,11 +352,15 @@
         en: {
             app_title: "Transfer Logistics",
             upload_title: "Start New Plan",
+            restore_title: "Restore Plan from CSV",
+            restore_desc: "Upload travel_plans.csv file to restore progress",
+            restore_button: "Restore",
             old_board_label: "Old transferboard (from)",
             new_board_label: "New transferboard (to)",
             process_upload: "Process upload",
             export_pdf: "Export PDF",
             export_csv: "Export CSV",
+            update_origin_areas_btn: "Update Origin Areas",
             clear_all_travel: "Clear All Saved Travel",
             groups_title: "Groups",
             add_missionary_title: "Add Missionary",
@@ -362,15 +380,14 @@
             save: "Save",
             settings: "Settings",
             language: "Language",
-            restore_title: "Restore Plan from CSV",
-            restore_desc: "Upload travel_plans.csv file to restore progress",
-            restore_button: "Restore",
             delete_all_travel: "Delete All Missionary Travel",
             exceptions_title: "Area/District Exceptions",
             add_exception_title: "Add New Exception",
             area_zone_name: "Area/District/Zone Name",
             override_city: "Override City",
             map_columns_title: "Map columns (choose which column in your spreadsheet corresponds to these fields)",
+            map_origin_areas_title: "Map Origin Area Columns",
+            map_origin_areas_desc: "Select the columns for Missionary Name and their Origin Area.",
             apply_mapping: "Apply Mapping",
             assign_exceptions_title: "Assign exceptions (areas/districts that map to a different city)",
             assign_exceptions_desc: "For any area or zone below, you can enter a city name to override the default. Check 'Apply' to save the exception.",
@@ -392,9 +409,11 @@
             bulk_edit_instructions_placeholder: "Set instructions for all",
             bulk_edit_transport_placeholder: "Set Transport",
             toast_select_files: "Please select both files",
+            toast_restore_file: "Please select a CSV file to restore",
             toast_processed: "Processed {count} missionaries (transfers and new arrivals).",
             toast_added: "Added",
             toast_restored: "Plan restored successfully.",
+            toast_origins_updated: "Origin areas updated successfully.",
             toast_updated: "Updated {field} for all in group.",
             toast_pdf_generating: "Generating PDF... Please wait.",
             toast_pdf_generated: "PDF generated successfully.",
@@ -412,11 +431,15 @@
         pt: {
             app_title: "Logística de Transferência",
             upload_title: "Iniciar Novo Plano",
+            restore_title: "Restaurar Plano do CSV",
+            restore_desc: "Carregar ficheiro travel_plans.csv para restaurar o progresso",
+            restore_button: "Restaurar",
             old_board_label: "Quadro de transferência antigo (de)",
             new_board_label: "Quadro de transferência novo (para)",
             process_upload: "Processar carregamento",
             export_pdf: "Exportar PDF",
             export_csv: "Exportar CSV",
+            update_origin_areas_btn: "Atualizar Áreas de Origem",
             clear_all_travel: "Limpar Viagens Guardadas",
             groups_title: "Grupos",
             add_missionary_title: "Adicionar Missionário",
@@ -436,15 +459,14 @@
             save: "Guardar",
             settings: "Definições",
             language: "Idioma",
-            restore_title: "Restaurar Plano do CSV",
-            restore_desc: "Carregar ficheiro travel_plans.csv para restaurar o progresso",
-            restore_button: "Restaurar",
             delete_all_travel: "Apagar Todas as Viagens de Missionários",
             exceptions_title: "Exceções de Área/Distrito",
             add_exception_title: "Adicionar Nova Exceção",
             area_zone_name: "Nome da Área/Distrito/Zona",
             override_city: "Cidade Alternativa",
             map_columns_title: "Mapear colunas (escolha qual coluna da sua planilha corresponde a estes campos)",
+            map_origin_areas_title: "Mapear Colunas da Área de Origem",
+            map_origin_areas_desc: "Selecione as colunas para o Nome do Missionário e a sua Área de Origem.",
             apply_mapping: "Aplicar Mapeamento",
             assign_exceptions_title: "Atribuir exceções (áreas/distritos que mapeiam para uma cidade diferente)",
             assign_exceptions_desc: "Para qualquer área ou zona abaixo, pode inserir um nome de cidade para substituir o padrão. Marque 'Aplicar' para guardar a exceção.",
@@ -466,9 +488,11 @@
             bulk_edit_instructions_placeholder: "Definir instruções para todos",
             bulk_edit_transport_placeholder: "Definir Transporte",
             toast_select_files: "Por favor, selecione ambos os ficheiros",
+            toast_restore_file: "Por favor, selecione um ficheiro CSV para restaurar",
             toast_processed: "Processados {count} missionários (transferências e novas chegadas).",
             toast_added: "Adicionado",
             toast_restored: "Plano restaurado com sucesso.",
+            toast_origins_updated: "Áreas de origem atualizadas com sucesso.",
             toast_updated: "{field} atualizado para todos no grupo.",
             toast_pdf_generating: "A gerar PDF... Por favor, aguarde.",
             toast_pdf_generated: "PDF gerado com sucesso.",
@@ -1031,7 +1055,7 @@
         const lang = state.lang || 'pt';
         const T = translations[lang];
         const delimiter = ';';
-        const headers = [T.table_header_type, T.table_header_name, T.table_header_origin_area, T.table_header_dest_area, T.table_header_transport, T.table_header_date, T.table_header_time, T.table_header_instructions, T.table_header_new, T.table_header_leader];
+        const headers = [T.table_header_type, T.table_header_name, T.table_header_origin_area, T.table_header_dest_area, "Origin City", "Destination City", T.table_header_transport, T.table_header_date, T.table_header_time, T.table_header_instructions, T.table_header_new, T.table_header_leader];
         let csvContent = "data:text/csv;charset=utf-8," + headers.join(delimiter) + "\n";
         const allMissionaries = Object.values(state.groups || {}).flat();
         
@@ -1044,7 +1068,7 @@
             const sanitizedOriginArea = (m.originArea || '').replace(/"/g, '""');
             const sanitizedArea = (m.destinationArea || '').replace(/"/g, '""');
             
-            const row = [m.type, `"${sanitizedName}"`, `"${sanitizedOriginArea}"`, `"${sanitizedArea}"`, transportText, m.date, m.time, `"${sanitizedInstructions}"`, newText, leaderText];
+            const row = [m.type, `"${sanitizedName}"`, `"${sanitizedOriginArea}"`, `"${sanitizedArea}"`, m.originCity, m.destinationCity, transportText, m.date, m.time, `"${sanitizedInstructions}"`, newText, leaderText];
             csvContent += row.join(delimiter) + "\n";
         });
 
@@ -1055,6 +1079,77 @@
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+    });
+
+    document.getElementById('btn-restore').addEventListener('click', async () => {
+        const file = document.getElementById('file-restore').files[0];
+        if (!file) {
+            M.toast({ html: translations[state.lang].toast_restore_file });
+            return;
+        }
+
+        const data = await file.text();
+        const rows = data.split('\n').slice(1); // Skip header row
+        const restoredMissionaries = [];
+        
+        // Define headers for both languages to find column indices
+        const T_EN = translations.en;
+        const T_PT = translations.pt;
+        const headersEN = [T_EN.table_header_type, T_EN.table_header_name, T_EN.table_header_origin_area, T_EN.table_header_dest_area, "Origin City", "Destination City", T_EN.table_header_transport, T_EN.table_header_date, T_EN.table_header_time, T_EN.table_header_instructions, T_EN.table_header_new, T_EN.table_header_leader];
+        const headersPT = [T_PT.table_header_type, T_PT.table_header_name, T_PT.table_header_origin_area, T_PT.table_header_dest_area, "Cidade de Origem", "Cidade de Destino", T_PT.table_header_transport, T_PT.table_header_date, T_PT.table_header_time, T_PT.table_header_instructions, T_PT.table_header_new, T_PT.table_header_leader];
+
+        const fileHeaders = data.split('\n')[0].trim().split(';');
+        const headerMap = {};
+        
+        headersEN.forEach((h, i) => {
+            let index = fileHeaders.indexOf(h);
+            if (index === -1) { // Try Portuguese header
+                index = fileHeaders.indexOf(headersPT[i]);
+            }
+            if (index !== -1) {
+                headerMap[h] = index;
+            }
+        });
+
+        const unquote = (str) => str.startsWith('"') && str.endsWith('"') ? str.slice(1, -1).replace(/""/g, '"') : str;
+
+        for (const row of rows) {
+            if (!row.trim()) continue;
+            const cols = row.split(';');
+
+            const transportValEN = Object.keys(T_EN).find(key => T_EN[key] === unquote(cols[headerMap[T_EN.table_header_transport]]));
+            const transportValPT = Object.keys(T_PT).find(key => T_PT[key] === unquote(cols[headerMap[T_EN.table_header_transport]]));
+            const transportKey = (transportValEN || transportValPT || '').replace('transport_', '');
+
+            const missionary = {
+                type: unquote(cols[headerMap[T_EN.table_header_type]]),
+                name: unquote(cols[headerMap[T_EN.table_header_name]]),
+                originArea: unquote(cols[headerMap[T_EN.table_header_origin_area]]),
+                destinationArea: unquote(cols[headerMap[T_EN.table_header_dest_area]]),
+                originCity: unquote(cols[headerMap["Origin City"]]),
+                destinationCity: unquote(cols[headerMap["Destination City"]]),
+                transport: transportKey,
+                date: unquote(cols[headerMap[T_EN.table_header_date]]),
+                time: unquote(cols[headerMap[T_EN.table_header_time]]),
+                instructions: unquote(cols[headerMap[T_EN.table_header_instructions]]),
+                isNew: unquote(cols[headerMap[T_EN.table_header_new]]).toLowerCase() === 'yes',
+                leader: unquote(cols[headerMap[T_EN.table_header_leader]]).toLowerCase() === 'yes',
+                id: unquote(cols[headerMap[T_EN.table_header_name]]).toLowerCase(),
+                tbd: unquote(cols[headerMap[T_EN.table_header_date]]) === T_EN.tbd || unquote(cols[headerMap[T_EN.table_header_date]]) === T_PT.tbd
+            };
+            restoredMissionaries.push(missionary);
+        }
+
+        state.groups = {};
+        restoredMissionaries.forEach(m => {
+            const key = `${m.originCity} -> ${m.destinationCity}`;
+            if (!state.groups[key]) state.groups[key] = [];
+            state.groups[key].push(m);
+        });
+
+        saveToLS();
+        M.toast({ html: translations[state.lang].toast_restored });
+        location.reload();
     });
 
     // -- Initial Load
