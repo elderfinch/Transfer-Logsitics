@@ -7,8 +7,11 @@
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-  <style>
-    body { padding: 16px; }
+<style>
+    body { 
+        padding: 16px; 
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+    }
     .container { width: 95%; max-width: initial; }
     .chip-leader { background: #ffd54f; }
     .group-card { margin-bottom: 18px; }
@@ -265,7 +268,6 @@
   <div id="modal-map" class="modal">
     <div class="modal-content">
       <h5 data-translate="map_columns_title">Map columns...</h5>
-      <p><strong data-translate="map_columns_note_strong">Note:</strong> <span data-translate="map_columns_note_text">...the missionary name will be used as the identifier.</span></p>
       <div id="mapping-forms"></div>
     </div>
     <div class="modal-footer">
@@ -296,6 +298,7 @@
   </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
@@ -353,8 +356,6 @@
             area_zone_name: "Area/District/Zone Name",
             override_city: "Override City",
             map_columns_title: "Map columns (choose which column in your spreadsheet corresponds to these fields)",
-            map_columns_note_strong: "Note:",
-            map_columns_note_text: "There is no ID column — the missionary name will be used as the identifier.",
             apply_mapping: "Apply Mapping",
             assign_exceptions_title: "Assign exceptions (areas/districts that map to a different city)",
             assign_exceptions_desc: "For any area or zone below, you can enter a city name to override the default. Check 'Apply' to save the exception.",
@@ -425,8 +426,6 @@
             area_zone_name: "Nome da Área/Distrito/Zona",
             override_city: "Cidade Alternativa",
             map_columns_title: "Mapear colunas (escolha qual coluna da sua planilha corresponde a estes campos)",
-            map_columns_note_strong: "Nota:",
-            map_columns_note_text: "Não há coluna de ID — o nome do missionário será usado como identificador.",
             apply_mapping: "Aplicar Mapeamento",
             assign_exceptions_title: "Atribuir exceções (áreas/distritos que mapeiam para uma cidade diferente)",
             assign_exceptions_desc: "Para qualquer área ou zona abaixo, pode inserir um nome de cidade para substituir o padrão. Marque 'Aplicar' para guardar a exceção.",
@@ -709,14 +708,11 @@
 
           const typeIsEditable = !(m.type === 'Elder' || m.type === 'Sister');
           const typeSelectHTML = `<select class="type-select-editable browser-default narrow-select"><option value="" ${!m.type ? 'selected' : ''}>${T.choose_option}</option><option value="Elder">Elder</option><option value="Sister">Sister</option></select>`;
-          
-          let typeCellContent = '';
-          if (typeIsEditable) {
-              typeCellContent = `${typeSelectHTML}<div class="pdf-type-wrap">${m.type}</div>`;
-          } else {
-              typeCellContent = m.type;
-          }
-          const typeCellHTML = `<td>${typeCellContent}</td>`;
+          const typeCellHTML = `
+            <td>
+                <span class="pdf-type-wrap">${m.type}</span>
+                ${typeIsEditable ? typeSelectHTML : `<span>${m.type}</span>`}
+            </td>`;
 
           tr.innerHTML = `${typeCellHTML}<td>${getLastName(m.name)}</td><td>${m.originCity}</td><td>${m.destinationCity}</td><td>${m.destinationArea}</td>
             <td><select class="transport-select browser-default"><option value="Bus">${T.transport_bus}</option><option value="Plane">${T.transport_plane}</option><option value="Chapa">${T.transport_chapa}</option><option value="Txopela/Taxi">${T.transport_taxi}</option><option value="Ride">${T.transport_ride}</option></select></td>
@@ -933,73 +929,67 @@
         });
     });
     
-    // -- Export Functions
-    document.getElementById('btn-export-pdf').addEventListener('click', async () => {
+// -- Export Functions
+    document.getElementById('btn-export-pdf').addEventListener('click', () => {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF({ orientation: 'l', unit: 'mm', format: 'a4' });
-        const cards = Array.from(document.querySelectorAll('.group-card'));
-        if (cards.length === 0) return;
-        M.toast({ html: translations[state.lang].toast_pdf_generating });
+        const lang = state.lang || 'pt';
+        const T = translations[lang];
 
-        for (let i = 0; i < cards.length; i++) {
-            const card = cards[i];
+        const groups = Object.keys(state.groups);
+        if (groups.length === 0) return;
 
-            const toHide = card.querySelectorAll('.bulk-edit-row, .actions-header, .actions-cell');
-            toHide.forEach(el => el.style.display = 'none');
+        M.toast({ html: T.toast_pdf_generating });
 
-            card.querySelectorAll('tbody tr').forEach(row => {
-                const dateInput = row.querySelector('.date-input');
-                if (dateInput && dateInput.value) {
-                    const tbdWrapper = row.querySelector('.tbd-wrapper');
-                    if (tbdWrapper) tbdWrapper.style.display = 'none';
-                }
+        groups.forEach((groupKey, index) => {
+            if (index > 0) {
+                doc.addPage(); // Add a page break before each new table (except the first one)
+            }
 
-                const instrTextarea = row.querySelector('.instr-input');
-                const pdfInstrDiv = row.querySelector('.pdf-instr-wrap');
-                if (instrTextarea) instrTextarea.style.display = 'none';
-                if (pdfInstrDiv) pdfInstrDiv.style.display = 'block';
+            const group = state.groups[groupKey];
+            const sortedGroup = [...group].sort((a, b) => (a.isNew ? 1 : -1) - (b.isNew ? 1 : -1));
 
-                const typeSelect = row.querySelector('.type-select-editable');
-                if (typeSelect) {
-                    const pdfTypeDiv = row.querySelector('.pdf-type-wrap');
-                    if (pdfTypeDiv) {
-                        pdfTypeDiv.textContent = typeSelect.value;
-                        pdfTypeDiv.style.display = 'block';
-                    }
-                    typeSelect.style.display = 'none';
-                }
+            const head = [[
+                T.table_header_type, T.table_header_name, T.table_header_origin, T.table_header_destination, 
+                T.table_header_dest_area, T.table_header_transport, T.table_header_date, T.table_header_time, 
+                T.table_header_instructions, T.table_header_new, T.table_header_leader
+            ]];
+
+            const body = sortedGroup.map(m => {
+                const transportText = m.transport ? (translations[lang][`transport_${m.transport.toLowerCase().replace('/','_')}`] || m.transport) : '';
+                return [
+                    m.type,
+                    getLastName(m.name),
+                    m.originCity,
+                    m.destinationCity,
+                    m.destinationArea,
+                    transportText,
+                    m.tbd ? T.tbd : m.date,
+                    m.time,
+                    m.instructions || '',
+                    m.isNew ? '✔️' : '',
+                    m.leader ? '⭐' : ''
+                ];
             });
 
-            const canvas = await html2canvas(card, { scale: 2 });
+            // Add a title for the group at the top of the page
+            doc.setFontSize(16);
+            doc.text(groupKey, 14, 15);
 
-            toHide.forEach(el => el.style.display = '');
-            card.querySelectorAll('tbody tr').forEach(row => {
-                const tbdWrapper = row.querySelector('.tbd-wrapper');
-                if (tbdWrapper) tbdWrapper.style.display = '';
-                
-                const instrTextarea = row.querySelector('.instr-input');
-                if(instrTextarea) instrTextarea.style.display = '';
-
-                const pdfInstrDiv = row.querySelector('.pdf-instr-wrap');
-                if(pdfInstrDiv) pdfInstrDiv.style.display = 'none';
-
-                const typeSelect = row.querySelector('.type-select-editable');
-                if(typeSelect) typeSelect.style.display = '';
-                
-                const pdfTypeDiv = row.querySelector('.pdf-type-wrap');
-                if(pdfTypeDiv) pdfTypeDiv.style.display = 'none';
+            doc.autoTable({
+                head: head,
+                body: body,
+                startY: 23, // Start table below the title
+                theme: 'striped',
+                headStyles: { fillColor: [0, 150, 136] }, // Teal color for header
+                columnStyles: {
+                    8: { cellWidth: 50 }, // Instructions column
+                }
             });
+        });
 
-            const imgData = canvas.toDataURL('image/jpeg', 0.7);
-            const imgProps = doc.getImageProperties(imgData);
-            const pdfWidth = doc.internal.pageSize.getWidth() - 20;
-            const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-            
-            if (i > 0) doc.addPage();
-            doc.addImage(imgData, 'JPEG', 10, 10, pdfWidth, pdfHeight);
-        }
         doc.save('transfer_logistics.pdf');
-        M.toast({ html: translations[state.lang].toast_pdf_generated });
+        M.toast({ html: T.toast_pdf_generated });
     });
 
     document.getElementById('btn-export-csv').addEventListener('click', () => {
