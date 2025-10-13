@@ -32,6 +32,7 @@
     }
     .action-buttons a { margin: 0 4px; }
     .hidden-input { display: none; margin-top: 10px !important; }
+    .narrow-select { width: 110px; }
   </style>
 </head>
 <body>
@@ -707,12 +708,15 @@
           tr.dataset.id = m.id;
 
           const typeIsEditable = !(m.type === 'Elder' || m.type === 'Sister');
-          const typeSelectHTML = `<select class="type-select-editable browser-default"><option value="" ${m.type === '' ? 'selected' : ''}>${T.choose_option}</option><option value="Elder" ${m.type === 'Elder' ? 'selected' : ''}>Elder</option><option value="Sister" ${m.type === 'Sister' ? 'selected' : ''}>Sister</option></select>`;
-          const typeCellHTML = `
-            <td>
-                <span class="pdf-type-wrap">${m.type}</span>
-                ${typeIsEditable ? typeSelectHTML : m.type}
-            </td>`;
+          const typeSelectHTML = `<select class="type-select-editable browser-default narrow-select"><option value="" ${!m.type ? 'selected' : ''}>${T.choose_option}</option><option value="Elder">Elder</option><option value="Sister">Sister</option></select>`;
+          
+          let typeCellContent = '';
+          if (typeIsEditable) {
+              typeCellContent = `${typeSelectHTML}<div class="pdf-type-wrap">${m.type}</div>`;
+          } else {
+              typeCellContent = m.type;
+          }
+          const typeCellHTML = `<td>${typeCellContent}</td>`;
 
           tr.innerHTML = `${typeCellHTML}<td>${getLastName(m.name)}</td><td>${m.originCity}</td><td>${m.destinationCity}</td><td>${m.destinationArea}</td>
             <td><select class="transport-select browser-default"><option value="Bus">${T.transport_bus}</option><option value="Plane">${T.transport_plane}</option><option value="Chapa">${T.transport_chapa}</option><option value="Txopela/Taxi">${T.transport_taxi}</option><option value="Ride">${T.transport_ride}</option></select></td>
@@ -931,62 +935,71 @@
     
     // -- Export Functions
     document.getElementById('btn-export-pdf').addEventListener('click', async () => {
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF({ orientation: 'l', unit: 'mm', format: 'a4' });
-      const cards = Array.from(document.querySelectorAll('.group-card'));
-      if (cards.length === 0) return;
-      M.toast({html: translations[state.lang].toast_pdf_generating});
-      
-      for (let i = 0; i < cards.length; i++) {
-        const card = cards[i];
-        
-        const toHide = card.querySelectorAll('.bulk-edit-row, .actions-header, .actions-cell');
-        toHide.forEach(el => el.style.display = 'none');
-        
-        card.querySelectorAll('tbody tr').forEach(row => {
-            const dateInput = row.querySelector('.date-input');
-            if (dateInput && dateInput.value) {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({ orientation: 'l', unit: 'mm', format: 'a4' });
+        const cards = Array.from(document.querySelectorAll('.group-card'));
+        if (cards.length === 0) return;
+        M.toast({ html: translations[state.lang].toast_pdf_generating });
+
+        for (let i = 0; i < cards.length; i++) {
+            const card = cards[i];
+
+            const toHide = card.querySelectorAll('.bulk-edit-row, .actions-header, .actions-cell');
+            toHide.forEach(el => el.style.display = 'none');
+
+            card.querySelectorAll('tbody tr').forEach(row => {
+                const dateInput = row.querySelector('.date-input');
+                if (dateInput && dateInput.value) {
+                    const tbdWrapper = row.querySelector('.tbd-wrapper');
+                    if (tbdWrapper) tbdWrapper.style.display = 'none';
+                }
+
+                const instrTextarea = row.querySelector('.instr-input');
+                const pdfInstrDiv = row.querySelector('.pdf-instr-wrap');
+                if (instrTextarea) instrTextarea.style.display = 'none';
+                if (pdfInstrDiv) pdfInstrDiv.style.display = 'block';
+
+                const typeSelect = row.querySelector('.type-select-editable');
+                if (typeSelect) {
+                    const pdfTypeDiv = row.querySelector('.pdf-type-wrap');
+                    if (pdfTypeDiv) {
+                        pdfTypeDiv.textContent = typeSelect.value;
+                        pdfTypeDiv.style.display = 'block';
+                    }
+                    typeSelect.style.display = 'none';
+                }
+            });
+
+            const canvas = await html2canvas(card, { scale: 2 });
+
+            toHide.forEach(el => el.style.display = '');
+            card.querySelectorAll('tbody tr').forEach(row => {
                 const tbdWrapper = row.querySelector('.tbd-wrapper');
-                if (tbdWrapper) tbdWrapper.style.display = 'none';
-            }
-            const instrTextarea = row.querySelector('.instr-input');
-            const pdfDiv = row.querySelector('.pdf-instr-wrap');
-            if(instrTextarea) instrTextarea.style.display = 'none';
-            if(pdfDiv) pdfDiv.style.display = 'block';
+                if (tbdWrapper) tbdWrapper.style.display = '';
+                
+                const instrTextarea = row.querySelector('.instr-input');
+                if(instrTextarea) instrTextarea.style.display = '';
+
+                const pdfInstrDiv = row.querySelector('.pdf-instr-wrap');
+                if(pdfInstrDiv) pdfInstrDiv.style.display = 'none';
+
+                const typeSelect = row.querySelector('.type-select-editable');
+                if(typeSelect) typeSelect.style.display = '';
+                
+                const pdfTypeDiv = row.querySelector('.pdf-type-wrap');
+                if(pdfTypeDiv) pdfTypeDiv.style.display = 'none';
+            });
+
+            const imgData = canvas.toDataURL('image/jpeg', 0.7);
+            const imgProps = doc.getImageProperties(imgData);
+            const pdfWidth = doc.internal.pageSize.getWidth() - 20;
+            const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
             
-            const typeSelect = row.querySelector('.type-select-editable');
-            const typeDiv = row.querySelector('.pdf-type-wrap');
-            if(typeSelect) typeSelect.style.display = 'none';
-            if(typeDiv) typeDiv.style.display = 'block';
-        });
-
-        const canvas = await html2canvas(card, { scale: 2 });
-        
-        toHide.forEach(el => el.style.display = '');
-        card.querySelectorAll('tbody tr').forEach(row => {
-            const tbdWrapper = row.querySelector('.tbd-wrapper');
-            if (tbdWrapper) tbdWrapper.style.display = '';
-            const instrTextarea = row.querySelector('.instr-input');
-            const pdfDiv = row.querySelector('.pdf-instr-wrap');
-            if(instrTextarea) instrTextarea.style.display = '';
-            if(pdfDiv) pdfDiv.style.display = 'none';
-
-            const typeSelect = row.querySelector('.type-select-editable');
-            const typeDiv = row.querySelector('.pdf-type-wrap');
-            if(typeSelect) typeSelect.style.display = '';
-            if(typeDiv) typeDiv.style.display = 'none';
-        });
-
-        const imgData = canvas.toDataURL('image/jpeg', 0.7);
-        const imgProps = doc.getImageProperties(imgData);
-        const pdfWidth = doc.internal.pageSize.getWidth() - 20;
-        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-        
-        if (i > 0) doc.addPage();
-        doc.addImage(imgData, 'JPEG', 10, 10, pdfWidth, pdfHeight);
-      }
-      doc.save('transfer_logistics.pdf');
-      M.toast({html: translations[state.lang].toast_pdf_generated});
+            if (i > 0) doc.addPage();
+            doc.addImage(imgData, 'JPEG', 10, 10, pdfWidth, pdfHeight);
+        }
+        doc.save('transfer_logistics.pdf');
+        M.toast({ html: translations[state.lang].toast_pdf_generated });
     });
 
     document.getElementById('btn-export-csv').addEventListener('click', () => {
