@@ -7,7 +7,7 @@
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-<style>
+  <style>
     body { 
         padding: 16px; 
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
@@ -340,6 +340,7 @@
             name: "Name",
             origin_city: "Origin City",
             dest_city: "Destination City",
+            origin_area: "Origin Area",
             dest_area: "Destination Area",
             transportation: "Transportation",
             date: "Date",
@@ -365,8 +366,7 @@
             table_header_type: "Type",
             table_header_name: "Name",
             table_header_new: "New",
-            table_header_origin: "Origin City",
-            table_header_destination: "Destination City",
+            table_header_origin_area: "Origin Area",
             table_header_dest_area: "Destination Area",
             table_header_transport: "Transportation",
             table_header_date: "Date",
@@ -410,6 +410,7 @@
             name: "Nome",
             origin_city: "Cidade de Origem",
             dest_city: "Cidade de Destino",
+            origin_area: "Área de Origem",
             dest_area: "Área de Destino",
             transportation: "Transporte",
             date: "Data",
@@ -435,9 +436,8 @@
             table_header_type: "Tipo",
             table_header_name: "Nome",
             table_header_new: "Novo",
-            table_header_origin: "Cidade Origem",
-            table_header_destination: "Cidade Destino",
-            table_header_dest_area: "Área Destino",
+            table_header_origin_area: "Área de Origem",
+            table_header_dest_area: "Área de Destino",
             table_header_transport: "Transporte",
             table_header_date: "Data",
             table_header_time: "Hora",
@@ -619,11 +619,11 @@
                 if (oldLoc.zone !== newLoc.zone || oldLoc.district !== newLoc.district || oldLoc.area !== newLoc.area) {
                     const originCity = determineCity(oldLoc);
                     const destinationCity = determineCity(newLoc);
-                    pendingMissionaries.push({ id: key, name: nameVal, type: finalType, originCity, destinationCity, destinationArea: newLoc.area, isNew: false, date: '', tbd: false, time: '', instructions:'', leader:false });
+                    pendingMissionaries.push({ id: key, name: nameVal, type: finalType, originCity, originArea: oldLoc.area, destinationCity, destinationArea: newLoc.area, isNew: false, date: '', tbd: false, time: '', instructions:'', leader:false });
                 }
             } else {
                 const destinationCity = determineCity(newLoc);
-                pendingMissionaries.push({ id: key, name: nameVal, type: finalType, originCity: 'Beira', destinationCity, destinationArea: newLoc.area, isNew: true, date: '', tbd: false, time: '', instructions:'', leader:false });
+                pendingMissionaries.push({ id: key, name: nameVal, type: finalType, originCity: 'Beira', originArea: '', destinationCity, destinationArea: newLoc.area, isNew: true, date: '', tbd: false, time: '', instructions:'', leader:false });
             }
         });
 
@@ -692,11 +692,11 @@
         table.innerHTML = `
           <thead>
             <tr class="bulk-edit-row">
-              <th colspan="5">${T.bulk_edit_title}</th>
+              <th colspan="4">${T.bulk_edit_title}</th>
               <th><select class="bulk-transport-select browser-default" title="${T.bulk_edit_transport_placeholder}"><option value="" selected disabled>${T.bulk_edit_transport_placeholder}</option><option value="Bus">${T.transport_bus}</option><option value="Plane">${T.transport_plane}</option><option value="Chapa">${T.transport_chapa}</option><option value="Txopela/Taxi">${T.transport_taxi}</option><option value="Ride">${T.transport_ride}</option></select></th>
               <th><input type="date" class="bulk-date-input"></th><th><input type="time" class="bulk-time-input"></th><th><textarea class="materialize-textarea bulk-instr-input" placeholder="${T.bulk_edit_instructions_placeholder}"></textarea></th><th class="actions-header" colspan="3"></th>
             </tr>
-            <tr><th>${T.table_header_type}</th><th>${T.table_header_name}</th><th>${T.table_header_origin}</th><th>${T.table_header_destination}</th><th>${T.table_header_dest_area}</th><th>${T.table_header_transport}</th><th>${T.table_header_date}</th><th>${T.table_header_time}</th><th>${T.table_header_instructions}</th><th>${T.table_header_new}</th><th>${T.table_header_leader}</th><th class="actions-header">${T.table_header_actions}</th></tr>
+            <tr><th>${T.table_header_type}</th><th>${T.table_header_name}</th><th>${T.table_header_origin_area}</th><th>${T.table_header_dest_area}</th><th>${T.table_header_transport}</th><th>${T.table_header_date}</th><th>${T.table_header_time}</th><th>${T.table_header_instructions}</th><th>${T.table_header_new}</th><th>${T.table_header_leader}</th><th class="actions-header">${T.table_header_actions}</th></tr>
           </thead>`;
         const tbody = document.createElement('tbody');
         const group = state.groups[key];
@@ -714,7 +714,7 @@
                 ${typeIsEditable ? typeSelectHTML : `<span>${m.type}</span>`}
             </td>`;
 
-          tr.innerHTML = `${typeCellHTML}<td>${getLastName(m.name)}</td><td>${m.originCity}</td><td>${m.destinationCity}</td><td>${m.destinationArea}</td>
+          tr.innerHTML = `${typeCellHTML}<td>${getLastName(m.name)}</td><td>${m.originArea || ''}</td><td>${m.destinationArea}</td>
             <td><select class="transport-select browser-default"><option value="Bus">${T.transport_bus}</option><option value="Plane">${T.transport_plane}</option><option value="Chapa">${T.transport_chapa}</option><option value="Txopela/Taxi">${T.transport_taxi}</option><option value="Ride">${T.transport_ride}</option></select></td>
             <td><input type="date" class="date-input" value="${m.date}"><p class="tbd-wrapper" style="margin-top:5px;"><label><input type="checkbox" class="tbd-checkbox" ${m.tbd? 'checked':''}><span>${T.tbd}</span></label></p></td><td><input type="time" class="time-input" value="${m.time}"></td>
             <td><textarea class="instr-input materialize-textarea">${m.instructions || ''}</textarea><div class="pdf-instr-wrap">${m.instructions || ''}</div></td>
@@ -929,7 +929,7 @@
         });
     });
     
-// -- Export Functions
+    // -- Export Functions
     document.getElementById('btn-export-pdf').addEventListener('click', () => {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF({ orientation: 'l', unit: 'mm', format: 'a4' });
@@ -941,27 +941,29 @@
 
         M.toast({ html: T.toast_pdf_generating });
 
+        let finalY = 15;
+
         groups.forEach((groupKey, index) => {
             if (index > 0) {
-                doc.addPage(); // Add a page break before each new table (except the first one)
+                doc.addPage();
+                finalY = 15;
             }
 
             const group = state.groups[groupKey];
             const sortedGroup = [...group].sort((a, b) => (a.isNew ? 1 : -1) - (b.isNew ? 1 : -1));
 
             const head = [[
-                T.table_header_type, T.table_header_name, T.table_header_origin, T.table_header_destination, 
-                T.table_header_dest_area, T.table_header_transport, T.table_header_date, T.table_header_time, 
+                T.table_header_type, T.table_header_name, T.table_header_origin_area, T.table_header_dest_area,
+                T.table_header_transport, T.table_header_date, T.table_header_time,
                 T.table_header_instructions, T.table_header_new, T.table_header_leader
             ]];
 
             const body = sortedGroup.map(m => {
                 const transportText = m.transport ? (translations[lang][`transport_${m.transport.toLowerCase().replace('/','_')}`] || m.transport) : '';
                 return [
-                    m.type,
+                    m.type || '',
                     getLastName(m.name),
-                    m.originCity,
-                    m.destinationCity,
+                    m.originArea || '',
                     m.destinationArea,
                     transportText,
                     m.tbd ? T.tbd : m.date,
@@ -972,31 +974,45 @@
                 ];
             });
 
-            // Add a title for the group at the top of the page
             doc.setFontSize(16);
-            doc.text(groupKey, 14, 15);
+            doc.text(groupKey, 14, finalY);
+            finalY += 8;
 
             doc.autoTable({
                 head: head,
                 body: body,
-                startY: 23, // Start table below the title
+                startY: finalY,
                 theme: 'striped',
                 headStyles: { fillColor: [0, 150, 136] }, // Teal color for header
                 columnStyles: {
-                    8: { cellWidth: 50 }, // Instructions column
+                    0: { cellWidth: 18 }, // Type
+                    1: { cellWidth: 30 }, // Name
+                    2: { cellWidth: 30 }, // Origin Area
+                    3: { cellWidth: 30 }, // Dest Area
+                    4: { cellWidth: 25 }, // Transport
+                    5: { cellWidth: 22 }, // Date
+                    6: { cellWidth: 17 }, // Time
+                    7: { cellWidth: 'auto' }, // Instructions
+                    8: { cellWidth: 12, halign: 'center' }, // New
+                    9: { cellWidth: 15, halign: 'center' }, // Leader
+                },
+                didDrawPage: (data) => {
+                    finalY = data.cursor.y + 15;
                 }
             });
+             finalY = doc.previousAutoTable.finalY + 15;
         });
 
         doc.save('transfer_logistics.pdf');
         M.toast({ html: T.toast_pdf_generated });
     });
 
+
     document.getElementById('btn-export-csv').addEventListener('click', () => {
         const lang = state.lang || 'pt';
         const T = translations[lang];
         const delimiter = ';';
-        const headers = [T.table_header_type, T.table_header_name, T.table_header_origin, T.table_header_destination, T.table_header_dest_area, T.table_header_transport, T.table_header_date, T.table_header_time, T.table_header_instructions, T.table_header_new, T.table_header_leader];
+        const headers = [T.table_header_type, T.table_header_name, T.table_header_origin_area, T.table_header_dest_area, T.table_header_transport, T.table_header_date, T.table_header_time, T.table_header_instructions, T.table_header_new, T.table_header_leader];
         let csvContent = "data:text/csv;charset=utf-8," + headers.join(delimiter) + "\n";
         const allMissionaries = Object.values(state.groups || {}).flat();
         
@@ -1006,9 +1022,10 @@
             const newText = m.isNew ? 'Yes' : 'No';
             const sanitizedInstructions = (m.instructions || '').replace(/"/g, '""');
             const sanitizedName = (m.name || '').replace(/"/g, '""');
+            const sanitizedOriginArea = (m.originArea || '').replace(/"/g, '""');
             const sanitizedArea = (m.destinationArea || '').replace(/"/g, '""');
             
-            const row = [m.type, `"${sanitizedName}"`, m.originCity, m.destinationCity, `"${sanitizedArea}"`, transportText, m.date, m.time, `"${sanitizedInstructions}"`, newText, leaderText];
+            const row = [m.type, `"${sanitizedName}"`, `"${sanitizedOriginArea}"`, `"${sanitizedArea}"`, transportText, m.date, m.time, `"${sanitizedInstructions}"`, newText, leaderText];
             csvContent += row.join(delimiter) + "\n";
         });
 
