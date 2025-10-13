@@ -929,7 +929,7 @@
     });
     
     // -- Export Functions
-    document.getElementById('btn-export-pdf').addEventListener('click', async () => {
+      document.getElementById('btn-export-pdf').addEventListener('click', async () => {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF({ orientation: 'l', unit: 'mm', format: 'a4' });
         const cards = Array.from(document.querySelectorAll('.group-card'));
@@ -939,92 +939,72 @@
         let isFirstPage = true;
 
         for (const card of cards) {
-            if (!isFirstPage) {
-                doc.addPage();
-            }
-            isFirstPage = false;
-            
-            // Prepare card for printing
-            const toHide = card.querySelectorAll('.bulk-edit-row, .actions-header, .actions-cell');
-            toHide.forEach(el => el.style.display = 'none');
+          // Hide controls and convert inputs/selects into readable text
+          const toHide = card.querySelectorAll('.bulk-edit-row, .actions-header, .actions-cell');
+          toHide.forEach(el => el.style.display = 'none');
 
-            card.querySelectorAll('tbody tr').forEach(row => {
-                if (row.querySelector('.date-input')?.value) {
-                    const tbdWrapper = row.querySelector('.tbd-wrapper');
-                    if(tbdWrapper) tbdWrapper.style.display = 'none';
-                }
-                const instrTextarea = row.querySelector('.instr-input');
-                const pdfInstrDiv = row.querySelector('.pdf-instr-wrap');
-                if (instrTextarea) instrTextarea.style.display = 'none';
-                if (pdfInstrDiv) pdfInstrDiv.style.display = 'block';
-
-                const typeSelect = row.querySelector('.type-select-editable');
-                const typeSpan = row.querySelector('td:first-child > span');
-                const pdfTypeDiv = row.querySelector('.pdf-type-wrap');
-                if (pdfTypeDiv) {
-                    pdfTypeDiv.textContent = typeSelect ? typeSelect.value : (typeSpan ? typeSpan.textContent : '');
-                    pdfTypeDiv.style.display = 'block';
-                }
-                if (typeSelect) typeSelect.style.display = 'none';
-                if (typeSpan) typeSpan.style.display = 'none';
-                
-                const transportSelect = row.querySelector('.transport-select');
-                if (transportSelect) {
-                    const transportText = transportSelect.options[transportSelect.selectedIndex].text;
-                    const pdfTransportSpan = document.createElement('span');
-                    pdfTransportSpan.className = 'pdf-transport-span';
-                    pdfTransportSpan.textContent = transportText;
-                    transportSelect.parentNode.insertBefore(pdfTransportSpan, transportSelect);
-                    transportSelect.style.display = 'none';
-                }
-
-                const newCell = row.querySelector('.new-status-cell');
-                if (newCell && newCell.querySelector('input:checked')) {
-                    const pdfNewSpan = document.createElement('span');
-                    pdfNewSpan.className = 'pdf-emoji-span';
-                    pdfNewSpan.textContent = '✔️';
-                    newCell.appendChild(pdfNewSpan);
-                    newCell.querySelector('label').style.display = 'none';
-                }
-
-                const leaderCell = row.querySelector('td:nth-last-child(2)');
-                if (leaderCell && leaderCell.querySelector('input:checked')) {
-                    const pdfLeaderSpan = document.createElement('span');
-                    pdfLeaderSpan.className = 'pdf-emoji-span';
-                    pdfLeaderSpan.textContent = '⭐';
-                    leaderCell.appendChild(pdfLeaderSpan);
-                    leaderCell.querySelector('label').style.display = 'none';
-                }
+          card.querySelectorAll('tbody tr').forEach(row => {
+            // Replace inputs and selects with text
+            row.querySelectorAll('input, select, textarea').forEach(input => {
+              if (input.tagName === 'TEXTAREA') {
+                const div = document.createElement('div');
+                div.className = 'pdf-text';
+                div.textContent = input.value || '';
+                input.style.display = 'none';
+                input.parentNode.insertBefore(div, input);
+              } else if (input.type === 'date' || input.type === 'time' || input.type === 'text') {
+                const span = document.createElement('span');
+                span.className = 'pdf-text';
+                span.textContent = input.value || '';
+                input.style.display = 'none';
+                input.parentNode.insertBefore(span, input);
+              } else if (input.type === 'checkbox') {
+                const span = document.createElement('span');
+                span.className = 'pdf-text';
+                span.textContent = input.checked ? '✔️' : '';
+                input.parentNode.insertBefore(span, input);
+                input.style.display = 'none';
+              }
             });
 
-            await doc.html(card, {
-                x: 10,
-                y: 10,
-                width: 277, // A4 landscape width - 20mm margin
-                windowWidth: card.scrollWidth,
-                autoPaging: 'text'
+            row.querySelectorAll('select').forEach(sel => {
+              const span = document.createElement('span');
+              span.className = 'pdf-text';
+              const selectedText = sel.options[sel.selectedIndex]?.text || '';
+              span.textContent = selectedText;
+              sel.parentNode.insertBefore(span, sel);
+              sel.style.display = 'none';
             });
+          });
 
-            // Restore card view
-            toHide.forEach(el => el.style.display = '');
-            card.querySelectorAll('tbody tr').forEach(row => {
-                row.querySelector('.tbd-wrapper')?.removeAttribute('style');
-                row.querySelector('.instr-input')?.removeAttribute('style');
-                row.querySelector('.pdf-instr-wrap')?.removeAttribute('style');
-                row.querySelector('.type-select-editable')?.removeAttribute('style');
-                row.querySelector('td:first-child > span')?.removeAttribute('style');
-                row.querySelector('.pdf-type-wrap')?.removeAttribute('style');
-                row.querySelector('.transport-select')?.removeAttribute('style');
-                row.querySelector('.pdf-transport-span')?.remove();
-                row.querySelector('.new-status-cell label')?.removeAttribute('style');
-                row.querySelector('td:nth-last-child(2) label')?.removeAttribute('style');
-                row.querySelectorAll('.pdf-emoji-span').forEach(e => e.remove());
-            });
+          // Add page (after first)
+          if (!isFirstPage) doc.addPage();
+          isFirstPage = false;
+
+          // Render the card to PDF
+          await doc.html(card, {
+            x: 10,
+            y: 10,
+            width: 277,
+            windowWidth: card.scrollWidth,
+            html2canvas: {
+              scale: 0.6,
+              useCORS: true,
+            },
+            autoPaging: 'text'
+          });
+
+          // Restore original elements
+          toHide.forEach(el => el.style.display = '');
+          card.querySelectorAll('tbody tr').forEach(row => {
+            row.querySelectorAll('.pdf-text').forEach(el => el.remove());
+            row.querySelectorAll('input, select, textarea').forEach(el => el.style.display = '');
+          });
         }
-        
+
         doc.save('transfer_logistics.pdf');
         M.toast({ html: translations[state.lang].toast_pdf_generated });
-    });
+      });
 
     document.getElementById('btn-export-csv').addEventListener('click', () => {
         const lang = state.lang || 'pt';
