@@ -140,7 +140,11 @@
         </div>
       </div>
       <div class="row">
-        <div class="col s4">
+        <div class="col s3">
+            <h6 data-translate="origin_area">Origin Area</h6>
+            <input id="add-originarea">
+        </div>
+        <div class="col s3">
           <h6 data-translate="dest_area">Destination Area</h6>
           <input id="add-destarea">
         </div>
@@ -152,21 +156,21 @@
           <h6 data-translate="date">Date</h6>
           <input id="add-date" type="date">
         </div>
-        <div class="col s1" style="padding-top: 30px;">
-          <label><input type="checkbox" id="add-tbd" /> <span data-translate="tbd">TBD</span></label>
-        </div>
-        <div class="col s1" style="padding-top: 30px;">
-          <label><input type="checkbox" id="add-new" /> <span data-translate="table_header_new">New</span></label>
-        </div>
       </div>
       <div class="row">
         <div class="col s3">
           <h6 data-translate="departure_time">Departure Time</h6>
           <input id="add-time" type="time">
         </div>
-        <div class="col s7">
+        <div class="col s5">
           <h6 data-translate="travel_instructions">Travel Instructions</h6>
           <input id="add-instructions">
+        </div>
+         <div class="col s1" style="padding-top: 30px;">
+          <label><input type="checkbox" id="add-tbd" /> <span data-translate="tbd">TBD</span></label>
+        </div>
+        <div class="col s1" style="padding-top: 30px;">
+          <label><input type="checkbox" id="add-new" /> <span data-translate="table_header_new">New</span></label>
         </div>
         <div class="col s2" style="padding-top: 30px;">
           <label>
@@ -210,7 +214,11 @@
         </div>
       </div>
       <div class="row">
-        <div class="col s4">
+        <div class="col s3">
+            <h6 data-translate="origin_area">Origin Area</h6>
+            <input id="edit-originarea">
+        </div>
+        <div class="col s3">
           <h6 data-translate="dest_area">Destination Area</h6>
           <input id="edit-destarea">
         </div>
@@ -222,12 +230,6 @@
           <h6 data-translate="date">Date</h6>
           <input id="edit-date" type="date">
         </div>
-        <div class="col s2" style="padding-top: 30px;">
-          <label>
-            <input type="checkbox" id="edit-tbd" />
-            <span data-translate="tbd">TBD</span>
-          </label>
-        </div>
       </div>
       <div class="row">
         <div class="col s3">
@@ -237,6 +239,12 @@
         <div class="col s5">
           <h6 data-translate="travel_instructions">Travel Instructions</h6>
           <input id="edit-instructions">
+        </div>
+        <div class="col s2" style="padding-top: 30px;">
+          <label>
+            <input type="checkbox" id="edit-tbd" />
+            <span data-translate="tbd">TBD</span>
+          </label>
         </div>
         <div class="col s2" style="padding-top: 30px;">
           <label>
@@ -294,7 +302,7 @@
     </div>
   </div>
 
-  <div id="modal-map-update" class="modal">
+    <div id="modal-map-update" class="modal">
     <div class="modal-content">
         <h5 data-translate="map_origin_areas_title">Map Origin Area Columns</h5>
         <p data-translate="map_origin_areas_desc">Select the columns for Missionary Name and their Origin Area.</p>
@@ -662,11 +670,11 @@
                 if (oldLoc.zone !== newLoc.zone || oldLoc.district !== newLoc.district || oldLoc.area !== newLoc.area) {
                     const originCity = determineCity(oldLoc);
                     const destinationCity = determineCity(newLoc);
-                    pendingMissionaries.push({ id: key, name: nameVal, type: finalType, originCity, originArea: oldLoc.area, destinationCity, destinationArea: newLoc.area, isNew: false, date: '', tbd: false, time: '', instructions:'', leader:false });
+                    pendingMissionaries.push({ id: key, name: nameVal, type: finalType, originCity, originArea: oldLoc.area, originDistrict: oldLoc.district, originZone: oldLoc.zone, destinationCity, destinationArea: newLoc.area, destinationDistrict: newLoc.district, destinationZone: newLoc.zone, isNew: false, date: '', tbd: false, time: '', instructions:'', leader:false });
                 }
             } else {
                 const destinationCity = determineCity(newLoc);
-                pendingMissionaries.push({ id: key, name: nameVal, type: finalType, originCity: 'Beira', originArea: '', destinationCity, destinationArea: newLoc.area, isNew: true, date: '', tbd: false, time: '', instructions:'', leader:false });
+                pendingMissionaries.push({ id: key, name: nameVal, type: finalType, originCity: 'Beira', originArea: '', originDistrict: '', originZone: '', destinationCity, destinationArea: newLoc.area, destinationDistrict: newLoc.district, destinationZone: newLoc.zone, isNew: true, date: '', tbd: false, time: '', instructions:'', leader:false });
             }
         });
 
@@ -861,7 +869,6 @@
 
     function openEditModal(groupKey, index) {
         const missionary = state.groups[groupKey][index];
-        const lang = state.lang || 'pt';
         
         document.getElementById('edit-original-group-key').value = groupKey;
         document.getElementById('edit-missionary-index').value = index;
@@ -890,6 +897,7 @@
             destOther.style.display = 'block';
         }
 
+        document.getElementById('edit-originarea').value = missionary.originArea || '';
         document.getElementById('edit-destarea').value = missionary.destinationArea;
         document.getElementById('edit-transport').value = missionary.transport;
         document.getElementById('edit-date').value = missionary.date;
@@ -920,7 +928,7 @@
 
       const m = {
         id: document.getElementById('add-name').value.trim().toLowerCase(), type: document.getElementById('add-type').value, name: document.getElementById('add-name').value.trim(), originCity: normalizeZoneName(originCity), destinationCity: normalizeZoneName(destCity),
-        destinationArea: document.getElementById('add-destarea').value, transport: document.getElementById('add-transport').value, date: document.getElementById('add-date').value, tbd: document.getElementById('add-tbd').checked, time: document.getElementById('add-time').value, instructions: document.getElementById('add-instructions').value, leader: document.getElementById('add-leader').checked, isNew: document.getElementById('add-new').checked
+        originArea: document.getElementById('add-originarea').value, destinationArea: document.getElementById('add-destarea').value, transport: document.getElementById('add-transport').value, date: document.getElementById('add-date').value, tbd: document.getElementById('add-tbd').checked, time: document.getElementById('add-time').value, instructions: document.getElementById('add-instructions').value, leader: document.getElementById('add-leader').checked, isNew: document.getElementById('add-new').checked
       };
       const key = `${m.originCity} -> ${m.destinationCity}`; if(!state.groups[key]) state.groups[key]=[]; state.groups[key].push(m);
       saveToLS();
@@ -940,7 +948,7 @@
 
         const missionary = { ...originalMissionary,
             id: document.getElementById('edit-name').value.trim().toLowerCase(), name: document.getElementById('edit-name').value.trim(), type: document.getElementById('edit-type').value, originCity: normalizeZoneName(originCity), destinationCity: normalizeZoneName(destCity),
-            destinationArea: document.getElementById('edit-destarea').value, transport: document.getElementById('edit-transport').value, date: document.getElementById('edit-date').value, tbd: document.getElementById('edit-tbd').checked, time: document.getElementById('edit-time').value, instructions: document.getElementById('edit-instructions').value, leader: document.getElementById('edit-leader').checked
+            originArea: document.getElementById('edit-originarea').value, destinationArea: document.getElementById('edit-destarea').value, transport: document.getElementById('edit-transport').value, date: document.getElementById('edit-date').value, tbd: document.getElementById('edit-tbd').checked, time: document.getElementById('edit-time').value, instructions: document.getElementById('edit-instructions').value, leader: document.getElementById('edit-leader').checked
         };
 
         state.groups[originalGroupKey].splice(index, 1);
@@ -972,7 +980,7 @@
         });
     });
     
-    // -- Export Functions
+    // -- Export and Update Functions
     document.getElementById('btn-export-pdf').addEventListener('click', () => {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF({ orientation: 'l', unit: 'mm', format: 'a4' });
@@ -1055,7 +1063,7 @@
         const lang = state.lang || 'pt';
         const T = translations[lang];
         const delimiter = ';';
-        const headers = [T.table_header_type, T.table_header_name, T.table_header_origin_area, T.table_header_dest_area, "Origin City", "Destination City", T.table_header_transport, T.table_header_date, T.table_header_time, T.table_header_instructions, T.table_header_new, T.table_header_leader];
+        const headers = [T.table_header_type, T.table_header_name, "Origin City", "Origin District", "Origin Zone", T.table_header_origin_area, "Destination City", "Destination District", "Destination Zone", T.table_header_dest_area, T.table_header_transport, T.table_header_date, T.table_header_time, T.table_header_instructions, T.table_header_new, T.table_header_leader];
         let csvContent = "data:text/csv;charset=utf-8," + headers.join(delimiter) + "\n";
         const allMissionaries = Object.values(state.groups || {}).flat();
         
@@ -1063,12 +1071,9 @@
             const transportText = m.transport ? (T[`transport_${m.transport.toLowerCase().replace('/','_')}`] || m.transport) : '';
             const leaderText = m.leader ? 'Yes' : 'No';
             const newText = m.isNew ? 'Yes' : 'No';
-            const sanitizedInstructions = (m.instructions || '').replace(/"/g, '""');
-            const sanitizedName = (m.name || '').replace(/"/g, '""');
-            const sanitizedOriginArea = (m.originArea || '').replace(/"/g, '""');
-            const sanitizedArea = (m.destinationArea || '').replace(/"/g, '""');
+            const sanitize = (str) => `"${(str || '').replace(/"/g, '""')}"`;
             
-            const row = [m.type, `"${sanitizedName}"`, `"${sanitizedOriginArea}"`, `"${sanitizedArea}"`, m.originCity, m.destinationCity, transportText, m.date, m.time, `"${sanitizedInstructions}"`, newText, leaderText];
+            const row = [ m.type, sanitize(m.name), m.originCity, sanitize(m.originDistrict), sanitize(m.originZone), sanitize(m.originArea), m.destinationCity, sanitize(m.destinationDistrict), sanitize(m.destinationZone), sanitize(m.destinationArea), transportText, m.date, m.time, sanitize(m.instructions), newText, leaderText];
             csvContent += row.join(delimiter) + "\n";
         });
 
@@ -1092,50 +1097,22 @@
         const rows = data.split('\n').slice(1); // Skip header row
         const restoredMissionaries = [];
         
-        // Define headers for both languages to find column indices
-        const T_EN = translations.en;
-        const T_PT = translations.pt;
-        const headersEN = [T_EN.table_header_type, T_EN.table_header_name, T_EN.table_header_origin_area, T_EN.table_header_dest_area, "Origin City", "Destination City", T_EN.table_header_transport, T_EN.table_header_date, T_EN.table_header_time, T_EN.table_header_instructions, T_EN.table_header_new, T_EN.table_header_leader];
-        const headersPT = [T_PT.table_header_type, T_PT.table_header_name, T_PT.table_header_origin_area, T_PT.table_header_dest_area, "Cidade de Origem", "Cidade de Destino", T_PT.table_header_transport, T_PT.table_header_date, T_PT.table_header_time, T_PT.table_header_instructions, T_PT.table_header_new, T_PT.table_header_leader];
-
-        const fileHeaders = data.split('\n')[0].trim().split(';');
-        const headerMap = {};
-        
-        headersEN.forEach((h, i) => {
-            let index = fileHeaders.indexOf(h);
-            if (index === -1) { // Try Portuguese header
-                index = fileHeaders.indexOf(headersPT[i]);
-            }
-            if (index !== -1) {
-                headerMap[h] = index;
-            }
-        });
-
-        const unquote = (str) => str ? (str.startsWith('"') && str.endsWith('"') ? str.slice(1, -1).replace(/""/g, '"') : str) : '';
-
+        // This is a simplified restore, more robust header mapping could be added if needed
         for (const row of rows) {
             if (!row.trim()) continue;
-            const cols = row.split(';');
-
-            const transportValEN = Object.keys(T_EN).find(key => T_EN[key] === unquote(cols[headerMap[T_EN.table_header_transport]]));
-            const transportValPT = Object.keys(T_PT).find(key => T_PT[key] === unquote(cols[headerMap[T_EN.table_header_transport]]));
+            const cols = row.split(';').map(col => col.startsWith('"') && col.endsWith('"') ? col.slice(1, -1).replace(/""/g, '"') : col);
+            
+            const transportValEN = Object.keys(translations.en).find(key => translations.en[key] === cols[10]);
+            const transportValPT = Object.keys(translations.pt).find(key => translations.pt[key] === cols[10]);
             const transportKey = (transportValEN || transportValPT || '').replace('transport_', '');
 
             const missionary = {
-                type: unquote(cols[headerMap[T_EN.table_header_type]]),
-                name: unquote(cols[headerMap[T_EN.table_header_name]]),
-                originArea: unquote(cols[headerMap[T_EN.table_header_origin_area]]),
-                destinationArea: unquote(cols[headerMap[T_EN.table_header_dest_area]]),
-                originCity: unquote(cols[headerMap["Origin City"]]),
-                destinationCity: unquote(cols[headerMap["Destination City"]]),
-                transport: transportKey,
-                date: unquote(cols[headerMap[T_EN.table_header_date]]),
-                time: unquote(cols[headerMap[T_EN.table_header_time]]),
-                instructions: unquote(cols[headerMap[T_EN.table_header_instructions]]),
-                isNew: unquote(cols[headerMap[T_EN.table_header_new]]).toLowerCase() === 'yes',
-                leader: unquote(cols[headerMap[T_EN.table_header_leader]]).toLowerCase() === 'yes',
-                id: unquote(cols[headerMap[T_EN.table_header_name]]).toLowerCase(),
-                tbd: unquote(cols[headerMap[T_EN.table_header_date]]) === T_EN.tbd || unquote(cols[headerMap[T_EN.table_header_date]]) === T_PT.tbd
+                type: cols[0], name: cols[1], originCity: cols[2], originDistrict: cols[3], originZone: cols[4], originArea: cols[5],
+                destinationCity: cols[6], destinationDistrict: cols[7], destinationZone: cols[8], destinationArea: cols[9],
+                transport: transportKey, date: cols[11], time: cols[12], instructions: cols[13],
+                isNew: cols[14]?.toLowerCase() === 'yes', leader: cols[15]?.toLowerCase() === 'yes',
+                id: (cols[1] || '').toLowerCase(),
+                tbd: cols[11] === translations.en.tbd || cols[11] === translations.pt.tbd
             };
             restoredMissionaries.push(missionary);
         }
@@ -1150,6 +1127,62 @@
         saveToLS();
         M.toast({ html: translations[state.lang].toast_restored });
         location.reload();
+    });
+
+    document.getElementById('btn-update-origins').addEventListener('click', () => {
+        document.getElementById('file-update-origin').click();
+    });
+
+    document.getElementById('file-update-origin').addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const rows = await readFileRows(file);
+        const container = document.getElementById('mapping-forms-update');
+        container.innerHTML = '';
+        const keys = Object.keys(rows[0] || {});
+        const fields = [{ id: 'name', label: 'Missionary Name' }, { id: 'originArea', label: 'Origin Area' }];
+
+        fields.forEach(f => {
+            const div = document.createElement('div');
+            div.style.marginBottom = '20px';
+            const h6 = document.createElement('h6');
+            h6.textContent = f.label;
+            const select = document.createElement('select');
+            select.id = 'map-update-' + f.id;
+            select.className = 'browser-default';
+            select.innerHTML = `<option value="">-- Select column --</option>` + keys.map(k => `<option value="${k}">${k}</option>`).join('');
+            div.appendChild(h6);
+            div.appendChild(select);
+            container.appendChild(div);
+        });
+
+        M.Modal.getInstance(document.getElementById('modal-map-update')).open();
+
+        document.getElementById('btn-map-update-apply').onclick = () => {
+            const nameCol = document.getElementById('map-update-name').value;
+            const areaCol = document.getElementById('map-update-originArea').value;
+            if (!nameCol || !areaCol) return;
+
+            const originAreaMap = {};
+            rows.forEach(row => {
+                const name = (row[nameCol] || '').toString().trim().toLowerCase();
+                if (name) {
+                    originAreaMap[name] = (row[areaCol] || '').toString().trim();
+                }
+            });
+
+            Object.values(state.groups).flat().forEach(missionary => {
+                if (originAreaMap[missionary.id]) {
+                    missionary.originArea = originAreaMap[missionary.id];
+                }
+            });
+
+            saveToLS();
+            M.toast({ html: translations[state.lang].toast_origins_updated });
+            location.reload();
+        };
+        e.target.value = ''; // Reset file input
     });
 
     // -- Initial Load
