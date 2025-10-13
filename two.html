@@ -22,7 +22,7 @@
         height: auto;
         padding: 5px !important;
     }
-    .pdf-instr-wrap {
+    .pdf-instr-wrap, .pdf-type-wrap {
         white-space: pre-wrap;
         word-wrap: break-word;
         font-size: 0.8rem;
@@ -177,11 +177,13 @@
         </div>
         <div class="col s3">
           <h6 data-translate="origin_city">Origin City</h6>
-          <input id="edit-origin">
+          <select id="edit-origin-select" class="browser-default"></select>
+          <input id="edit-origin-other" class="hidden-input" placeholder="Custom City">
         </div>
         <div class="col s3">
           <h6 data-translate="dest_city">Destination City</h6>
-          <input id="edit-dest">
+          <select id="edit-dest-select" class="browser-default"></select>
+          <input id="edit-dest-other" class="hidden-input" placeholder="Custom City">
         </div>
       </div>
       <div class="row">
@@ -703,7 +705,16 @@
         sortedGroup.forEach(m =>{
           const tr = document.createElement('tr');
           tr.dataset.id = m.id;
-          tr.innerHTML = `<td>${m.type}</td><td>${getLastName(m.name)}</td><td>${m.originCity}</td><td>${m.destinationCity}</td><td>${m.destinationArea}</td>
+
+          const typeIsEditable = !(m.type === 'Elder' || m.type === 'Sister');
+          const typeSelectHTML = `<select class="type-select-editable browser-default"><option value="" ${m.type === '' ? 'selected' : ''}>${T.choose_option}</option><option value="Elder" ${m.type === 'Elder' ? 'selected' : ''}>Elder</option><option value="Sister" ${m.type === 'Sister' ? 'selected' : ''}>Sister</option></select>`;
+          const typeCellHTML = `
+            <td>
+                ${typeIsEditable ? typeSelectHTML : m.type}
+                <div class="pdf-type-wrap">${m.type}</div>
+            </td>`;
+
+          tr.innerHTML = `${typeCellHTML}<td>${getLastName(m.name)}</td><td>${m.originCity}</td><td>${m.destinationCity}</td><td>${m.destinationArea}</td>
             <td><select class="transport-select browser-default"><option value="Bus">${T.transport_bus}</option><option value="Plane">${T.transport_plane}</option><option value="Chapa">${T.transport_chapa}</option><option value="Txopela/Taxi">${T.transport_taxi}</option><option value="Ride">${T.transport_ride}</option></select></td>
             <td><input type="date" class="date-input" value="${m.date}"><p class="tbd-wrapper" style="margin-top:5px;"><label><input type="checkbox" class="tbd-checkbox" ${m.tbd? 'checked':''}><span>${T.tbd}</span></label></p></td><td><input type="time" class="time-input" value="${m.time}"></td>
             <td><textarea class="instr-input materialize-textarea">${m.instructions || ''}</textarea><div class="pdf-instr-wrap">${m.instructions || ''}</div></td>
@@ -726,28 +737,30 @@
 
           tr.querySelector('.transport-select').value = m.transport;
           
-          tr.querySelectorAll('input:not([type=checkbox]), select, textarea').forEach(el=>{
-            el.addEventListener('change', (e)=>{
-              const missionaryId = e.target.closest('tr').dataset.id;
-              const item = group.find(miss => miss.id === missionaryId);
-              if (!item) return;
-              item.transport = tr.querySelector('.transport-select').value; 
-              item.date = dateInput.value; 
-              item.time = tr.querySelector('.time-input').value; 
-              item.instructions = instrTextarea.value; 
+          const updateItem = (item, trElement) => {
+              item.transport = trElement.querySelector('.transport-select').value;
+              item.date = trElement.querySelector('.date-input').value;
+              item.tbd = trElement.querySelector('.tbd-checkbox').checked;
+              item.time = trElement.querySelector('.time-input').value;
+              item.instructions = trElement.querySelector('.instr-input').value;
+              item.leader = trElement.querySelector('.leader-checkbox').checked;
+              
+              const typeSelect = trElement.querySelector('.type-select-editable');
+              if (typeSelect) {
+                  item.type = typeSelect.value;
+              }
               saveToLS();
-            });
-          });
-          
-          tr.querySelectorAll('input[type=checkbox]').forEach(el => {
-            el.addEventListener('change', (e) => {
-              const missionaryId = e.target.closest('tr').dataset.id;
-              const item = group.find(miss => miss.id === missionaryId);
-              if (!item) return;
-              item.tbd = tbdCheckbox.checked;
-              item.leader = tr.querySelector('.leader-checkbox').checked;
-              saveToLS();
-            });
+          };
+
+          tr.querySelectorAll('input, select, textarea').forEach(el => {
+              el.addEventListener('change', (e) => {
+                  const trElement = e.target.closest('tr');
+                  const missionaryId = trElement.dataset.id;
+                  const item = group.find(miss => miss.id === missionaryId);
+                  if (item) {
+                      updateItem(item, trElement);
+                  }
+              });
           });
 
           tr.querySelector('.remove-btn').addEventListener('click', (e)=>{ 
@@ -796,29 +809,52 @@
         const sortedCities = Array.from(cities).sort();
         const lang = state.lang || 'pt';
         
-        const originSelect = document.getElementById('add-origin-select');
-        const destSelect = document.getElementById('add-dest-select');
-
-        originSelect.innerHTML = `<option value="" disabled selected>${translations[lang].choose_option}</option>`;
-        destSelect.innerHTML = `<option value="" disabled selected>${translations[lang].choose_option}</option>`;
+        const selects = document.querySelectorAll('#add-origin-select, #add-dest-select, #edit-origin-select, #edit-dest-select');
         
-        sortedCities.forEach(city => {
-            originSelect.innerHTML += `<option value="${city}">${city}</option>`;
-            destSelect.innerHTML += `<option value="${city}">${city}</option>`;
+        selects.forEach(select => {
+            select.innerHTML = `<option value="" disabled selected>${translations[lang].choose_option}</option>`;
+            sortedCities.forEach(city => {
+                select.innerHTML += `<option value="${city}">${city}</option>`;
+            });
+            select.innerHTML += `<option value="other">${translations[lang].other_option}</option>`;
         });
-
-        originSelect.innerHTML += `<option value="other">${translations[lang].other_option}</option>`;
-        destSelect.innerHTML += `<option value="other">${translations[lang].other_option}</option>`;
     }
 
     function openEditModal(groupKey, index) {
         const missionary = state.groups[groupKey][index];
+        const lang = state.lang || 'pt';
+        
         document.getElementById('edit-original-group-key').value = groupKey;
         document.getElementById('edit-missionary-index').value = index;
         document.getElementById('edit-name').value = missionary.name;
         document.getElementById('edit-type').value = missionary.type;
-        document.getElementById('edit-origin').value = missionary.originCity;
-        document.getElementById('edit-dest').value = missionary.destinationCity;
+        
+        // Handle Origin City Dropdown
+        const originSelect = document.getElementById('edit-origin-select');
+        const originOther = document.getElementById('edit-origin-other');
+        const originCityExists = Array.from(originSelect.options).some(opt => opt.value === missionary.originCity);
+        if (originCityExists) {
+            originSelect.value = missionary.originCity;
+            originOther.style.display = 'none';
+        } else {
+            originSelect.value = 'other';
+            originOther.value = missionary.originCity;
+            originOther.style.display = 'block';
+        }
+
+        // Handle Destination City Dropdown
+        const destSelect = document.getElementById('edit-dest-select');
+        const destOther = document.getElementById('edit-dest-other');
+        const destCityExists = Array.from(destSelect.options).some(opt => opt.value === missionary.destinationCity);
+        if (destCityExists) {
+            destSelect.value = missionary.destinationCity;
+            destOther.style.display = 'none';
+        } else {
+            destSelect.value = 'other';
+            destOther.value = missionary.destinationCity;
+            destOther.style.display = 'block';
+        }
+
         document.getElementById('edit-destarea').value = missionary.destinationArea;
         document.getElementById('edit-transport').value = missionary.transport;
         document.getElementById('edit-date').value = missionary.date;
@@ -838,6 +874,9 @@
 
     document.getElementById('add-origin-select').addEventListener('change', (e) => { document.getElementById('add-origin-other').style.display = e.target.value === 'other' ? 'block' : 'none'; });
     document.getElementById('add-dest-select').addEventListener('change', (e) => { document.getElementById('add-dest-other').style.display = e.target.value === 'other' ? 'block' : 'none'; });
+
+    document.getElementById('edit-origin-select').addEventListener('change', (e) => { document.getElementById('edit-origin-other').style.display = e.target.value === 'other' ? 'block' : 'none'; });
+    document.getElementById('edit-dest-select').addEventListener('change', (e) => { document.getElementById('edit-dest-other').style.display = e.target.value === 'other' ? 'block' : 'none'; });
 
     document.getElementById('btn-add-save').addEventListener('click', ()=>{
       const originSelect = document.getElementById('add-origin-select');
@@ -860,8 +899,13 @@
         const index = parseInt(document.getElementById('edit-missionary-index').value, 10);
         const originalMissionary = state.groups[originalGroupKey][index];
         
+        const originSelect = document.getElementById('edit-origin-select');
+        const destSelect = document.getElementById('edit-dest-select');
+        const originCity = originSelect.value === 'other' ? document.getElementById('edit-origin-other').value : originSelect.value;
+        const destCity = destSelect.value === 'other' ? document.getElementById('edit-dest-other').value : destSelect.value;
+
         const missionary = { ...originalMissionary,
-            id: document.getElementById('edit-name').value.trim().toLowerCase(), name: document.getElementById('edit-name').value.trim(), type: document.getElementById('edit-type').value, originCity: normalizeZoneName(document.getElementById('edit-origin').value), destinationCity: normalizeZoneName(document.getElementById('edit-dest').value),
+            id: document.getElementById('edit-name').value.trim().toLowerCase(), name: document.getElementById('edit-name').value.trim(), type: document.getElementById('edit-type').value, originCity: normalizeZoneName(originCity), destinationCity: normalizeZoneName(destCity),
             destinationArea: document.getElementById('edit-destarea').value, transport: document.getElementById('edit-transport').value, date: document.getElementById('edit-date').value, tbd: document.getElementById('edit-tbd').checked, time: document.getElementById('edit-time').value, instructions: document.getElementById('edit-instructions').value, leader: document.getElementById('edit-leader').checked
         };
 
@@ -914,10 +958,10 @@
                 const tbdWrapper = row.querySelector('.tbd-wrapper');
                 if (tbdWrapper) tbdWrapper.style.display = 'none';
             }
-            const instrTextarea = row.querySelector('.instr-input');
-            const pdfDiv = row.querySelector('.pdf-instr-wrap');
-            if (instrTextarea) instrTextarea.style.display = 'none';
-            if (pdfDiv) pdfDiv.style.display = 'block';
+            row.querySelector('.instr-input')?.setAttribute('style', 'display: none !important');
+            row.querySelector('.pdf-instr-wrap')?.setAttribute('style', 'display: block !important');
+            row.querySelector('.type-select-editable')?.setAttribute('style', 'display: none !important');
+            row.querySelector('.pdf-type-wrap')?.setAttribute('style', 'display: block !important');
         });
 
         const canvas = await html2canvas(card, { scale: 2 });
@@ -926,10 +970,10 @@
         card.querySelectorAll('tbody tr').forEach(row => {
             const tbdWrapper = row.querySelector('.tbd-wrapper');
             if (tbdWrapper) tbdWrapper.style.display = '';
-            const instrTextarea = row.querySelector('.instr-input');
-            const pdfDiv = row.querySelector('.pdf-instr-wrap');
-            if (instrTextarea) instrTextarea.style.display = '';
-            if (pdfDiv) pdfDiv.style.display = 'none';
+            row.querySelector('.instr-input')?.style.display = '';
+            row.querySelector('.pdf-instr-wrap')?.style.display = 'none';
+            row.querySelector('.type-select-editable')?.style.display = '';
+            row.querySelector('.pdf-type-wrap')?.style.display = 'none';
         });
 
         const imgData = canvas.toDataURL('image/jpeg', 0.7);
