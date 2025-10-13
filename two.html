@@ -710,8 +710,8 @@
           const typeSelectHTML = `<select class="type-select-editable browser-default"><option value="" ${m.type === '' ? 'selected' : ''}>${T.choose_option}</option><option value="Elder" ${m.type === 'Elder' ? 'selected' : ''}>Elder</option><option value="Sister" ${m.type === 'Sister' ? 'selected' : ''}>Sister</option></select>`;
           const typeCellHTML = `
             <td>
+                <span class="pdf-type-wrap">${m.type}</span>
                 ${typeIsEditable ? typeSelectHTML : m.type}
-                <div class="pdf-type-wrap">${m.type}</div>
             </td>`;
 
           tr.innerHTML = `${typeCellHTML}<td>${getLastName(m.name)}</td><td>${m.originCity}</td><td>${m.destinationCity}</td><td>${m.destinationArea}</td>
@@ -746,9 +746,7 @@
               item.leader = trElement.querySelector('.leader-checkbox').checked;
               
               const typeSelect = trElement.querySelector('.type-select-editable');
-              if (typeSelect) {
-                  item.type = typeSelect.value;
-              }
+              if (typeSelect) { item.type = typeSelect.value; }
               saveToLS();
           };
 
@@ -757,9 +755,7 @@
                   const trElement = e.target.closest('tr');
                   const missionaryId = trElement.dataset.id;
                   const item = group.find(miss => miss.id === missionaryId);
-                  if (item) {
-                      updateItem(item, trElement);
-                  }
+                  if (item) { updateItem(item, trElement); }
               });
           });
 
@@ -829,11 +825,9 @@
         document.getElementById('edit-name').value = missionary.name;
         document.getElementById('edit-type').value = missionary.type;
         
-        // Handle Origin City Dropdown
         const originSelect = document.getElementById('edit-origin-select');
         const originOther = document.getElementById('edit-origin-other');
-        const originCityExists = Array.from(originSelect.options).some(opt => opt.value === missionary.originCity);
-        if (originCityExists) {
+        if (Array.from(originSelect.options).some(opt => opt.value === missionary.originCity)) {
             originSelect.value = missionary.originCity;
             originOther.style.display = 'none';
         } else {
@@ -842,11 +836,9 @@
             originOther.style.display = 'block';
         }
 
-        // Handle Destination City Dropdown
         const destSelect = document.getElementById('edit-dest-select');
         const destOther = document.getElementById('edit-dest-other');
-        const destCityExists = Array.from(destSelect.options).some(opt => opt.value === missionary.destinationCity);
-        if (destCityExists) {
+        if (Array.from(destSelect.options).some(opt => opt.value === missionary.destinationCity)) {
             destSelect.value = missionary.destinationCity;
             destOther.style.display = 'none';
         } else {
@@ -874,7 +866,6 @@
 
     document.getElementById('add-origin-select').addEventListener('change', (e) => { document.getElementById('add-origin-other').style.display = e.target.value === 'other' ? 'block' : 'none'; });
     document.getElementById('add-dest-select').addEventListener('change', (e) => { document.getElementById('add-dest-other').style.display = e.target.value === 'other' ? 'block' : 'none'; });
-
     document.getElementById('edit-origin-select').addEventListener('change', (e) => { document.getElementById('edit-origin-other').style.display = e.target.value === 'other' ? 'block' : 'none'; });
     document.getElementById('edit-dest-select').addEventListener('change', (e) => { document.getElementById('edit-dest-other').style.display = e.target.value === 'other' ? 'block' : 'none'; });
 
@@ -958,10 +949,15 @@
                 const tbdWrapper = row.querySelector('.tbd-wrapper');
                 if (tbdWrapper) tbdWrapper.style.display = 'none';
             }
-            row.querySelector('.instr-input')?.setAttribute('style', 'display: none !important');
-            row.querySelector('.pdf-instr-wrap')?.setAttribute('style', 'display: block !important');
-            row.querySelector('.type-select-editable')?.setAttribute('style', 'display: none !important');
-            row.querySelector('.pdf-type-wrap')?.setAttribute('style', 'display: block !important');
+            const instrTextarea = row.querySelector('.instr-input');
+            const pdfDiv = row.querySelector('.pdf-instr-wrap');
+            if(instrTextarea) instrTextarea.style.display = 'none';
+            if(pdfDiv) pdfDiv.style.display = 'block';
+            
+            const typeSelect = row.querySelector('.type-select-editable');
+            const typeDiv = row.querySelector('.pdf-type-wrap');
+            if(typeSelect) typeSelect.style.display = 'none';
+            if(typeDiv) typeDiv.style.display = 'block';
         });
 
         const canvas = await html2canvas(card, { scale: 2 });
@@ -970,10 +966,15 @@
         card.querySelectorAll('tbody tr').forEach(row => {
             const tbdWrapper = row.querySelector('.tbd-wrapper');
             if (tbdWrapper) tbdWrapper.style.display = '';
-            row.querySelector('.instr-input')?.style.display = '';
-            row.querySelector('.pdf-instr-wrap')?.style.display = 'none';
-            row.querySelector('.type-select-editable')?.style.display = '';
-            row.querySelector('.pdf-type-wrap')?.style.display = 'none';
+            const instrTextarea = row.querySelector('.instr-input');
+            const pdfDiv = row.querySelector('.pdf-instr-wrap');
+            if(instrTextarea) instrTextarea.style.display = '';
+            if(pdfDiv) pdfDiv.style.display = 'none';
+
+            const typeSelect = row.querySelector('.type-select-editable');
+            const typeDiv = row.querySelector('.pdf-type-wrap');
+            if(typeSelect) typeSelect.style.display = '';
+            if(typeDiv) typeDiv.style.display = 'none';
         });
 
         const imgData = canvas.toDataURL('image/jpeg', 0.7);
