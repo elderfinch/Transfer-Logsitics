@@ -1111,7 +1111,7 @@
             }
         });
 
-        const unquote = (str) => str.startsWith('"') && str.endsWith('"') ? str.slice(1, -1).replace(/""/g, '"') : str;
+        const unquote = (str) => str ? (str.startsWith('"') && str.endsWith('"') ? str.slice(1, -1).replace(/""/g, '"') : str) : '';
 
         for (const row of rows) {
             if (!row.trim()) continue;
