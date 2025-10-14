@@ -12,6 +12,11 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
+    body { 
+        padding-bottom: 100px; /* Add padding to prevent FAB from overlapping content */
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+    }
+    .container { width: 95%; max-width: initial; }
     .btn-group {
       display: flex;
       flex-wrap: wrap;
@@ -23,16 +28,13 @@
         position: sticky;
         left: 0;
         background: inherit;
+        z-index: 1;
     }
-    .table th:nth-child(2), .table td:nth-child(2) {
-        position: sticky;
-        left: 80px; /* Adjust based on first column width */
-        background: inherit;
-    }
+    .hidden-input { display: none; margin-top: 10px !important; }
   </style>
 </head>
 <body>
-  <div class="navbar bg-primary text-primary-content">
+  <div class="navbar bg-primary text-primary-content sticky top-0 z-30">
     <div class="navbar-start">
       <button class="btn btn-ghost btn-circle" onclick="modal_settings.showModal()">
         <i class="fa fa-cog text-xl"></i>
@@ -44,8 +46,8 @@
     <div class="navbar-end">
         <div class="dropdown dropdown-end">
             <div tabindex="0" role="button" class="btn btn-ghost">Theme <svg width="12px" height="12px" class="h-2 w-2 fill-current opacity-60 inline-block" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2048 2048"><path d="M1799 349l242 241-1017 1017L7 590l242-241 775 775 775-775z"></path></svg></div>
-            <ul tabindex="0" id="theme-menu" class="dropdown-content max-h-[65vh] overflow-y-auto flex-nowrap menu p-2 shadow-2xl bg-base-300 rounded-box w-52">
-                <li><a>winter</a></li><li><a>light</a></li><li><a>dark</a></li><li><a>night</a></li><li><a>cyberpunk</a></li><li><a>retro</a></li><li><a>valentine</a></li><li><a>aqua</a></li><li><a>nord</a></li><li><a>lemonade</a></li><li><a>forest</a></li><li><a>luxury</a></li>
+            <ul tabindex="0" id="theme-menu" class="dropdown-content z-[50] max-h-[65vh] overflow-y-auto flex-nowrap menu p-2 shadow-2xl bg-base-200 rounded-box w-52">
+                <li><a>light</a></li><li><a>dark</a></li><li><a>cupcake</a></li><li><a>bumblebee</a></li><li><a>emerald</a></li><li><a>corporate</a></li><li><a>synthwave</a></li><li><a>retro</a></li><li><a>cyberpunk</a></li><li><a>valentine</a></li><li><a>halloween</a></li><li><a>garden</a></li><li><a>forest</a></li><li><a>aqua</a></li><li><a>lofi</a></li><li><a>pastel</a></li><li><a>fantasy</a></li><li><a>wireframe</a></li><li><a>black</a></li><li><a>luxury</a></li><li><a>dracula</a></li><li><a>cmyk</a></li><li><a>autumn</a></li><li><a>business</a></li><li><a>acid</a></li><li><a>lemonade</a></li><li><a>night</a></li><li><a>coffee</a></li><li><a>winter</a></li><li><a>dim</a></li><li><a>nord</a></li><li><a>sunset</a></li>
             </ul>
         </div>
     </div>
@@ -54,7 +56,7 @@
   <main class="container mx-auto p-4">
     <div class="my-8">
       <div id="upload-section">
-        <div class="flex justify-between items-center mb-4">
+        <div class="flex justify-between items-center mb-4 flex-wrap gap-4">
             <h2 class="text-2xl font-bold" data-translate="upload_title">Start New Plan</h2>
             <label class="form-control w-full max-w-xs">
               <div class="label"><span class="label-text" data-translate="language">Language</span></div>
@@ -77,8 +79,8 @@
         <button id="btn-process" class="btn btn-primary mt-4" data-translate="process_upload">Process upload</button>
         <div class="divider my-8">OR</div>
         <h2 class="text-2xl font-bold" data-translate="restore_title">Restore Plan from CSV</h2>
-        <div class="flex items-end gap-4 mt-4">
-            <label class="form-control w-full">
+        <div class="flex items-end gap-4 mt-4 flex-wrap">
+            <label class="form-control w-full flex-grow">
               <div class="label"><span class="label-text" data-translate="restore_desc">Upload travel_plans.csv file to restore progress</span></div>
               <input id="file-restore" type="file" class="file-input file-input-bordered w-full" accept=".csv" />
             </label>
@@ -100,14 +102,14 @@
       <div id="groups" class="space-y-6"></div>
     </div>
 
-    <div class="fixed bottom-8 right-8">
+    <div class="fixed bottom-8 right-8 z-40">
       <button class="btn btn-primary btn-circle btn-lg" onclick="modal_add.showModal()">
         <i class="fa fa-plus text-2xl"></i>
       </button>
     </div>
   </main>
   
-  <div id="toast-container" class="toast toast-top toast-center"></div>
+  <div id="toast-container" class="toast toast-top toast-center z-50"></div>
 
   <dialog id="modal_add" class="modal">
     <div class="modal-box w-11/12 max-w-5xl">
@@ -117,7 +119,7 @@
               <label class="form-control"><div class="label"><span class="label-text" data-translate="type">Type</span></div><select id="add-type" class="select select-bordered"><option disabled selected data-translate="choose_option">Choose...</option><option>Elder</option><option>Sister</option></select></label>
               <label class="form-control"><div class="label"><span class="label-text" data-translate="name">Name</span></div><input id="add-name" type="text" placeholder="Last, First" class="input input-bordered" /></label>
               <label class="form-control"><div class="label"><span class="label-text" data-translate="origin_city">Origin City</span></div><select id="add-origin-select" class="select select-bordered"></select><input id="add-origin-other" class="input input-bordered hidden-input" placeholder="Custom City" /></label>
-              <label class="form-control"><div class="label"><span class="label-text" data-translate="dest_city">Destination City</span></div><select id="add-dest-select" class="select select-bordered"></select><input id="add-dest-other" class="hidden-input input input-bordered" placeholder="Custom City" /></label>
+              <label class="form-control"><div class="label"><span class="label-text" data-translate="dest_city">Destination City</span></div><select id="add-dest-select" class="select select-bordered"></select><input id="add-dest-other" class="input input-bordered hidden-input" placeholder="Custom City" /></label>
           </div>
           <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
               <label class="form-control col-span-3"><div class="label"><span class="label-text" data-translate="origin_area">Origin Area</span></div><input id="add-originarea" type="text" class="input input-bordered" /></label>
@@ -264,11 +266,12 @@
         const toastContainer = document.getElementById('toast-container');
         const alertType = type === 'error' ? 'alert-error' : 'alert-success';
         const toast = document.createElement('div');
-        toast.className = `alert ${alertType}`;
+        toast.className = `alert ${alertType} shadow-lg`;
         toast.innerHTML = `<span>${message}</span>`;
         toastContainer.appendChild(toast);
         setTimeout(() => {
-            toast.remove();
+            toast.style.opacity = '0';
+            setTimeout(() => toast.remove(), 500);
         }, 3000);
     }
 
@@ -456,10 +459,6 @@
         });
         document.querySelectorAll('.lang-select').forEach(sel => {
             sel.value = lang;
-            const formControl = sel.parentElement;
-             if (formControl && formControl.classList.contains('input-field')) {
-                M.FormSelect.init(sel);
-            }
         });
         populateTransportDropdowns();
         renderGroups();
@@ -500,6 +499,7 @@
     function getLastName(fullName) { if (!fullName) return ''; return fullName.split(',')[0].trim(); }
     function normalizeZoneName(name){ if(!name) return ''; name = name.replace(/ZONA/i,'').trim(); return name.charAt(0).toUpperCase()+name.slice(1).toLowerCase(); }
     function autoResizeTextarea(element) {
+        if (!element) return;
         element.style.height = 'auto';
         element.style.height = (element.scrollHeight) + 'px';
     }
@@ -528,11 +528,13 @@
       const fields = [ {id:'name', label:'Name'}, {id:'type', label:'Type (Elder/Sister)'}, {id:'area', label:'Area/Neighborhood'}, {id:'district', label:'District'}, {id:'zone', label:'Zone'} ];
       fields.forEach(f=>{
         const div = document.createElement('div');
-        const h6 = document.createElement('h3'); h6.className = 'text-md font-semibold'; h6.textContent = f.label;
-        const select = document.createElement('select'); select.id = 'map-'+f.id; select.className = 'select select-bordered';
-        const emptyOpt = document.createElement('option'); emptyOpt.value=''; emptyOpt.text='-- Select column --'; select.appendChild(emptyOpt);
-        keys.forEach(k=>{ const opt=document.createElement('option'); opt.value=k; opt.text=k; select.appendChild(opt); });
-        div.appendChild(h6); div.appendChild(select); container.appendChild(div);
+        div.className = 'form-control';
+        div.innerHTML = `<div class="label"><span class="label-text">${f.label}</span></div>
+                         <select id="map-${f.id}" class="select select-bordered">
+                            <option value="">-- Select column --</option>
+                            ${keys.map(k => `<option value="${k}">${k}</option>`).join('')}
+                         </select>`;
+        container.appendChild(div);
       });
       modal_map.showModal();
     }
@@ -677,7 +679,7 @@
         const card = document.createElement('div'); card.className='card bg-base-100 shadow-xl';
         const content = document.createElement('div'); content.className='card-body'; content.innerHTML = `<h2 class="card-title">${key}</h2>`;
         const tableContainer = document.createElement('div'); tableContainer.className = 'overflow-x-auto';
-        const table = document.createElement('table'); table.className='table table-sm table-zebra';
+        const table = document.createElement('table'); table.className='table table-sm';
         table.innerHTML = `
           <thead>
             <tr class="bulk-edit-row bg-base-200">
@@ -696,7 +698,7 @@
           tr.dataset.id = m.id;
 
           const typeIsEditable = !(m.type === 'Elder' || m.type === 'Sister');
-          const typeSelectHTML = `<select class="type-select-editable select select-bordered select-xs"><option value="" ${!m.type ? 'selected' : ''}>${T.choose_option}</option><option>Elder</option><option>Sister</option></select>`;
+          const typeSelectHTML = `<select class="type-select-editable select select-bordered select-xs w-28"><option value="" ${!m.type ? 'selected' : ''}>${T.choose_option}</option><option>Elder</option><option>Sister</option></select>`;
           const typeCellHTML = `
             <td>
                 <span class="pdf-type-wrap">${m.type}</span>
@@ -772,7 +774,6 @@
         tableContainer.appendChild(table);
         content.appendChild(tableContainer);
         card.appendChild(content);
-
         const bulkUpdate = (field, value) => { if(!value && field !== 'instructions') return; state.groups[key].forEach(m => { m[field] = value; }); saveToLS(); renderGroups(); showToast(T.toast_updated.replace('{field}', field)); };
         
         const bulkInstrTextarea = card.querySelector('.bulk-instr-input');
@@ -809,10 +810,9 @@
 
     function openEditModal(groupKey, index) {
         const missionary = state.groups[groupKey][index];
-        const lang = state.lang || 'pt';
         
         document.getElementById('edit-original-group-key').value = groupKey;
-        document.getElementById('edit-missionary-id').value = missionary.id; // Use ID for lookup
+        document.getElementById('edit-missionary-id').value = missionary.id;
         document.getElementById('edit-name').value = missionary.name;
         document.getElementById('edit-type').value = missionary.type;
         
@@ -979,7 +979,7 @@
                 body: body,
                 startY: finalY,
                 theme: 'striped',
-                headStyles: { fillColor: [0, 150, 136] },
+                headStyles: { fillColor: [34, 150, 136] },
                 columnStyles: {
                     0: { cellWidth: 18 }, 1: { cellWidth: 30 }, 2: { cellWidth: 30 }, 
                     3: { cellWidth: 30 }, 4: { cellWidth: 25 }, 5: { cellWidth: 22 }, 
