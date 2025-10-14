@@ -17,47 +17,54 @@
         padding: 16px; 
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
     }
-    .container { width: 95%; max-width: initial; }
+    .container { width: 98%; max-width: initial; }
     .chip-leader { background: #ffd54f; }
     .group-card { margin-bottom: 18px; }
-    .small-input { width:120px }
-    .time-input { width:140px }
     .btn-group { margin-top: 10px; }
     .btn-group .btn { margin-right: 8px; margin-bottom: 8px; }
     #modal-add h6, #modal-edit h6 { margin: 10px 0 2px 0; font-size: 0.9rem; color: #555; }
     .bulk-instr-input, .instr-input {
-        min-height: 45px;
-        height: auto;
-        padding: 5px !important;
-    }
-    .pdf-instr-wrap, .pdf-type-wrap {
-        white-space: pre-wrap;
-        word-wrap: break-word;
-        font-size: 0.8rem;
-        padding: 5px 0;
-        display: none;
-        min-height: 20px;
+        min-height: 45px; height: auto; padding: 5px !important;
     }
     .action-buttons a { margin: 0 4px; }
-    .hidden-input { display: none; margin-top: 10px !important; }
-    .narrow-select { width: 110px; }
-    .hidden-file-input { display: none; }
+    .hidden-input, .hidden-file-input { display: none; }
 
-    /* Styles for Column Toggling */
+    /* --- NEW: Compact Table & Column Toggle Styles --- */
+    .group-card .card-content { padding: 12px; }
+    .table-col-toggle th, .table-col-toggle td {
+        padding: 8px 5px;
+        font-size: 0.85rem;
+    }
+    .table-col-toggle .input-field { margin: 0; }
+    .table-col-toggle input[type=date], .table-col-toggle input[type=time], .table-col-toggle .browser-default, .table-col-toggle .companion-input {
+        height: 2.1rem;
+        font-size: 0.85rem;
+        padding: 0 4px;
+        border-radius: 2px;
+        border: 1px solid #ddd;
+    }
+    .table-col-toggle .materialize-textarea {
+        padding: 5px !important; min-height: 35px; line-height: 1.2;
+    }
+    .tbd-wrapper, .leader-checkbox-wrapper { padding-top: 0 !important; margin-top: 0 !important; }
+
     .table-col-toggle th, .table-col-toggle td { display: none; }
-    .table-col-toggle th.col-actions, .table-col-toggle td.col-actions { display: table-cell; } /* Always show */
+    .table-col-toggle th.col-actions, .table-col-toggle td.col-actions { display: table-cell; }
 
     body.show-type .table-col-toggle th.col-type, body.show-type .table-col-toggle td.col-type { display: table-cell; }
-    body.show-name .table-col-toggle th.col-name, body.show-name .table-col-toggle td.col-name { display: table-cell; }
+    body.show-lastName .table-col-toggle th.col-lastName, body.show-lastName .table-col-toggle td.col-lastName { display: table-cell; }
+    body.show-firstName .table-col-toggle th.col-firstName, body.show-firstName .table-col-toggle td.col-firstName { display: table-cell; }
+    body.show-originCity .table-col-toggle th.col-originCity, body.show-originCity .table-col-toggle td.col-originCity { display: table-cell; }
+    body.show-destCity .table-col-toggle th.col-destCity, body.show-destCity .table-col-toggle td.col-destCity { display: table-cell; }
     body.show-originArea .table-col-toggle th.col-originArea, body.show-originArea .table-col-toggle td.col-originArea { display: table-cell; }
     body.show-destArea .table-col-toggle th.col-destArea, body.show-destArea .table-col-toggle td.col-destArea { display: table-cell; }
+    body.show-companion .table-col-toggle th.col-companion, body.show-companion .table-col-toggle td.col-companion { display: table-cell; }
     body.show-transport .table-col-toggle th.col-transport, body.show-transport .table-col-toggle td.col-transport { display: table-cell; }
     body.show-date .table-col-toggle th.col-date, body.show-date .table-col-toggle td.col-date { display: table-cell; }
     body.show-time .table-col-toggle th.col-time, body.show-time .table-col-toggle td.col-time { display: table-cell; }
     body.show-instructions .table-col-toggle th.col-instructions, body.show-instructions .table-col-toggle td.col-instructions { display: table-cell; }
     body.show-new .table-col-toggle th.col-new, body.show-new .table-col-toggle td.col-new { display: table-cell; }
     body.show-leader .table-col-toggle th.col-leader, body.show-leader .table-col-toggle td.col-leader { display: table-cell; }
-
   </style>
 </head>
 <body>
@@ -112,21 +119,23 @@
       <div class="btn-group">
           <a id="btn-export-pdf" class="btn green" data-translate="export_pdf">Export PDF</a>
           <a id="btn-export-csv" class="btn blue" data-translate="export_csv">Export CSV</a>
-          <a id="btn-update-origins" class="btn orange" data-translate="update_origin_areas_btn">Update Origin Areas</a>
-          <input type="file" id="file-update-origin" class="hidden-file-input" accept=".xlsx,.xls,.csv" />
           <a id="btn-clear-local" class="btn red" data-translate="clear_all_travel">Clear All Saved Travel</a>
       </div>
     </div>
 
     <div class="section" id="controls-section" style="display: none;">
         <div class="row">
-            <div class="input-field col s12 m8 l6">
+            <div class="input-field col s12 m10 l8">
                 <select multiple id="column-toggle">
                   <option value="" disabled data-translate="visible_columns_placeholder">Choose columns to display</option>
                   <option value="type" data-translate="table_header_type">Type</option>
-                  <option value="name" data-translate="table_header_name">Name</option>
+                  <option value="lastName" data-translate="table_header_last_name">Last Name</option>
+                  <option value="firstName" data-translate="table_header_first_name">First Name</option>
+                  <option value="originCity" data-translate="origin_city">Origin City</option>
+                  <option value="destCity" data-translate="dest_city">Destination City</option>
                   <option value="originArea" data-translate="table_header_origin_area">Origin Area</option>
                   <option value="destArea" data-translate="table_header_dest_area">Destination Area</option>
+                  <option value="companion" data-translate="table_header_companion">Companion</option>
                   <option value="transport" data-translate="table_header_transport">Transportation</option>
                   <option value="date" data-translate="table_header_date">Date</option>
                   <option value="time" data-translate="table_header_time">Time</option>
@@ -205,21 +214,25 @@
           <h6 data-translate="dest_area">Destination Area</h6>
           <input id="add-destarea">
         </div>
-        <div class="col s4">
+        <div class="col s3">
           <h6 data-translate="transportation">Transportation</h6>
           <select id="add-transport" class="browser-default"></select>
         </div>
-        <div class="col s2 add-date-wrapper">
-          <h6 data-translate="date">Date</h6>
-          <input id="add-date" type="date">
+         <div class="col s3">
+            <h6 data-translate="table_header_companion">Companion</h6>
+            <input id="add-companion">
         </div>
       </div>
       <div class="row">
-        <div class="col s3">
+        <div class="col s2">
+          <h6 data-translate="date">Date</h6>
+          <input id="add-date" type="date">
+        </div>
+        <div class="col s2">
           <h6 data-translate="departure_time">Departure Time</h6>
           <input id="add-time" type="time">
         </div>
-        <div class="col s5">
+        <div class="col s4">
           <h6 data-translate="travel_instructions">Travel Instructions</h6>
           <input id="add-instructions">
         </div>
@@ -245,8 +258,7 @@
   <div id="modal-edit" class="modal">
     <div class="modal-content">
       <h5 data-translate="edit_missionary_title">Edit Missionary</h5>
-      <input type="hidden" id="edit-original-group-key">
-      <input type="hidden" id="edit-missionary-index">
+      <input type="hidden" id="edit-id">
       <div class="row">
         <div class="col s2">
           <h6 data-translate="type">Type</h6>
@@ -279,21 +291,25 @@
           <h6 data-translate="dest_area">Destination Area</h6>
           <input id="edit-destarea">
         </div>
-        <div class="col s4">
+        <div class="col s3">
           <h6 data-translate="transportation">Transportation</h6>
           <select id="edit-transport" class="browser-default"></select>
         </div>
-        <div class="col s2 edit-date-wrapper">
-          <h6 data-translate="date">Date</h6>
-          <input id="edit-date" type="date">
+        <div class="col s3">
+            <h6 data-translate="table_header_companion">Companion</h6>
+            <input id="edit-companion">
         </div>
       </div>
       <div class="row">
-        <div class="col s3">
+        <div class="col s2">
+          <h6 data-translate="date">Date</h6>
+          <input id="edit-date" type="date">
+        </div>
+        <div class="col s2">
           <h6 data-translate="departure_time">Departure Time</h6>
           <input id="edit-time" type="time">
         </div>
-        <div class="col s5">
+        <div class="col s4">
           <h6 data-translate="travel_instructions">Travel Instructions</h6>
           <input id="edit-instructions">
         </div>
@@ -359,17 +375,6 @@
     </div>
   </div>
 
-    <div id="modal-map-update" class="modal">
-    <div class="modal-content">
-        <h5 data-translate="map_origin_areas_title">Map Origin Area Columns</h5>
-        <p data-translate="map_origin_areas_desc">Select the columns for Missionary Name and their Origin Area.</p>
-        <div id="mapping-forms-update"></div>
-    </div>
-    <div class="modal-footer">
-        <a id="btn-map-update-apply" class="modal-close btn">Apply Update</a>
-    </div>
-  </div>
-
   <div id="modal-exceptions" class="modal modal-fixed-footer">
     <div class="modal-content">
       <h5 data-translate="assign_exceptions_title">Assign exceptions...</h5>
@@ -394,12 +399,12 @@
 
   <script>
     // -- Constants, Defaults & State
-    const LS_KEY = 'transfer_logistics_data_v1';
+    const LS_KEY = 'transfer_logistics_data_v2';
     const defaults = {
       exceptions: {
         'Quelimane': { city: 'Quelimane' }, 'Quelimane District': { city: 'Quelimane' }, 'Nhamatanda': { city: 'Nhamatanda' }, 'Marromeu': { city: 'Marromeu' }, 'Caia': { city: 'Caia' }, 'ZONA INHAMIZUA': { city: 'Beira' }, 'ZONA MANGA': { city: 'Beira' }, 'ZONA MUNHAVA': { city: 'Beira' }
       },
-      visibleColumns: ['type', 'name', 'destArea', 'transport', 'date', 'time', 'instructions', 'leader']
+      visibleColumns: ['type', 'lastName', 'firstName', 'destArea', 'companion', 'transport', 'date', 'time', 'instructions', 'leader']
     };
     let state = loadFromLS() || { groups: {}, exceptions: defaults.exceptions, lang: 'pt', visibleColumns: defaults.visibleColumns };
     let fileOldRows = null; let fileNewRows = null;
@@ -419,12 +424,11 @@
             process_upload: "Process upload",
             export_pdf: "Export PDF",
             export_csv: "Export CSV",
-            update_origin_areas_btn: "Update Origin Areas",
             clear_all_travel: "Clear All Saved Travel",
             add_missionary_title: "Add Missionary",
             edit_missionary_title: "Edit Missionary",
             type: "Type",
-            name: "Name",
+            name: "Name (Last, First)",
             origin_city: "Origin City",
             dest_city: "Destination City",
             origin_area: "Origin Area",
@@ -438,14 +442,11 @@
             save: "Save",
             settings: "Settings",
             language: "Language",
-            delete_all_travel: "Delete All Missionary Travel",
             exceptions_title: "Area/District Exceptions",
             add_exception_title: "Add New Exception",
             area_zone_name: "Area/District/Zone Name",
             override_city: "Override City",
             map_columns_title: "Map columns (choose which column in your spreadsheet corresponds to these fields)",
-            map_origin_areas_title: "Map Origin Area Columns",
-            map_origin_areas_desc: "Select the columns for Missionary Name and their Origin Area.",
             apply_mapping: "Apply Mapping",
             assign_exceptions_title: "Assign exceptions (areas/districts that map to a different city)",
             assign_exceptions_desc: "For any area or zone below, you can enter a city name to override the default. Check 'Apply' to save the exception.",
@@ -453,7 +454,9 @@
             transport_defaults_title: "Set Default Transportation",
             transport_defaults_desc: "Select the default mode of transport for each travel group. This will be applied to all missionaries in that group.",
             table_header_type: "Type",
-            table_header_name: "Name",
+            table_header_last_name: "Last Name",
+            table_header_first_name: "First Name",
+            table_header_companion: "Companion",
             table_header_new: "New",
             table_header_origin_area: "Origin Area",
             table_header_dest_area: "Destination Area",
@@ -471,25 +474,17 @@
             toast_processed: "Processed {count} missionaries (transfers and new arrivals).",
             toast_added: "Added",
             toast_restored: "Plan restored successfully.",
-            toast_origins_updated: "Origin areas updated successfully.",
             toast_updated: "Updated {field} for all in group.",
             toast_pdf_generating: "Generating PDF... Please wait.",
             toast_pdf_generated: "PDF generated successfully.",
             confirm_remove_missionary: "Remove this missionary from travel plans?",
             confirm_delete_all: "Delete ALL missionary travel? This will clear saved groups.",
             confirm_clear_local: "Clear local storage? This will delete all saved travel and settings.",
-            transport_bus: "Bus",
-            transport_plane: "Plane",
-            transport_chapa: "Chapa",
-            transport_taxi: "Txopela/Taxi",
-            transport_ride: "Ride",
-            choose_option: "Choose...",
-            other_option: "Other...",
+            transport_bus: "Bus", transport_plane: "Plane", transport_chapa: "Chapa", transport_taxi: "Txopela/Taxi", transport_ride: "Ride",
+            choose_option: "Choose...", other_option: "Other...",
             visible_columns_label: "Visible Columns",
             visible_columns_placeholder: "Choose columns to display",
-            tab_route: "By Route",
-            tab_transport: "By Transport",
-            tab_master: "Master List"
+            tab_route: "By Route", tab_transport: "By Transport", tab_master: "Master List"
         },
         pt: {
             app_title: "Logística de Transferência",
@@ -502,12 +497,11 @@
             process_upload: "Processar carregamento",
             export_pdf: "Exportar PDF",
             export_csv: "Exportar CSV",
-            update_origin_areas_btn: "Atualizar Áreas de Origem",
             clear_all_travel: "Limpar Viagens Guardadas",
             add_missionary_title: "Adicionar Missionário",
             edit_missionary_title: "Editar Missionário",
             type: "Tipo",
-            name: "Nome",
+            name: "Nome (Apelido, Nome)",
             origin_city: "Cidade de Origem",
             dest_city: "Cidade de Destino",
             origin_area: "Área de Origem",
@@ -521,14 +515,11 @@
             save: "Guardar",
             settings: "Definições",
             language: "Idioma",
-            delete_all_travel: "Apagar Todas as Viagens de Missionários",
             exceptions_title: "Exceções de Área/Distrito",
             add_exception_title: "Adicionar Nova Exceção",
             area_zone_name: "Nome da Área/Distrito/Zona",
             override_city: "Cidade Alternativa",
             map_columns_title: "Mapear colunas (escolha qual coluna da sua planilha corresponde a estes campos)",
-            map_origin_areas_title: "Mapear Colunas da Área de Origem",
-            map_origin_areas_desc: "Selecione as colunas para o Nome do Missionário e a sua Área de Origem.",
             apply_mapping: "Aplicar Mapeamento",
             assign_exceptions_title: "Atribuir exceções (áreas/distritos que mapeiam para uma cidade diferente)",
             assign_exceptions_desc: "Para qualquer área ou zona abaixo, pode inserir um nome de cidade para substituir o padrão. Marque 'Aplicar' para guardar a exceção.",
@@ -536,7 +527,9 @@
             transport_defaults_title: "Definir Transporte Padrão",
             transport_defaults_desc: "Selecione o modo de transporte padrão para cada grupo de viagem. Isso será aplicado a todos os missionários desse grupo.",
             table_header_type: "Tipo",
-            table_header_name: "Nome",
+            table_header_last_name: "Apelido",
+            table_header_first_name: "Nome",
+            table_header_companion: "Companheiro",
             table_header_new: "Novo",
             table_header_origin_area: "Área de Origem",
             table_header_dest_area: "Área de Destino",
@@ -554,25 +547,17 @@
             toast_processed: "Processados {count} missionários (transferências e novas chegadas).",
             toast_added: "Adicionado",
             toast_restored: "Plano restaurado com sucesso.",
-            toast_origins_updated: "Áreas de origem atualizadas com sucesso.",
             toast_updated: "{field} atualizado para todos no grupo.",
             toast_pdf_generating: "A gerar PDF... Por favor, aguarde.",
             toast_pdf_generated: "PDF gerado com sucesso.",
             confirm_remove_missionary: "Remover este missionário dos planos de viagem?",
             confirm_delete_all: "Apagar TODAS as viagens de missionários? Isto irá limpar os grupos guardados.",
             confirm_clear_local: "Limpar armazenamento local? Isto irá apagar todas as viagens e definições guardadas.",
-            transport_bus: "Ônibus",
-            transport_plane: "Avião",
-            transport_chapa: "Chapa",
-            transport_taxi: "Txopela/Táxi",
-            transport_ride: "Boleia",
-            choose_option: "Escolha...",
-            other_option: "Outro...",
+            transport_bus: "Ônibus", transport_plane: "Avião", transport_chapa: "Chapa", transport_taxi: "Txopela/Táxi", transport_ride: "Boleia",
+            choose_option: "Escolha...", other_option: "Outro...",
             visible_columns_label: "Colunas Visíveis",
             visible_columns_placeholder: "Escolha as colunas para exibir",
-            tab_route: "Por Rota",
-            tab_transport: "Por Transporte",
-            tab_master: "Lista Geral"
+            tab_route: "Por Rota", tab_transport: "Por Transporte", tab_master: "Lista Geral"
         }
     };
 
@@ -582,30 +567,18 @@
             const key = el.getAttribute('data-translate');
             if (translations[lang] && translations[lang][key]) {
                 const isPlaceholder = el.hasAttribute('placeholder');
-                if (isPlaceholder) {
-                    el.setAttribute('placeholder', translations[lang][key]);
-                } else {
-                    el.textContent = translations[lang][key];
-                }
+                if (isPlaceholder) { el.setAttribute('placeholder', translations[lang][key]); } 
+                else { el.textContent = translations[lang][key]; }
             }
         });
-        document.querySelectorAll('.lang-select').forEach(sel => {
-            sel.value = lang;
-            M.FormSelect.init(sel);
-        });
+        document.querySelectorAll('.lang-select').forEach(sel => { sel.value = lang; M.FormSelect.init(sel); });
         populateTransportDropdowns();
         renderAllViews();
     }
     
     function populateTransportDropdowns() {
         const lang = state.lang || 'pt';
-        const transportOptions = `
-            <option value="Bus">${translations[lang].transport_bus}</option>
-            <option value="Plane">${translations[lang].transport_plane}</option>
-            <option value="Chapa">${translations[lang].transport_chapa}</option>
-            <option value="Txopela/Taxi">${translations[lang].transport_taxi}</option>
-            <option value="Ride">${translations[lang].transport_ride}</option>`;
-        
+        const transportOptions = `<option value="Bus">${translations[lang].transport_bus}</option><option value="Plane">${translations[lang].transport_plane}</option><option value="Chapa">${translations[lang].transport_chapa}</option><option value="Txopela/Taxi">${translations[lang].transport_taxi}</option><option value="Ride">${translations[lang].transport_ride}</option>`;
         document.getElementById('add-transport').innerHTML = transportOptions;
         document.getElementById('edit-transport').innerHTML = transportOptions;
     }
@@ -629,41 +602,42 @@
     }
 
     // -- Helpers
-    function getLastName(fullName) { if (!fullName) return ''; return fullName.split(',')[0].trim(); }
     function normalizeZoneName(name){ if(!name) return ''; name = name.replace(/ZONA/i,'').trim(); return name.charAt(0).toUpperCase()+name.slice(1).toLowerCase(); }
-    function autoResizeTextarea(element) {
-        element.style.height = 'auto';
-        element.style.height = (element.scrollHeight) + 'px';
-    }
+    function autoResizeTextarea(element) { element.style.height = 'auto'; element.style.height = (element.scrollHeight) + 'px'; }
     function determineCity(loc) {
         if (loc.area && state.exceptions[loc.area]) return state.exceptions[loc.area].city;
         if (loc.district && state.exceptions[loc.district]) return state.exceptions[loc.district].city;
         if (loc.zone && state.exceptions[loc.zone]) return state.exceptions[loc.zone].city;
         return normalizeZoneName(loc.zone || loc.district || loc.area);
     }
+    function findMissionary(missionaryId) {
+        for (const key in state.groups) {
+            const missionary = state.groups[key].find(m => m.id === missionaryId);
+            if (missionary) return { missionary, groupKey: key };
+        }
+        return { missionary: null, groupKey: null };
+    }
+
 
     // -- File Processing
     document.getElementById('btn-process').addEventListener('click', async ()=>{
-      const fOld = document.getElementById('file-old').files[0];
-      const fNew = document.getElementById('file-new').files[0];
+      const fOld = document.getElementById('file-old').files[0]; const fNew = document.getElementById('file-new').files[0];
       if(!fOld || !fNew){ M.toast({html: translations[state.lang].toast_select_files}); return; }
-      fileOldRows = await readFileRows(fOld);
-      fileNewRows = await readFileRows(fNew);
+      fileOldRows = await readFileRows(fOld); fileNewRows = await readFileRows(fNew);
       showMappingModal(fileOldRows[0] || fileNewRows[0]);
     });
 
-    async function readFileRows(file){ const data = await file.arrayBuffer(); const wb = XLSX.read(data); const first = wb.SheetNames[0]; const sheet = wb.Sheets[first]; return XLSX.utils.sheet_to_json(sheet, {defval: ''}); }
+    async function readFileRows(file){ const data = await file.arrayBuffer(); const wb = XLSX.read(data); return XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {defval: ''}); }
 
     function showMappingModal(sampleRow){
       const container = document.getElementById('mapping-forms'); container.innerHTML = '';
       const keys = Object.keys(sampleRow || {});
-      const fields = [ {id:'name', label:'Name'}, {id:'type', label:'Type (Elder/Sister)'}, {id:'area', label:'Area/Neighborhood'}, {id:'district', label:'District'}, {id:'zone', label:'Zone'} ];
+      const fields = [ {id:'name', label:'Name (Last, First)'}, {id:'type', label:'Type (Elder/Sister)'}, {id:'area', label:'Area/Neighborhood'}, {id:'district', label:'District'}, {id:'zone', label:'Zone'} ];
       fields.forEach(f=>{
         const div = document.createElement('div'); div.style.marginBottom = '20px';
         const h6 = document.createElement('h6'); h6.textContent = f.label;
         const select = document.createElement('select'); select.id = 'map-'+f.id; select.className = 'browser-default';
-        const emptyOpt = document.createElement('option'); emptyOpt.value=''; emptyOpt.text='-- Select column --'; select.appendChild(emptyOpt);
-        keys.forEach(k=>{ const opt=document.createElement('option'); opt.value=k; opt.text=k; select.appendChild(opt); });
+        select.innerHTML = `<option value="">-- Select column --</option>` + keys.map(k=>`<option value="${k}">${k}</option>`).join('');
         div.appendChild(h6); div.appendChild(select); container.appendChild(div);
       });
       M.Modal.getInstance(document.getElementById('modal-map')).open();
@@ -675,12 +649,11 @@
     });
 
     function prepareExceptionsAssignment(){
-      const uniqueZones = new Set(); const uniqueDistricts = new Set(); const uniqueAreas = new Set();
+      const allUnique = { zones: new Set(), districts: new Set(), areas: new Set() };
       [fileOldRows,fileNewRows].forEach(rows=>{ (rows||[]).forEach(r=>{
-        const z = (mapping.zone ? r[mapping.zone] : '').toString().trim();
-        const d = (mapping.district ? r[mapping.district] : '').toString().trim();
-        const a = (mapping.area ? r[mapping.area] : '').toString().trim();
-        if(z) uniqueZones.add(z); if(d) uniqueDistricts.add(d); if(a) uniqueAreas.add(a);
+        if (mapping.zone && r[mapping.zone]) allUnique.zones.add(r[mapping.zone].toString().trim());
+        if (mapping.district && r[mapping.district]) allUnique.districts.add(r[mapping.district].toString().trim());
+        if (mapping.area && r[mapping.area]) allUnique.areas.add(r[mapping.area].toString().trim());
       }); });
       const container = document.getElementById('exceptions-assign'); container.innerHTML='';
       const createSection = (title, list) => {
@@ -689,96 +662,62 @@
         Array.from(list).sort((x,y)=>x.localeCompare(y)).forEach(val=>{
           const row = document.createElement('div'); row.className='row valign-wrapper'; row.style.marginBottom = '0px';
           const existingCity = state.exceptions[val]?.city || '';
-          row.innerHTML = `<div class="input-field col s5"> <input value="${val}" readonly> <label class="active">Source Name</label></div><div class="input-field col s5"> <input class="ex-city" data-key="${val}" value="${existingCity}" placeholder="e.g., Beira" /> <label class="active">Override City</label></div><div class="col s2"> <label><input type="checkbox" class="ex-apply" data-key="${val}" ${existingCity ? 'checked' : ''} /><span>Apply</span></label></div>`;
+          row.innerHTML = `<div class="input-field col s5"><input value="${val}" readonly></div><div class="input-field col s5"><input class="ex-city" data-key="${val}" value="${existingCity}" placeholder="e.g., Beira" /></div><div class="col s2"><label><input type="checkbox" class="ex-apply" data-key="${val}" ${existingCity ? 'checked' : ''} /><span>Apply</span></label></div>`;
           container.appendChild(row);
         });
-        container.appendChild(document.createElement('div')).className = 'divider';
       };
-      createSection('Area Overrides', uniqueAreas);
-      createSection('District Overrides', uniqueDistricts);
-      createSection('Zone Overrides', uniqueZones);
+      createSection('Area Overrides', allUnique.areas); createSection('District Overrides', allUnique.districts); createSection('Zone Overrides', allUnique.zones);
       M.AutoInit(); M.Modal.getInstance(document.getElementById('modal-exceptions')).open();
     }
 
     document.getElementById('btn-exceptions-apply').addEventListener('click', ()=>{
       document.querySelectorAll('.ex-apply').forEach(chk => {
-          const key = chk.dataset.key; const cityInput = document.querySelector(`.ex-city[data-key="${key}"]`); const city = cityInput.value.trim();
-          if (chk.checked && city) { state.exceptions[key] = { city: city }; } else { if (state.exceptions[key] && !defaults.exceptions[key]) { delete state.exceptions[key]; } }
+          const key = chk.dataset.key; const city = document.querySelector(`.ex-city[data-key="${key}"]`).value.trim();
+          if (chk.checked && city) { state.exceptions[key] = { city: city }; } 
+          else if (state.exceptions[key] && !defaults.exceptions[key]) { delete state.exceptions[key]; }
       });
       state.exceptions = Object.assign({}, defaults.exceptions, state.exceptions);
-      saveToLS();
-      prepareAndShowTransportModal();
+      saveToLS(); prepareAndShowTransportModal();
     });
     
     function prepareAndShowTransportModal() {
         const oldIdx = {};
         (fileOldRows||[]).forEach(r=>{ const nameVal = mapping.name ? (r[mapping.name]||'') : ''; const key = nameVal.toString().trim().toLowerCase(); if(key) oldIdx[key]=r; });
-        
         pendingMissionaries = [];
         (fileNewRows||[]).forEach(r=>{
             const nameVal = (mapping.name ? r[mapping.name] : '').toString().trim();
-            const key = nameVal.toLowerCase();
-            if(!key) return;
+            const id = nameVal.toLowerCase(); if(!id) return;
             const nameParts = nameVal.split(',').map(p => p.trim());
-            const lastName = nameParts[0] || '';
-            const firstName = nameParts[1] || '';
-            const old = oldIdx[key];
-            
-            const rawType = (r[mapping.type]||'').toString().trim();
-            const finalType = /^(elder|sister)$/i.test(rawType) ? rawType : '';
-            
-            const newLoc = {
-                zone: (mapping.zone ? r[mapping.zone] : '').toString(), district: (mapping.district ? r[mapping.district] : '').toString(), area: (mapping.area ? r[mapping.area] : '').toString()
-            };
-
-            const baseMissionary = {
-                id: key, name: nameVal, lastName, firstName, type: finalType, date: '', tbd: false, time: '', instructions:'', leader:false
-            };
-
+            const old = oldIdx[id];
+            const newLoc = { zone: (mapping.zone ? r[mapping.zone] : '').toString(), district: (mapping.district ? r[mapping.district] : '').toString(), area: (mapping.area ? r[mapping.area] : '').toString() };
+            const baseMissionary = { id, name: nameVal, lastName: nameParts[0] || '', firstName: nameParts[1] || '', type: /^(elder|sister)$/i.test((r[mapping.type]||'').toString().trim()) ? (r[mapping.type]||'').toString().trim() : '', date: '', tbd: false, time: '', instructions:'', leader:false, companion: '' };
             if (old) {
-                const oldLoc = {
-                    zone: (mapping.zone ? old[mapping.zone] : '').toString(), district: (mapping.district ? old[mapping.district] : '').toString(), area: (mapping.area ? old[mapping.area] : '').toString()
-                };
-                if (oldLoc.zone !== newLoc.zone || oldLoc.district !== newLoc.district || oldLoc.area !== newLoc.area) {
+                const oldLoc = { zone: (mapping.zone ? old[mapping.zone] : '').toString(), district: (mapping.district ? old[mapping.district] : '').toString(), area: (mapping.area ? old[mapping.area] : '').toString() };
+                if (oldLoc.area !== newLoc.area) { // Simplified transfer condition
                     pendingMissionaries.push({ ...baseMissionary, originCity: determineCity(oldLoc), originArea: oldLoc.area, originDistrict: oldLoc.district, originZone: oldLoc.zone, destinationCity: determineCity(newLoc), destinationArea: newLoc.area, destinationDistrict: newLoc.district, destinationZone: newLoc.zone, isNew: false });
                 }
             } else {
                 pendingMissionaries.push({ ...baseMissionary, originCity: 'Beira', originArea: '', originDistrict: '', originZone: '', destinationCity: determineCity(newLoc), destinationArea: newLoc.area, destinationDistrict: newLoc.district, destinationZone: newLoc.zone, isNew: true });
             }
         });
-
-        const uniqueRoutes = new Set();
-        pendingMissionaries.forEach(m => { uniqueRoutes.add(`${m.originCity} -> ${m.destinationCity}`); });
-
+        const uniqueRoutes = new Set(pendingMissionaries.map(m => `${m.originCity} -> ${m.destinationCity}`));
         const container = document.getElementById('transport-defaults-list'); container.innerHTML = ''; const lang = state.lang || 'pt'; const T = translations[lang];
         const transportOptions = `<option value="Bus">${T.transport_bus}</option><option value="Plane">${T.transport_plane}</option><option value="Chapa">${T.transport_chapa}</option><option value="Txopela/Taxi">${T.transport_taxi}</option><option value="Ride">${T.transport_ride}</option>`;
-
         Array.from(uniqueRoutes).sort().forEach(route => {
             const [origin, destination] = route.split(' -> ');
             const row = document.createElement('div'); row.className = 'row valign-wrapper';
             row.innerHTML = `<div class="col s6"><h6>${route}</h6></div><div class="col s6"><select class="browser-default transport-default-select" data-route="${route}">${transportOptions}</select></div>`;
-            container.appendChild(row);
-            row.querySelector('select').value = defaultTransportForPair(origin, destination);
+            container.appendChild(row); row.querySelector('select').value = defaultTransportForPair(origin, destination);
         });
         M.Modal.getInstance(document.getElementById('modal-transport-defaults')).open();
     }
 
     document.getElementById('btn-transport-apply').addEventListener('click', () => {
-        const transportDefaults = {};
-        document.querySelectorAll('.transport-default-select').forEach(sel => { transportDefaults[sel.dataset.route] = sel.value; });
-
-        pendingMissionaries.forEach(m => {
-            const routeKey = `${m.originCity} -> ${m.destinationCity}`;
-            m.transport = transportDefaults[routeKey] || defaultTransportForPair(m.originCity, m.destinationCity);
-        });
+        const transportDefaults = {}; document.querySelectorAll('.transport-default-select').forEach(sel => { transportDefaults[sel.dataset.route] = sel.value; });
+        pendingMissionaries.forEach(m => { m.transport = transportDefaults[`${m.originCity} -> ${m.destinationCity}`] || defaultTransportForPair(m.originCity, m.destinationCity); });
         state.groups = {};
-        pendingMissionaries.forEach(m => {
-            const key = `${m.originCity} -> ${m.destinationCity}`;
-            if (!state.groups[key]) state.groups[key] = []; state.groups[key].push(m);
-        });
-        saveToLS();
-        M.toast({html: translations[state.lang].toast_processed.replace('{count}', pendingMissionaries.length)});
-        location.reload();
+        pendingMissionaries.forEach(m => { const key = `${m.originCity} -> ${m.destinationCity}`; if (!state.groups[key]) state.groups[key] = []; state.groups[key].push(m); });
+        saveToLS(); M.toast({html: translations[state.lang].toast_processed.replace('{count}', pendingMissionaries.length)}); location.reload();
     });
 
     function defaultTransportForPair(from, to){
@@ -787,126 +726,97 @@
     }
 
     // -- UI Rendering
-    function renderAllViews(){
-        renderGroupsByRoute();
-        renderGroupsByTransport();
-        renderMasterTable();
-        populateCityDropdowns();
-        M.AutoInit();
-    }
-
+    function renderAllViews(){ renderGroupsByRoute(); renderGroupsByTransport(); renderMasterTable(); populateCityDropdowns(); M.AutoInit(); applyColumnVisibility(); }
     function renderGroupsByRoute(){
       const container = document.getElementById('groups-by-route'); container.innerHTML = '';
-      for(const key of Object.keys(state.groups||{}).sort()){
+      Object.keys(state.groups||{}).sort().forEach(key => {
         const card = document.createElement('div'); card.className='card group-card';
         const content = document.createElement('div'); content.className='card-content'; content.innerHTML = `<span class="card-title">${key}</span>`;
-        const table = createMissionaryTable(state.groups[key], key, true);
-        content.appendChild(table); card.appendChild(content); container.appendChild(card);
-      }
+        content.appendChild(createMissionaryTable(state.groups[key], key, true)); card.appendChild(content); container.appendChild(card);
+      });
     }
-
     function renderGroupsByTransport() {
         const container = document.getElementById('groups-by-transport'); container.innerHTML = '';
         const byTransport = {};
-        const allMissionaries = Object.values(state.groups || {}).flat();
-        allMissionaries.forEach(m => {
+        Object.values(state.groups || {}).flat().forEach(m => {
             const transport = m.transport || 'Unassigned';
             if (!byTransport[transport]) byTransport[transport] = []; byTransport[transport].push(m);
         });
-
-        for (const key of Object.keys(byTransport).sort()) {
+        Object.keys(byTransport).sort().forEach(key => {
             const card = document.createElement('div'); card.className = 'card group-card';
             const content = document.createElement('div'); content.className = 'card-content';
-            const lang = state.lang || 'pt';
-            const transportKey = `transport_${key.toLowerCase().replace('/','_')}`;
-            const transportName = translations[lang][transportKey] || key;
+            const lang = state.lang || 'pt'; const T = translations[lang]; const transportName = T[`transport_${key.toLowerCase().replace('/','_')}`] || key;
             content.innerHTML = `<span class="card-title">${transportName}</span>`;
-            const table = createMissionaryTable(byTransport[key], null, false);
-            content.appendChild(table); card.appendChild(content); container.appendChild(card);
-        }
+            content.appendChild(createMissionaryTable(byTransport[key], null, false)); card.appendChild(content); container.appendChild(card);
+        });
     }
-
     function renderMasterTable() {
         const container = document.getElementById('groups-master'); container.innerHTML = '';
-        const allMissionaries = Object.values(state.groups || {}).flat().sort((a,b) => (a.lastName || a.name).localeCompare(b.lastName || b.name));
-        const table = createMissionaryTable(allMissionaries, null, false);
-        container.appendChild(table);
+        const allMissionaries = Object.values(state.groups || {}).flat().sort((a,b) => a.lastName.localeCompare(b.lastName) || a.firstName.localeCompare(b.firstName));
+        container.appendChild(createMissionaryTable(allMissionaries, null, false));
     }
-    
     function createMissionaryTable(missionaries, groupKey, allowBulkEdit) {
       const table = document.createElement('table'); table.className='striped table-col-toggle'; const lang = state.lang || 'pt'; const T = translations[lang];
-      const bulkEditRow = allowBulkEdit ? `
-        <tr class="bulk-edit-row">
-          <th colspan="4">${T.bulk_edit_title}</th>
-          <th class="col-transport"><select class="bulk-transport-select browser-default" title="${T.bulk_edit_transport_placeholder}"><option value="" selected disabled>${T.bulk_edit_transport_placeholder}</option><option value="Bus">${T.transport_bus}</option><option value="Plane">${T.transport_plane}</option><option value="Chapa">${T.transport_chapa}</option><option value="Txopela/Taxi">${T.transport_taxi}</option><option value="Ride">${T.transport_ride}</option></select></th>
-          <th class="col-date"><input type="date" class="bulk-date-input"></th><th class="col-time"><input type="time" class="bulk-time-input"></th><th class="col-instructions"><textarea class="materialize-textarea bulk-instr-input" placeholder="${T.bulk_edit_instructions_placeholder}"></textarea></th><th class="actions-header" colspan="3"></th>
-        </tr>` : '';
-
-      table.innerHTML = `
-        <thead>${bulkEditRow}
-          <tr><th class="col-type">${T.table_header_type}</th><th class="col-name">${T.table_header_name}</th><th class="col-originArea">${T.table_header_origin_area}</th><th class="col-destArea">${T.table_header_dest_area}</th><th class="col-transport">${T.table_header_transport}</th><th class="col-date">${T.table_header_date}</th><th class="col-time">${T.table_header_time}</th><th class="col-instructions">${T.table_header_instructions}</th><th class="col-new">${T.table_header_new}</th><th class="col-leader">${T.table_header_leader}</th><th class="col-actions">${T.table_header_actions}</th></tr>
-        </thead>`;
+      const bulkEditRow = allowBulkEdit ? `<tr class="bulk-edit-row"><th colspan="6">${T.bulk_edit_title}</th><th class="col-transport"><select class="bulk-transport-select browser-default"><option value="" selected disabled>${T.bulk_edit_transport_placeholder}</option><option value="Bus">${T.transport_bus}</option><option value="Plane">${T.transport_plane}</option><option value="Chapa">${T.transport_chapa}</option><option value="Txopela/Taxi">${T.transport_taxi}</option><option value="Ride">${T.transport_ride}</option></select></th><th class="col-date"><input type="date" class="bulk-date-input"></th><th class="col-time"><input type="time" class="bulk-time-input"></th><th class="col-instructions"><textarea class="materialize-textarea bulk-instr-input" placeholder="${T.bulk_edit_instructions_placeholder}"></textarea></th><th class="actions-header" colspan="3"></th></tr>` : '';
+      table.innerHTML = `<thead>${bulkEditRow}<tr>
+          <th class="col-type">${T.table_header_type}</th><th class="col-lastName">${T.table_header_last_name}</th><th class="col-firstName">${T.table_header_first_name}</th>
+          <th class="col-originCity">${T.origin_city}</th><th class="col-destCity">${T.dest_city}</th>
+          <th class="col-originArea">${T.table_header_origin_area}</th><th class="col-destArea">${T.table_header_dest_area}</th><th class="col-companion">${T.table_header_companion}</th>
+          <th class="col-transport">${T.table_header_transport}</th><th class="col-date">${T.table_header_date}</th><th class="col-time">${T.table_header_time}</th>
+          <th class="col-instructions">${T.table_header_instructions}</th><th class="col-new">${T.table_header_new}</th><th class="col-leader">${T.table_header_leader}</th>
+          <th class="col-actions">${T.table_header_actions}</th></tr></thead>`;
       const tbody = document.createElement('tbody');
       missionaries.forEach(m =>{
           const tr = document.createElement('tr'); tr.dataset.id = m.id;
-          const typeSelectHTML = `<select class="type-select-editable browser-default narrow-select"><option value="" ${!m.type ? 'selected' : ''}>${T.choose_option}</option><option value="Elder">Elder</option><option value="Sister">Sister</option></select>`;
-          const typeCellContent = !(m.type === 'Elder' || m.type === 'Sister') ? typeSelectHTML : `<span>${m.type}</span>`;
-
-          tr.innerHTML = `<td class="col-type"><span class="pdf-type-wrap">${m.type}</span>${typeCellContent}</td><td class="col-name">${m.name}</td><td class="col-originArea">${m.originArea || ''}</td><td class="col-destArea">${m.destinationArea}</td>
+          tr.innerHTML = `
+            <td class="col-type">${m.type}</td><td class="col-lastName">${m.lastName}</td><td class="col-firstName">${m.firstName}</td>
+            <td class="col-originCity">${m.originCity}</td><td class="col-destCity">${m.destinationCity}</td>
+            <td class="col-originArea">${m.originArea || ''}</td><td class="col-destArea">${m.destinationArea}</td>
+            <td class="col-companion"><input type="text" class="companion-input" value="${m.companion || ''}"></td>
             <td class="col-transport"><select class="transport-select browser-default"><option value="Bus">${T.transport_bus}</option><option value="Plane">${T.transport_plane}</option><option value="Chapa">${T.transport_chapa}</option><option value="Txopela/Taxi">${T.transport_taxi}</option><option value="Ride">${T.transport_ride}</option></select></td>
-            <td class="col-date"><input type="date" class="date-input" value="${m.date}"><p class="tbd-wrapper" style="margin-top:5px;"><label><input type="checkbox" class="tbd-checkbox" ${m.tbd? 'checked':''}><span>${T.tbd}</span></label></p></td><td class="col-time"><input type="time" class="time-input" value="${m.time}"></td>
-            <td class="col-instructions"><textarea class="instr-input materialize-textarea">${m.instructions || ''}</textarea><div class="pdf-instr-wrap">${m.instructions || ''}</div></td>
+            <td class="col-date"><div style="display: flex; flex-direction: column; align-items: flex-start;"><input type="date" class="date-input" value="${m.date}"><p class="tbd-wrapper"><label><input type="checkbox" class="tbd-checkbox" ${m.tbd? 'checked':''}><span>${T.tbd}</span></label></p></div></td>
+            <td class="col-time"><input type="time" class="time-input" value="${m.time}"></td>
+            <td class="col-instructions"><textarea class="instr-input materialize-textarea">${m.instructions || ''}</textarea></td>
             <td class="col-new">${m.isNew ? '<label><input type="checkbox" checked="checked" disabled="disabled" /><span></span></label>' : ''}</td>
-            <td class="col-leader"><label><input type="checkbox" class="leader-checkbox" ${m.leader ? 'checked':''}><span></span></label></td>
+            <td class="col-leader leader-checkbox-wrapper"><label><input type="checkbox" class="leader-checkbox" ${m.leader ? 'checked':''}><span></span></label></td>
             <td class="col-actions"><div class="action-buttons"><a class="btn-small blue edit-btn"><i class="fa fa-pencil"></i></a><a class="btn-small red remove-btn"><i class="fa fa-trash"></i></a></div></td>`;
           tbody.appendChild(tr);
 
-          const dateInput = tr.querySelector('.date-input'); const tbdCheckbox = tr.querySelector('.tbd-checkbox'); const instrTextarea = tr.querySelector('.instr-input');
+          const dateInput = tr.querySelector('.date-input'); const tbdCheckbox = tr.querySelector('.tbd-checkbox');
           const toggleDateVisibility = () => { dateInput.style.display = tbdCheckbox.checked ? 'none' : 'block'; };
           toggleDateVisibility(); tbdCheckbox.addEventListener('change', toggleDateVisibility);
+          const instrTextarea = tr.querySelector('.instr-input');
           instrTextarea.addEventListener('input', () => autoResizeTextarea(instrTextarea)); setTimeout(() => autoResizeTextarea(instrTextarea), 0);
           tr.querySelector('.transport-select').value = m.transport;
           
           tr.querySelectorAll('input, select, textarea').forEach(el => {
               el.addEventListener('change', (e) => {
                   const trElement = e.target.closest('tr'); const missionaryId = trElement.dataset.id;
-                  const allM = Object.values(state.groups).flat(); const item = allM.find(miss => miss.id === missionaryId);
-                  if (item) {
-                      item.transport = trElement.querySelector('.transport-select').value; item.date = trElement.querySelector('.date-input').value; item.tbd = trElement.querySelector('.tbd-checkbox').checked; item.time = trElement.querySelector('.time-input').value; item.instructions = trElement.querySelector('.instr-input').value; item.leader = trElement.querySelector('.leader-checkbox').checked;
-                      const typeSelect = trElement.querySelector('.type-select-editable'); if (typeSelect) { item.type = typeSelect.value; }
+                  const { missionary } = findMissionary(missionaryId);
+                  if (missionary) {
+                      missionary.transport = trElement.querySelector('.transport-select').value; missionary.date = trElement.querySelector('.date-input').value; missionary.tbd = trElement.querySelector('.tbd-checkbox').checked; missionary.time = trElement.querySelector('.time-input').value; missionary.instructions = trElement.querySelector('.instr-input').value; missionary.leader = trElement.querySelector('.leader-checkbox').checked; missionary.companion = trElement.querySelector('.companion-input').value;
                       saveToLS();
                   }
               });
           });
-
           tr.querySelector('.remove-btn').addEventListener('click', (e)=>{ 
             if(confirm(T.confirm_remove_missionary)){
                 const missionaryId = e.currentTarget.closest('tr').dataset.id;
-                for (const key in state.groups) {
-                    const indexToRemove = state.groups[key].findIndex(miss => miss.id === missionaryId);
-                    if(indexToRemove > -1) { state.groups[key].splice(indexToRemove, 1); if(state.groups[key].length===0) delete state.groups[key]; break; }
+                const { groupKey } = findMissionary(missionaryId);
+                if (groupKey) {
+                    const indexToRemove = state.groups[groupKey].findIndex(miss => miss.id === missionaryId);
+                    if(indexToRemove > -1) { state.groups[groupKey].splice(indexToRemove, 1); if(state.groups[groupKey].length===0) delete state.groups[groupKey]; }
                 }
                 saveToLS(); renderAllViews();
             }
           });
-
-          tr.querySelector('.edit-btn').addEventListener('click', (e) => {
-            const missionaryId = e.currentTarget.closest('tr').dataset.id;
-            for (const key in state.groups) {
-                const indexToEdit = state.groups[key].findIndex(miss => miss.id === missionaryId);
-                if(indexToEdit > -1) { openEditModal(key, indexToEdit); break; }
-            }
-          });
+          tr.querySelector('.edit-btn').addEventListener('click', (e) => openEditModal(e.currentTarget.closest('tr').dataset.id));
         });
       table.appendChild(tbody);
-      
       if(allowBulkEdit && groupKey) {
         const bulkUpdate = (field, value) => { if(!value && field !== 'instructions') return; state.groups[groupKey].forEach(m => { m[field] = value; }); saveToLS(); renderAllViews(); M.toast({html: T.toast_updated.replace('{field}', field)}); };
-        const bulkInstrTextarea = table.querySelector('.bulk-instr-input');
-        if(bulkInstrTextarea) {
-            bulkInstrTextarea.addEventListener('input', () => autoResizeTextarea(bulkInstrTextarea));
-            bulkInstrTextarea.addEventListener('change', (e) => bulkUpdate('instructions', e.target.value));
-        }
+        const bulkInstr = table.querySelector('.bulk-instr-input');
+        if(bulkInstr) { bulkInstr.addEventListener('input', () => autoResizeTextarea(bulkInstr)); bulkInstr.addEventListener('change', (e) => bulkUpdate('instructions', e.target.value)); }
         table.querySelector('.bulk-transport-select').addEventListener('change', (e) => bulkUpdate('transport', e.target.value));
         table.querySelector('.bulk-date-input').addEventListener('change', (e) => bulkUpdate('date', e.target.value));
         table.querySelector('.bulk-time-input').addEventListener('change', (e) => bulkUpdate('time', e.target.value));
@@ -915,63 +825,49 @@
     }
     
     function populateCityDropdowns() {
-        const cities = new Set();
-        Object.values(state.groups || {}).flat().forEach(m => { cities.add(m.originCity); cities.add(m.destinationCity); });
+        const cities = new Set(Object.values(state.groups || {}).flat().flatMap(m => [m.originCity, m.destinationCity]));
         const sortedCities = Array.from(cities).sort(); const lang = state.lang || 'pt';
         const selects = document.querySelectorAll('#add-origin-select, #add-dest-select, #edit-origin-select, #edit-dest-select');
         selects.forEach(select => {
-            select.innerHTML = `<option value="" disabled selected>${translations[lang].choose_option}</option>`;
-            sortedCities.forEach(city => { select.innerHTML += `<option value="${city}">${city}</option>`; });
-            select.innerHTML += `<option value="other">${translations[lang].other_option}</option>`;
+            select.innerHTML = `<option value="" disabled selected>${translations[lang].choose_option}</option>${sortedCities.map(c=>`<option value="${c}">${c}</option>`).join('')}<option value="other">${translations[lang].other_option}</option>`;
         });
     }
 
-    function openEditModal(groupKey, index) {
-        const missionary = state.groups[groupKey][index];
-        document.getElementById('edit-original-group-key').value = groupKey; document.getElementById('edit-missionary-index').value = index;
+    function openEditModal(missionaryId) {
+        const { missionary } = findMissionary(missionaryId); if (!missionary) return;
+        document.getElementById('edit-id').value = missionary.id;
         document.getElementById('edit-name').value = missionary.name; document.getElementById('edit-type').value = missionary.type;
-        const originSelect = document.getElementById('edit-origin-select'); const originOther = document.getElementById('edit-origin-other');
-        if (Array.from(originSelect.options).some(opt => opt.value === missionary.originCity)) { originSelect.value = missionary.originCity; originOther.style.display = 'none'; } else { originSelect.value = 'other'; originOther.value = missionary.originCity; originOther.style.display = 'block'; }
-        const destSelect = document.getElementById('edit-dest-select'); const destOther = document.getElementById('edit-dest-other');
-        if (Array.from(destSelect.options).some(opt => opt.value === missionary.destinationCity)) { destSelect.value = missionary.destinationCity; destOther.style.display = 'none'; } else { destSelect.value = 'other'; destOther.value = missionary.destinationCity; destOther.style.display = 'block'; }
-        document.getElementById('edit-originarea').value = missionary.originArea || ''; document.getElementById('edit-destarea').value = missionary.destinationArea; document.getElementById('edit-transport').value = missionary.transport; document.getElementById('edit-date').value = missionary.date; document.getElementById('edit-tbd').checked = missionary.tbd; document.getElementById('edit-time').value = missionary.time; document.getElementById('edit-instructions').value = missionary.instructions; document.getElementById('edit-leader').checked = missionary.leader;
-        document.querySelector('.edit-date-wrapper').style.display = missionary.tbd ? 'none' : 'block';
+        const setupSelect = (type, city) => {
+            const select = document.getElementById(`edit-${type}-select`), other = document.getElementById(`edit-${type}-other`);
+            if (Array.from(select.options).some(o => o.value === city)) { select.value = city; other.style.display = 'none'; } 
+            else { select.value = 'other'; other.value = city; other.style.display = 'block'; }
+        };
+        setupSelect('origin', missionary.originCity); setupSelect('dest', missionary.destinationCity);
+        document.getElementById('edit-originarea').value = missionary.originArea || ''; document.getElementById('edit-destarea').value = missionary.destinationArea; document.getElementById('edit-transport').value = missionary.transport; document.getElementById('edit-companion').value = missionary.companion;
+        document.getElementById('edit-date').value = missionary.date; document.getElementById('edit-tbd').checked = missionary.tbd; document.getElementById('edit-time').value = missionary.time; document.getElementById('edit-instructions').value = missionary.instructions; document.getElementById('edit-leader').checked = missionary.leader;
+        document.querySelector('#modal-edit input[type="date"]').style.display = missionary.tbd ? 'none' : 'block';
         M.Modal.getInstance(document.getElementById('modal-edit')).open();
     }
     
     // -- Column Visibility
     function setupColumnToggle() {
         const selectEl = document.getElementById('column-toggle');
-        state.visibleColumns.forEach(col => {
-            const option = selectEl.querySelector(`option[value="${col}"]`);
-            if (option) option.selected = true;
-        });
+        state.visibleColumns.forEach(col => { const option = selectEl.querySelector(`option[value="${col}"]`); if (option) option.selected = true; });
         M.FormSelect.init(selectEl);
-        selectEl.addEventListener('change', () => {
-            state.visibleColumns = M.FormSelect.getInstance(selectEl).getSelectedValues();
-            saveToLS();
-            applyColumnVisibility();
-        });
+        selectEl.addEventListener('change', () => { state.visibleColumns = M.FormSelect.getInstance(selectEl).getSelectedValues(); saveToLS(); applyColumnVisibility(); });
     }
-
     function applyColumnVisibility() {
-        const allCols = ['type', 'name', 'originArea', 'destArea', 'transport', 'date', 'time', 'instructions', 'new', 'leader'];
-        allCols.forEach(col => {
-            if (state.visibleColumns.includes(col)) {
-                document.body.classList.add(`show-${col}`);
-            } else {
-                document.body.classList.remove(`show-${col}`);
-            }
-        });
+        const allCols = ['type', 'lastName', 'firstName', 'originCity', 'destCity', 'originArea', 'destArea', 'companion', 'transport', 'date', 'time', 'instructions', 'new', 'leader'];
+        allCols.forEach(col => document.body.classList.toggle(`show-${col}`, state.visibleColumns.includes(col)));
     }
 
     // -- Event Listeners
-    document.getElementById('add-tbd').addEventListener('change', (e) => { document.querySelector('.add-date-wrapper').style.display = e.target.checked ? 'none' : 'block'; });
-    document.getElementById('edit-tbd').addEventListener('change', (e) => { document.querySelector('.edit-date-wrapper').style.display = e.target.checked ? 'none' : 'block'; });
-    document.getElementById('add-origin-select').addEventListener('change', (e) => { document.getElementById('add-origin-other').style.display = e.target.value === 'other' ? 'block' : 'none'; });
-    document.getElementById('add-dest-select').addEventListener('change', (e) => { document.getElementById('add-dest-other').style.display = e.target.value === 'other' ? 'block' : 'none'; });
-    document.getElementById('edit-origin-select').addEventListener('change', (e) => { document.getElementById('edit-origin-other').style.display = e.target.value === 'other' ? 'block' : 'none'; });
-    document.getElementById('edit-dest-select').addEventListener('change', (e) => { document.getElementById('edit-dest-other').style.display = e.target.value === 'other' ? 'block' : 'none'; });
+    document.getElementById('add-tbd').addEventListener('change', (e) => { document.querySelector('#modal-add input[type="date"]').style.display = e.target.checked ? 'none' : 'block'; });
+    document.getElementById('edit-tbd').addEventListener('change', (e) => { document.querySelector('#modal-edit input[type="date"]').style.display = e.target.checked ? 'none' : 'block'; });
+    ['add', 'edit'].forEach(prefix => {
+        document.getElementById(`${prefix}-origin-select`).addEventListener('change', (e) => { document.getElementById(`${prefix}-origin-other`).style.display = e.target.value === 'other' ? 'block' : 'none'; });
+        document.getElementById(`${prefix}-dest-select`).addEventListener('change', (e) => { document.getElementById(`${prefix}-dest-other`).style.display = e.target.value === 'other' ? 'block' : 'none'; });
+    });
 
     document.getElementById('btn-add-save').addEventListener('click', ()=>{
       const originCity = document.getElementById('add-origin-select').value === 'other' ? document.getElementById('add-origin-other').value : document.getElementById('add-origin-select').value;
@@ -979,76 +875,125 @@
       const nameVal = document.getElementById('add-name').value.trim();
       const nameParts = nameVal.split(',').map(p => p.trim());
       const m = {
-        id: nameVal.toLowerCase(), type: document.getElementById('add-type').value, name: nameVal, lastName: nameParts[0]||'', firstName: nameParts[1]||'', originCity: normalizeZoneName(originCity), destinationCity: normalizeZoneName(destCity),
-        originArea: document.getElementById('add-originarea').value, destinationArea: document.getElementById('add-destarea').value, transport: document.getElementById('add-transport').value, date: document.getElementById('add-date').value, tbd: document.getElementById('add-tbd').checked, time: document.getElementById('add-time').value, instructions: document.getElementById('add-instructions').value, leader: document.getElementById('add-leader').checked, isNew: document.getElementById('add-new').checked
+        id: nameVal.toLowerCase(), name: nameVal, lastName: nameParts[0]||'', firstName: nameParts[1]||'', type: document.getElementById('add-type').value, 
+        originCity: normalizeZoneName(originCity), destinationCity: normalizeZoneName(destCity),
+        originArea: document.getElementById('add-originarea').value, destinationArea: document.getElementById('add-destarea').value, 
+        transport: document.getElementById('add-transport').value, companion: document.getElementById('add-companion').value,
+        date: document.getElementById('add-date').value, tbd: document.getElementById('add-tbd').checked, time: document.getElementById('add-time').value, 
+        instructions: document.getElementById('add-instructions').value, leader: document.getElementById('add-leader').checked, isNew: document.getElementById('add-new').checked
       };
       const key = `${m.originCity} -> ${m.destinationCity}`; if(!state.groups[key]) state.groups[key]=[]; state.groups[key].push(m);
       saveToLS(); M.toast({html: translations[state.lang].toast_added}); location.reload();
     });
     
     document.getElementById('btn-edit-save').addEventListener('click', () => {
-        const originalGroupKey = document.getElementById('edit-original-group-key').value; const index = parseInt(document.getElementById('edit-missionary-index').value, 10);
-        const originalMissionary = state.groups[originalGroupKey][index];
+        const id = document.getElementById('edit-id').value;
+        const { missionary, groupKey } = findMissionary(id);
+        if (!missionary) return;
         const originCity = document.getElementById('edit-origin-select').value === 'other' ? document.getElementById('edit-origin-other').value : document.getElementById('edit-origin-select').value;
         const destCity = document.getElementById('edit-dest-select').value === 'other' ? document.getElementById('edit-dest-other').value : document.getElementById('edit-dest-select').value;
         const nameVal = document.getElementById('edit-name').value.trim();
         const nameParts = nameVal.split(',').map(p => p.trim());
-        const missionary = { ...originalMissionary,
-            id: nameVal.toLowerCase(), name: nameVal, lastName: nameParts[0]||'', firstName: nameParts[1]||'', type: document.getElementById('edit-type').value, originCity: normalizeZoneName(originCity), destinationCity: normalizeZoneName(destCity),
-            originArea: document.getElementById('edit-originarea').value, destinationArea: document.getElementById('edit-destarea').value, transport: document.getElementById('edit-transport').value, date: document.getElementById('edit-date').value, tbd: document.getElementById('edit-tbd').checked, time: document.getElementById('edit-time').value, instructions: document.getElementById('edit-instructions').value, leader: document.getElementById('edit-leader').checked
-        };
-        state.groups[originalGroupKey].splice(index, 1); if (state.groups[originalGroupKey].length === 0) { delete state.groups[originalGroupKey]; }
+
+        // Update missionary object in place
+        Object.assign(missionary, {
+            id: nameVal.toLowerCase(), name: nameVal, lastName: nameParts[0]||'', firstName: nameParts[1]||'', type: document.getElementById('edit-type').value, 
+            originCity: normalizeZoneName(originCity), destinationCity: normalizeZoneName(destCity),
+            originArea: document.getElementById('edit-originarea').value, destinationArea: document.getElementById('edit-destarea').value, 
+            transport: document.getElementById('edit-transport').value, companion: document.getElementById('edit-companion').value,
+            date: document.getElementById('edit-date').value, tbd: document.getElementById('edit-tbd').checked, time: document.getElementById('edit-time').value, 
+            instructions: document.getElementById('edit-instructions').value, leader: document.getElementById('edit-leader').checked
+        });
+        
         const newGroupKey = `${missionary.originCity} -> ${missionary.destinationCity}`;
-        if (!state.groups[newGroupKey]) { state.groups[newGroupKey] = []; } state.groups[newGroupKey].push(missionary);
+        if (newGroupKey !== groupKey) {
+            const index = state.groups[groupKey].findIndex(m => m.id === id);
+            state.groups[groupKey].splice(index, 1);
+            if (state.groups[groupKey].length === 0) delete state.groups[groupKey];
+            if (!state.groups[newGroupKey]) state.groups[newGroupKey] = [];
+            state.groups[newGroupKey].push(missionary);
+        }
         saveToLS(); location.reload();
     });
     
     document.getElementById('btn-save-exception').addEventListener('click', () => {
-      const name = document.getElementById('ex-add-name').value.trim(); const city = document.getElementById('ex-add-city').value.trim(); if (!name || !city) return; if (!state.exceptions) state.exceptions = {}; state.exceptions[name] = { city: city };
-      saveToLS(); renderExceptions(); document.getElementById('ex-add-name').value = ''; document.getElementById('ex-add-city').value = ''; M.updateTextFields();
+      const name = document.getElementById('ex-add-name').value.trim(), city = document.getElementById('ex-add-city').value.trim();
+      if (name && city) { if (!state.exceptions) state.exceptions = {}; state.exceptions[name] = { city }; saveToLS(); renderExceptions(); document.getElementById('ex-add-name').value = ''; document.getElementById('ex-add-city').value = ''; M.updateTextFields(); }
     });
 
-    function renderExceptions(){ const el = document.getElementById('exceptions-list'); el.innerHTML=''; for(const k of Object.keys(state.exceptions||{})){ const row = document.createElement('div'); row.className='row'; row.innerHTML = `<div class="col s4">${k}</div><div class="col s4">${state.exceptions[k].city || ''}</div><div class="col s4"><a data-key="${k}" class="btn-small red btn-ex-remove">Remove</a></div>`; el.appendChild(row); row.querySelector('.btn-ex-remove').addEventListener('click', (e)=>{ delete state.exceptions[e.currentTarget.dataset.key]; saveToLS(); renderExceptions(); }); } }
+    function renderExceptions(){ const el = document.getElementById('exceptions-list'); el.innerHTML=''; Object.keys(state.exceptions||{}).forEach(k => { const row = document.createElement('div'); row.className='row'; row.innerHTML = `<div class="col s4">${k}</div><div class="col s4">${state.exceptions[k].city || ''}</div><div class="col s4"><a data-key="${k}" class="btn-small red btn-ex-remove">Remove</a></div>`; el.appendChild(row); row.querySelector('.btn-ex-remove').addEventListener('click', (e)=>{ delete state.exceptions[e.currentTarget.dataset.key]; saveToLS(); renderExceptions(); }); }); }
     
     document.getElementById('btn-clear-local').addEventListener('click', ()=>{ if(confirm(translations[state.lang].confirm_clear_local)){ localStorage.removeItem(LS_KEY); location.reload(); } });
-    
     document.querySelectorAll('.lang-select').forEach(sel => { sel.addEventListener('change', (e)=>{ state.lang = e.target.value; saveToLS(); location.reload(); }); });
     
     // -- Export and Update Functions
     document.getElementById('btn-export-pdf').addEventListener('click', () => {
         const { jsPDF } = window.jspdf; const doc = new jsPDF({ orientation: 'l', unit: 'mm', format: 'a4' });
         const lang = state.lang || 'pt'; const T = translations[lang];
-        const groups = Object.keys(state.groups); if (groups.length === 0) return; M.toast({ html: T.toast_pdf_generating }); let finalY = 15;
-        groups.forEach((groupKey, index) => {
-            if (index > 0) { doc.addPage(); finalY = 15; }
-            const group = state.groups[groupKey]; const sortedGroup = [...group].sort((a, b) => (a.isNew ? 1 : -1) - (b.isNew ? 1 : -1));
-            const head = [[ T.table_header_type, T.table_header_name, T.table_header_origin_area, T.table_header_dest_area, T.table_header_transport, T.table_header_date, T.table_header_time, T.table_header_instructions, T.table_header_new, T.table_header_leader ]];
-            const body = sortedGroup.map(m => { const transportText = m.transport ? (translations[lang][`transport_${m.transport.toLowerCase().replace('/','_')}`] || m.transport) : ''; return [ m.type || '', getLastName(m.name), m.originArea || '', m.destinationArea, transportText, m.tbd ? T.tbd : m.date, m.time, m.instructions || '', m.isNew ? '✔️' : '', m.leader ? '⭐' : '' ]; });
-            doc.setFontSize(16); doc.text(groupKey, 14, finalY); finalY += 8;
-            doc.autoTable({ head: head, body: body, startY: finalY, theme: 'striped', headStyles: { fillColor: [0, 150, 136] },
-                columnStyles: { 0: { cellWidth: 18 }, 1: { cellWidth: 30 }, 2: { cellWidth: 30 }, 3: { cellWidth: 30 }, 4: { cellWidth: 25 }, 5: { cellWidth: 22 }, 6: { cellWidth: 17 }, 7: { cellWidth: 'auto' }, 8: { cellWidth: 12, halign: 'center' }, 9: { cellWidth: 15, halign: 'center' }, },
-                didDrawPage: (data) => { finalY = data.cursor.y + 15; }
-            });
-             finalY = doc.previousAutoTable.finalY + 15;
+        M.toast({ html: T.toast_pdf_generating });
+        
+        const visibleCols = state.visibleColumns;
+        const allHeaders = { type: T.table_header_type, lastName: T.table_header_last_name, firstName: T.table_header_first_name, originCity: T.origin_city, destCity: T.dest_city, originArea: T.table_header_origin_area, destArea: T.table_header_dest_area, companion: T.table_header_companion, transport: T.table_header_transport, date: T.table_header_date, time: T.table_header_time, instructions: T.table_header_instructions, new: T.table_header_new, leader: T.table_header_leader };
+        const head = [visibleCols.map(key => allHeaders[key])];
+        
+        const getRowData = m => visibleCols.map(key => {
+            switch(key) {
+                case 'transport': return m.transport ? (T[`transport_${m.transport.toLowerCase().replace('/','_')}`] || m.transport) : '';
+                case 'date': return m.tbd ? T.tbd : m.date;
+                case 'new': return m.isNew ? '✔️' : '';
+                case 'leader': return m.leader ? '⭐' : '';
+                default: return m[key] || '';
+            }
         });
+
+        const activeTab = document.querySelector('.tabs .tab a.active').getAttribute('href');
+        let finalY = 15;
+
+        if (activeTab === '#tab-route') {
+            Object.keys(state.groups).sort().forEach(groupKey => {
+                doc.setFontSize(14); doc.text(groupKey, 14, finalY); finalY += 7;
+                const body = state.groups[groupKey].map(getRowData);
+                doc.autoTable({ head, body, startY: finalY, theme: 'striped', headStyles: { fillColor: [0, 150, 136] } });
+                finalY = doc.previousAutoTable.finalY + 10;
+                if (finalY > 180) { doc.addPage(); finalY = 15; }
+            });
+        } else {
+            let title = '';
+            let groupsToPrint = {};
+            if (activeTab === '#tab-transport') {
+                title = T.tab_transport;
+                const byTransport = {};
+                Object.values(state.groups).flat().forEach(m => { const t = m.transport || 'Unassigned'; if (!byTransport[t]) byTransport[t] = []; byTransport[t].push(m); });
+                groupsToPrint = byTransport;
+            } else { // Master List
+                title = T.tab_master;
+                const all = Object.values(state.groups).flat().sort((a,b) => a.lastName.localeCompare(b.lastName) || a.firstName.localeCompare(b.firstName));
+                groupsToPrint = { [title]: all };
+            }
+
+            Object.keys(groupsToPrint).sort().forEach(groupKey => {
+                doc.setFontSize(14); doc.text(groupKey, 14, finalY); finalY += 7;
+                const body = groupsToPrint[groupKey].map(getRowData);
+                doc.autoTable({ head, body, startY: finalY, theme: 'striped', headStyles: { fillColor: [0, 150, 136] } });
+                finalY = doc.previousAutoTable.finalY + 10;
+                if (finalY > 180 && activeTab !== '#tab-master') { doc.addPage(); finalY = 15; }
+            });
+        }
+        
         doc.save('transfer_logistics.pdf'); M.toast({ html: T.toast_pdf_generated });
     });
 
 
     document.getElementById('btn-export-csv').addEventListener('click', () => {
         const lang = state.lang || 'pt'; const T = translations[lang]; const delimiter = ';';
-        const headers = ["First Name", "Last Name", T.table_header_type, T.table_header_name, "Origin City", "Origin District", "Origin Zone", T.table_header_origin_area, "Destination City", "Destination District", "Destination Zone", T.table_header_dest_area, T.table_header_transport, T.table_header_date, T.table_header_time, T.table_header_instructions, T.table_header_new, T.table_header_leader];
+        const headers = [T.table_header_last_name, T.table_header_first_name, T.table_header_type, T.origin_city, T.dest_city, T.table_header_origin_area, T.table_header_dest_area, T.table_header_companion, T.table_header_transport, T.table_header_date, T.table_header_time, T.table_header_instructions, T.table_header_new, T.table_header_leader];
         let csvContent = "data:text/csv;charset=utf-8," + headers.join(delimiter) + "\n";
-        const allMissionaries = Object.values(state.groups || {}).flat();
-        allMissionaries.forEach(m => {
-            const transportText = m.transport ? (T[`transport_${m.transport.toLowerCase().replace('/','_')}`] || m.transport) : '';
-            const leaderText = m.leader ? 'Yes' : 'No'; const newText = m.isNew ? 'Yes' : 'No';
+        Object.values(state.groups || {}).flat().forEach(m => {
             const sanitize = (str) => `"${(str || '').replace(/"/g, '""')}"`;
-            const row = [ sanitize(m.firstName), sanitize(m.lastName), m.type, sanitize(m.name), m.originCity, sanitize(m.originDistrict), sanitize(m.originZone), sanitize(m.originArea), m.destinationCity, sanitize(m.destinationDistrict), sanitize(m.destinationZone), sanitize(m.destinationArea), transportText, m.date, m.time, sanitize(m.instructions), newText, leaderText];
+            const row = [ sanitize(m.lastName), sanitize(m.firstName), m.type, m.originCity, m.destinationCity, sanitize(m.originArea), sanitize(m.destinationArea), sanitize(m.companion), T[`transport_${(m.transport||'').toLowerCase().replace('/','_')}`] || m.transport, m.tbd ? T.tbd : m.date, m.time, sanitize(m.instructions), m.isNew ? 'Yes' : 'No', m.leader ? 'Yes' : 'No' ];
             csvContent += row.join(delimiter) + "\n";
         });
-        const encodedUri = encodeURI(csvContent); const link = document.createElement("a");
-        link.setAttribute("href", encodedUri); link.setAttribute("download", "travel_plans.csv");
+        const link = document.createElement("a"); link.setAttribute("href", encodeURI(csvContent)); link.setAttribute("download", "travel_plans.csv");
         document.body.appendChild(link); link.click(); document.body.removeChild(link);
     });
 
@@ -1058,41 +1003,19 @@
         for (const row of rows) {
             if (!row.trim()) continue;
             const cols = row.split(';').map(col => col.startsWith('"') && col.endsWith('"') ? col.slice(1, -1).replace(/""/g, '"') : col);
-            const transportValEN = Object.keys(translations.en).find(key => translations.en[key] === cols[12]);
-            const transportValPT = Object.keys(translations.pt).find(key => translations.pt[key] === cols[12]);
-            const transportKey = (transportValEN || transportValPT || '').replace('transport_', '');
+            const transportVal = Object.keys(translations.en).find(k => k.startsWith('transport_') && translations.en[k] === cols[8]) || Object.keys(translations.pt).find(k => k.startsWith('transport_') && translations.pt[k] === cols[8]);
             const missionary = {
-                firstName: cols[0], lastName: cols[1], type: cols[2], name: cols[3], originCity: cols[4], originDistrict: cols[5], originZone: cols[6], originArea: cols[7], destinationCity: cols[8], destinationDistrict: cols[9], destinationZone: cols[10], destinationArea: cols[11],
-                transport: transportKey, date: cols[13], time: cols[14], instructions: cols[15], isNew: cols[16]?.toLowerCase() === 'yes', leader: cols[17]?.toLowerCase() === 'yes', id: (cols[3] || '').toLowerCase(), tbd: cols[13] === translations.en.tbd || cols[13] === translations.pt.tbd
+                lastName: cols[0], firstName: cols[1], type: cols[2], originCity: cols[3], destinationCity: cols[4], originArea: cols[5], destinationArea: cols[6], companion: cols[7],
+                transport: (transportVal || '').replace('transport_', ''), date: cols[9], time: cols[10], instructions: cols[11],
+                isNew: cols[12]?.toLowerCase() === 'yes', leader: cols[13]?.toLowerCase() === 'yes', 
+                name: `${cols[0]}, ${cols[1]}`, id: `${cols[0]}, ${cols[1]}`.toLowerCase(),
+                tbd: cols[9] === translations.en.tbd || cols[9] === translations.pt.tbd
             };
             restoredMissionaries.push(missionary);
         }
         state.groups = {};
-        restoredMissionaries.forEach(m => {
-            const key = `${m.originCity} -> ${m.destinationCity}`;
-            if (!state.groups[key]) state.groups[key] = []; state.groups[key].push(m);
-        });
+        restoredMissionaries.forEach(m => { const key = `${m.originCity} -> ${m.destinationCity}`; if (!state.groups[key]) state.groups[key] = []; state.groups[key].push(m); });
         saveToLS(); M.toast({ html: translations[state.lang].toast_restored }); location.reload();
-    });
-
-    document.getElementById('btn-update-origins').addEventListener('click', () => { document.getElementById('file-update-origin').click(); });
-    document.getElementById('file-update-origin').addEventListener('change', async (e) => {
-        const file = e.target.files[0]; if (!file) return; const rows = await readFileRows(file);
-        const container = document.getElementById('mapping-forms-update'); container.innerHTML = '';
-        const keys = Object.keys(rows[0] || {}); const fields = [{ id: 'name', label: 'Missionary Name' }, { id: 'originArea', label: 'Origin Area' }];
-        fields.forEach(f => {
-            const div = document.createElement('div'); div.style.marginBottom = '20px'; const h6 = document.createElement('h6'); h6.textContent = f.label; const select = document.createElement('select'); select.id = 'map-update-' + f.id; select.className = 'browser-default'; select.innerHTML = `<option value="">-- Select column --</option>` + keys.map(k => `<option value="${k}">${k}</option>`).join('');
-            div.appendChild(h6); div.appendChild(select); container.appendChild(div);
-        });
-        M.Modal.getInstance(document.getElementById('modal-map-update')).open();
-        document.getElementById('btn-map-update-apply').onclick = () => {
-            const nameCol = document.getElementById('map-update-name').value; const areaCol = document.getElementById('map-update-originArea').value; if (!nameCol || !areaCol) return;
-            const originAreaMap = {};
-            rows.forEach(row => { const name = (row[nameCol] || '').toString().trim().toLowerCase(); if (name) { originAreaMap[name] = (row[areaCol] || '').toString().trim(); } });
-            Object.values(state.groups).flat().forEach(missionary => { if (originAreaMap[missionary.id]) { missionary.originArea = originAreaMap[missionary.id]; } });
-            saveToLS(); M.toast({ html: translations[state.lang].toast_origins_updated }); location.reload();
-        };
-        e.target.value = '';
     });
 
     // -- Initial Load
