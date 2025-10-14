@@ -909,7 +909,7 @@
     
     document.getElementById('btn-save-exception').addEventListener('click', () => {
       const name = document.getElementById('ex-add-name').value.trim(); const city = document.getElementById('ex-add-city').value.trim(); if (!name || !city) return; if (!state.exceptions) state.exceptions = {}; state.exceptions[name] = { city: city };
-      saveToLS(); renderExceptions(); document.getElementById('ex-add-name').value = ''; document.getElementById('ex-add-city').value = ''; M.updateTextFields();
+      saveToLS(); renderExceptions(); document.getElementById('ex-add-name').value = ''; document.getElementById('ex-add-city').value = ''; 
     });
 
     function renderExceptions(){ const el = document.getElementById('exceptions-list'); el.innerHTML=''; for(const k of Object.keys(state.exceptions||{})){ const row = document.createElement('div'); row.className='grid grid-cols-3 gap-4 items-center'; row.innerHTML = `<div>${k}</div><div>${state.exceptions[k].city || ''}</div><div><button data-key="${k}" class="btn btn-xs btn-error btn-ex-remove">Remove</button></div>`; el.appendChild(row); row.querySelector('.btn-ex-remove').addEventListener('click', (e)=>{ delete state.exceptions[e.currentTarget.dataset.key]; saveToLS(); renderExceptions(); }); } }
