@@ -29,7 +29,7 @@
     .action-buttons a { margin: 0 4px; }
     .hidden-input, .hidden-file-input { display: none; }
 
-    /* --- NEW: Compact Table & Column Toggle Styles --- */
+    /* --- Compact Table & Column Toggle Styles --- */
     .group-card .card-content { padding: 12px; }
     .table-col-toggle th, .table-col-toggle td {
         padding: 8px 5px;
@@ -151,14 +151,14 @@
     <div class="row" id="tabs-section" style="display: none;">
         <div class="col s12">
             <ul class="tabs">
-                <li class="tab col s4"><a class="active" href="#tab-route" data-translate="tab_route">By Route</a></li>
+                <li class="tab col s4"><a class="active" href="#tab-city" data-translate="tab_city">By City</a></li>
                 <li class="tab col s4"><a href="#tab-transport" data-translate="tab_transport">By Transport</a></li>
                 <li class="tab col s4"><a href="#tab-master" data-translate="tab_master">Master List</a></li>
             </ul>
         </div>
-        <div id="tab-route" class="col s12">
+        <div id="tab-city" class="col s12">
             <div class="section">
-                <div id="groups-by-route"></div>
+                <div id="groups-by-city"></div>
             </div>
         </div>
         <div id="tab-transport" class="col s12">
@@ -399,16 +399,16 @@
 
   <script>
     // -- Constants, Defaults & State
-    const LS_KEY = 'transfer_logistics_data_v2';
+    const LS_KEY = 'transfer_logistics_data_v3';
     const defaults = {
       exceptions: {
         'Quelimane': { city: 'Quelimane' }, 'Quelimane District': { city: 'Quelimane' }, 'Nhamatanda': { city: 'Nhamatanda' }, 'Marromeu': { city: 'Marromeu' }, 'Caia': { city: 'Caia' }, 'ZONA INHAMIZUA': { city: 'Beira' }, 'ZONA MANGA': { city: 'Beira' }, 'ZONA MUNHAVA': { city: 'Beira' }
       },
-      visibleColumns: ['type', 'lastName', 'firstName', 'destArea', 'companion', 'transport', 'date', 'time', 'instructions', 'leader']
+      visibleColumns: ['type', 'lastName', 'originArea', 'destArea', 'transport', 'date', 'time', 'instructions', 'new', 'leader']
     };
     let state = loadFromLS() || { groups: {}, exceptions: defaults.exceptions, lang: 'pt', visibleColumns: defaults.visibleColumns };
     let fileOldRows = null; let fileNewRows = null;
-    let mapping = { name: null, type: null, area: null, district: null, zone: null };
+    let mapping = { name: null, type: null, area: null, district: null, zone: null, companion: null };
     let pendingMissionaries = [];
 
     // -- Translations
@@ -484,7 +484,7 @@
             choose_option: "Choose...", other_option: "Other...",
             visible_columns_label: "Visible Columns",
             visible_columns_placeholder: "Choose columns to display",
-            tab_route: "By Route", tab_transport: "By Transport", tab_master: "Master List"
+            tab_city: "By City", tab_transport: "By Transport", tab_master: "Master List"
         },
         pt: {
             app_title: "Logística de Transferência",
@@ -557,7 +557,7 @@
             choose_option: "Escolha...", other_option: "Outro...",
             visible_columns_label: "Colunas Visíveis",
             visible_columns_placeholder: "Escolha as colunas para exibir",
-            tab_route: "Por Rota", tab_transport: "Por Transporte", tab_master: "Lista Geral"
+            tab_city: "Por Cidade", tab_transport: "Por Transporte", tab_master: "Lista Geral"
         }
     };
 
@@ -632,7 +632,7 @@
     function showMappingModal(sampleRow){
       const container = document.getElementById('mapping-forms'); container.innerHTML = '';
       const keys = Object.keys(sampleRow || {});
-      const fields = [ {id:'name', label:'Name (Last, First)'}, {id:'type', label:'Type (Elder/Sister)'}, {id:'area', label:'Area/Neighborhood'}, {id:'district', label:'District'}, {id:'zone', label:'Zone'} ];
+      const fields = [ {id:'name', label:'Name (Last, First)'}, {id:'type', label:'Type (Elder/Sister)'}, {id:'area', label:'Area/Neighborhood'}, {id:'district', label:'District'}, {id:'zone', label:'Zone'}, {id:'companion', label:'Companion'} ];
       fields.forEach(f=>{
         const div = document.createElement('div'); div.style.marginBottom = '20px';
         const h6 = document.createElement('h6'); h6.textContent = f.label;
@@ -644,7 +644,7 @@
     }
 
     document.getElementById('btn-map-apply').addEventListener('click', ()=>{
-      ['name','type','area', 'district', 'zone'].forEach(f=>mapping[f]=document.getElementById('map-'+f).value || null);
+      ['name','type','area', 'district', 'zone', 'companion'].forEach(f=>mapping[f]=document.getElementById('map-'+f).value || null);
       prepareExceptionsAssignment();
     });
 
@@ -690,7 +690,7 @@
             const nameParts = nameVal.split(',').map(p => p.trim());
             const old = oldIdx[id];
             const newLoc = { zone: (mapping.zone ? r[mapping.zone] : '').toString(), district: (mapping.district ? r[mapping.district] : '').toString(), area: (mapping.area ? r[mapping.area] : '').toString() };
-            const baseMissionary = { id, name: nameVal, lastName: nameParts[0] || '', firstName: nameParts[1] || '', type: /^(elder|sister)$/i.test((r[mapping.type]||'').toString().trim()) ? (r[mapping.type]||'').toString().trim() : '', date: '', tbd: false, time: '', instructions:'', leader:false, companion: '' };
+            const baseMissionary = { id, name: nameVal, lastName: nameParts[0] || '', firstName: nameParts[1] || '', type: /^(elder|sister)$/i.test((r[mapping.type]||'').toString().trim()) ? (r[mapping.type]||'').toString().trim() : '', date: '', tbd: false, time: '', instructions:'', leader:false, companion: (mapping.companion && r[mapping.companion]) ? r[mapping.companion].toString().trim() : '' };
             if (old) {
                 const oldLoc = { zone: (mapping.zone ? old[mapping.zone] : '').toString(), district: (mapping.district ? old[mapping.district] : '').toString(), area: (mapping.area ? old[mapping.area] : '').toString() };
                 if (oldLoc.area !== newLoc.area) { // Simplified transfer condition
@@ -726,9 +726,9 @@
     }
 
     // -- UI Rendering
-    function renderAllViews(){ renderGroupsByRoute(); renderGroupsByTransport(); renderMasterTable(); populateCityDropdowns(); M.AutoInit(); applyColumnVisibility(); }
-    function renderGroupsByRoute(){
-      const container = document.getElementById('groups-by-route'); container.innerHTML = '';
+    function renderAllViews(){ renderGroupsByCity(); renderGroupsByTransport(); renderMasterTable(); populateCityDropdowns(); M.AutoInit(); applyColumnVisibility(); }
+    function renderGroupsByCity(){
+      const container = document.getElementById('groups-by-city'); container.innerHTML = '';
       Object.keys(state.groups||{}).sort().forEach(key => {
         const card = document.createElement('div'); card.className='card group-card';
         const content = document.createElement('div'); content.className='card-content'; content.innerHTML = `<span class="card-title">${key}</span>`;
@@ -757,7 +757,14 @@
     }
     function createMissionaryTable(missionaries, groupKey, allowBulkEdit) {
       const table = document.createElement('table'); table.className='striped table-col-toggle'; const lang = state.lang || 'pt'; const T = translations[lang];
-      const bulkEditRow = allowBulkEdit ? `<tr class="bulk-edit-row"><th colspan="6">${T.bulk_edit_title}</th><th class="col-transport"><select class="bulk-transport-select browser-default"><option value="" selected disabled>${T.bulk_edit_transport_placeholder}</option><option value="Bus">${T.transport_bus}</option><option value="Plane">${T.transport_plane}</option><option value="Chapa">${T.transport_chapa}</option><option value="Txopela/Taxi">${T.transport_taxi}</option><option value="Ride">${T.transport_ride}</option></select></th><th class="col-date"><input type="date" class="bulk-date-input"></th><th class="col-time"><input type="time" class="bulk-time-input"></th><th class="col-instructions"><textarea class="materialize-textarea bulk-instr-input" placeholder="${T.bulk_edit_instructions_placeholder}"></textarea></th><th class="actions-header" colspan="3"></th></tr>` : '';
+      const bulkEditRow = allowBulkEdit ? `<tr class="bulk-edit-row">
+          <th colspan="8">${T.bulk_edit_title}</th>
+          <th class="col-transport"><select class="bulk-transport-select browser-default"><option value="" selected disabled>${T.bulk_edit_transport_placeholder}</option><option value="Bus">${T.transport_bus}</option><option value="Plane">${T.transport_plane}</option><option value="Chapa">${T.transport_chapa}</option><option value="Txopela/Taxi">${T.transport_taxi}</option><option value="Ride">${T.transport_ride}</option></select></th>
+          <th class="col-date"><input type="date" class="bulk-date-input"></th>
+          <th class="col-time"><input type="time" class="bulk-time-input"></th>
+          <th class="col-instructions"><textarea class="materialize-textarea bulk-instr-input" placeholder="${T.bulk_edit_instructions_placeholder}"></textarea></th>
+          <th colspan="3"></th>
+        </tr>` : '';
       table.innerHTML = `<thead>${bulkEditRow}<tr>
           <th class="col-type">${T.table_header_type}</th><th class="col-lastName">${T.table_header_last_name}</th><th class="col-firstName">${T.table_header_first_name}</th>
           <th class="col-originCity">${T.origin_city}</th><th class="col-destCity">${T.dest_city}</th>
@@ -895,7 +902,6 @@
         const nameVal = document.getElementById('edit-name').value.trim();
         const nameParts = nameVal.split(',').map(p => p.trim());
 
-        // Update missionary object in place
         Object.assign(missionary, {
             id: nameVal.toLowerCase(), name: nameVal, lastName: nameParts[0]||'', firstName: nameParts[1]||'', type: document.getElementById('edit-type').value, 
             originCity: normalizeZoneName(originCity), destinationCity: normalizeZoneName(destCity),
@@ -949,7 +955,7 @@
         const activeTab = document.querySelector('.tabs .tab a.active').getAttribute('href');
         let finalY = 15;
 
-        if (activeTab === '#tab-route') {
+        if (activeTab === '#tab-city') {
             Object.keys(state.groups).sort().forEach(groupKey => {
                 doc.setFontSize(14); doc.text(groupKey, 14, finalY); finalY += 7;
                 const body = state.groups[groupKey].map(getRowData);
