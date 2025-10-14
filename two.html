@@ -28,11 +28,12 @@
     .table-col-toggle th, .table-col-toggle td {
         padding: 10px 8px;
         font-size: 0.88rem;
+        vertical-align: middle;
     }
     .table-col-toggle th { white-space: nowrap; }
     .table-col-toggle .input-field { margin: 0; }
     .table-col-toggle input[type=date], .table-col-toggle input[type=time], 
-    .table-col-toggle .browser-default, .table-col-toggle .companion-input {
+    .table-col-toggle .browser-default {
         height: 2.2rem;
         font-size: 0.9rem;
         padding: 0 5px;
@@ -125,6 +126,7 @@
       <div class="btn-group">
           <a id="btn-export-pdf" class="btn green" data-translate="export_pdf">Export PDF</a>
           <a id="btn-export-csv" class="btn blue" data-translate="export_csv">Export CSV</a>
+          <a id="btn-reset-cols" class="btn orange" data-translate="reset_columns">Reset Columns</a>
           <a id="btn-clear-local" class="btn red" data-translate="clear_all_travel">Clear All Saved Travel</a>
       </div>
     </div>
@@ -386,7 +388,7 @@
 
   <script>
     // -- Constants, Defaults & State
-    const LS_KEY = 'transfer_logistics_data_v4';
+    const LS_KEY = 'transfer_logistics_data_v5';
     const defaults = {
       exceptions: {
         'Quelimane': { city: 'Quelimane' }, 'Quelimane District': { city: 'Quelimane' }, 'Nhamatanda': { city: 'Nhamatanda' }, 'Marromeu': { city: 'Marromeu' }, 'Caia': { city: 'Caia' }, 'ZONA INHAMIZUA': { city: 'Beira' }, 'ZONA MANGA': { city: 'Beira' }, 'ZONA MUNHAVA': { city: 'Beira' }
@@ -412,6 +414,7 @@
             export_pdf: "Export PDF",
             export_csv: "Export CSV",
             clear_all_travel: "Clear All Saved Travel",
+            reset_columns: "Reset Columns",
             add_missionary_title: "Add Missionary",
             edit_missionary_title: "Edit Missionary",
             type: "Type",
@@ -461,6 +464,7 @@
             toast_added: "Added",
             toast_restored: "Plan restored successfully.",
             toast_updated: "Updated {field} for all in group.",
+            toast_columns_reset: "Column layout has been reset to default.",
             toast_pdf_generating: "Generating PDF... Please wait.",
             toast_pdf_generated: "PDF generated successfully.",
             confirm_remove_missionary: "Remove this missionary from travel plans?",
@@ -484,6 +488,7 @@
             export_pdf: "Exportar PDF",
             export_csv: "Exportar CSV",
             clear_all_travel: "Limpar Viagens Guardadas",
+            reset_columns: "Redefinir Colunas",
             add_missionary_title: "Adicionar Missionário",
             edit_missionary_title: "Editar Missionário",
             type: "Tipo",
@@ -533,6 +538,7 @@
             toast_added: "Adicionado",
             toast_restored: "Plano restaurado com sucesso.",
             toast_updated: "{field} atualizado para todos no grupo.",
+            toast_columns_reset: "O layout das colunas foi redefinido para o padrão.",
             toast_pdf_generating: "A gerar PDF... Por favor, aguarde.",
             toast_pdf_generated: "PDF gerado com sucesso.",
             confirm_remove_missionary: "Remover este missionário dos planos de viagem?",
@@ -581,7 +587,22 @@
             document.getElementById('upload-section').style.display = 'none';
             document.getElementById('controls-section').style.display = 'block';
             document.getElementById('tabs-section').style.display = 'block';
-            M.Tabs.init(document.querySelector('.tabs'));
+            const tabs = M.Tabs.init(document.querySelector('.tabs'));
+            document.querySelector('a[href="#tab-transport"]').addEventListener('click', () => {
+                state.visibleColumns = ['type', 'lastName', 'originCity', 'destCity', 'transport', 'date', 'time', 'instructions', 'new', 'leader'];
+                saveToLS();
+                setupColumnManager();
+            });
+            document.querySelector('a[href="#tab-city"]').addEventListener('click', () => {
+                state.visibleColumns = ['type', 'lastName', 'originArea', 'destArea', 'transport', 'date', 'time', 'instructions', 'new', 'leader'];
+                saveToLS();
+                setupColumnManager();
+            });
+             document.querySelector('a[href="#tab-master"]').addEventListener('click', () => {
+                state.visibleColumns = ['type', 'lastName', 'originCity', 'destCity', 'transport', 'date', 'time', 'instructions', 'new', 'leader'];
+                saveToLS();
+                setupColumnManager();
+            });
         }
     }
 
@@ -736,11 +757,12 @@
     }
     function renderMasterTable() {
         const container = document.getElementById('groups-master'); container.innerHTML = '';
-        const allMissionaries = Object.values(state.groups || {}).flat().sort((a,b) => a.lastName.localeCompare(b.lastName) || a.firstName.localeCompare(b.firstName));
+        const allMissionaries = Object.values(state.groups || {}).flat();
         container.appendChild(createMissionaryTable(allMissionaries, null, false));
     }
     function createMissionaryTable(missionaries, groupKey, allowBulkEdit) {
       const table = document.createElement('table'); table.className='striped table-col-toggle'; const lang = state.lang || 'pt'; const T = translations[lang];
+      const sortedMissionaries = [...missionaries].sort((a,b) => (a.isNew - b.isNew) || a.lastName.localeCompare(b.lastName) || a.firstName.localeCompare(b.firstName));
       
       const bulkEditRow = allowBulkEdit ? `<tr class="bulk-edit-row">
             <th class="col-type"></th><th class="col-lastName"></th><th class="col-firstName"></th>
@@ -765,18 +787,26 @@
         ${bulkEditRow}
         </thead>`;
       const tbody = document.createElement('tbody');
-      missionaries.forEach(m =>{
+      sortedMissionaries.forEach(m =>{
           const tr = document.createElement('tr'); tr.dataset.id = m.id;
+          
+          let typeCellContent;
+          if (m.type === 'Elder' || m.type === 'Sister') {
+              typeCellContent = `<span>${m.type}</span>`;
+          } else {
+              typeCellContent = `<select class="type-select-editable browser-default"><option value="" selected disabled>${T.choose_option}</option><option value="Elder">Elder</option><option value="Sister">Sister</option></select>`;
+          }
+
           tr.innerHTML = `
-            <td class="col-type">${m.type}</td><td class="col-lastName">${m.lastName}</td><td class="col-firstName">${m.firstName}</td>
+            <td class="col-type">${typeCellContent}</td><td class="col-lastName">${m.lastName}</td><td class="col-firstName">${m.firstName}</td>
             <td class="col-originCity">${m.originCity}</td><td class="col-destCity">${m.destinationCity}</td>
             <td class="col-originArea">${m.originArea || ''}</td><td class="col-destArea">${m.destinationArea}</td>
-            <td class="col-companion"><input type="text" class="companion-input" value="${m.companion || ''}"></td>
+            <td class="col-companion"><span>${m.companion || ''}</span></td>
             <td class="col-transport"><select class="transport-select browser-default"><option value="Bus">${T.transport_bus}</option><option value="Plane">${T.transport_plane}</option><option value="Chapa">${T.transport_chapa}</option><option value="Txopela/Taxi">${T.transport_taxi}</option><option value="Ride">${T.transport_ride}</option></select></td>
             <td class="col-date"><input type="date" class="date-input" value="${m.date}"></td>
             <td class="col-time"><input type="time" class="time-input" value="${m.time}"></td>
             <td class="col-instructions"><textarea class="instr-input materialize-textarea">${m.instructions || ''}</textarea></td>
-            <td class="col-new">${m.isNew ? '<i class="material-icons green-text">check</i>' : ''}</td>
+            <td class="col-new">${m.isNew ? '<i class="material-icons green-text">check_box</i>' : ''}</td>
             <td class="col-leader"><label><input type="checkbox" class="leader-checkbox" ${m.leader ? 'checked':''}><span></span></label></td>
             <td class="col-actions"><div class="action-buttons"><a class="btn-small blue edit-btn"><i class="fa fa-pencil"></i></a><a class="btn-small red remove-btn"><i class="fa fa-trash"></i></a></div></td>`;
           tbody.appendChild(tr);
@@ -790,8 +820,12 @@
                   const trElement = e.target.closest('tr'); const missionaryId = trElement.dataset.id;
                   const { missionary } = findMissionary(missionaryId);
                   if (missionary) {
-                      missionary.transport = trElement.querySelector('.transport-select').value; missionary.date = trElement.querySelector('.date-input').value; missionary.time = trElement.querySelector('.time-input').value; missionary.instructions = trElement.querySelector('.instr-input').value; missionary.leader = trElement.querySelector('.leader-checkbox').checked; missionary.companion = trElement.querySelector('.companion-input').value;
+                      missionary.transport = trElement.querySelector('.transport-select').value; missionary.date = trElement.querySelector('.date-input').value; missionary.time = trElement.querySelector('.time-input').value; missionary.instructions = trElement.querySelector('.instr-input').value; missionary.leader = trElement.querySelector('.leader-checkbox').checked; 
+                      if (el.classList.contains('type-select-editable')) {
+                          missionary.type = el.value;
+                      }
                       saveToLS();
+                      if (el.classList.contains('type-select-editable')) renderAllViews();
                   }
               });
           });
@@ -859,78 +893,66 @@
         visibleContainer.innerHTML = ''; hiddenContainer.innerHTML = '';
         const lang = state.lang || 'pt';
 
+        const allColumnKeys = new Set(ALL_COLUMNS.map(c => c.key));
         const visibleKeys = new Set(state.visibleColumns);
-        
-        ALL_COLUMNS.forEach(col => {
-            const chip = document.createElement('div');
-            chip.className = 'col-chip';
-            chip.dataset.key = col.key;
-            chip.innerHTML = `<i class="material-icons">drag_handle</i> ${translations[lang][col.labelKey]} <i class="material-icons visibility-toggle">${visibleKeys.has(col.key) ? 'visibility' : 'visibility_off'}</i>`;
-            
-            if (visibleKeys.has(col.key)) {
-                // This logic is flawed, we need to add them in the order of state.visibleColumns
-            } else {
-                hiddenContainer.appendChild(chip);
-            }
-        });
-        
-        // Ensure visible columns are added in the correct order
+
+        // Add visible columns first, in their saved order
         state.visibleColumns.forEach(key => {
             const col = ALL_COLUMNS.find(c => c.key === key);
-            if (col) {
-                const chip = document.createElement('div');
-                chip.className = 'col-chip';
-                chip.dataset.key = col.key;
-                chip.innerHTML = `<i class="material-icons">drag_handle</i> ${translations[lang][col.labelKey]} <i class="material-icons visibility-toggle">visibility</i>`;
-                visibleContainer.appendChild(chip);
-            }
+            if(col) visibleContainer.appendChild(createColumnChip(col, true, lang));
         });
 
-        const sortableOptions = {
-            group: 'columns',
-            animation: 150,
-            handle: '.material-icons',
-            onEnd: updateColumnState,
-        };
-        new Sortable(visibleContainer, sortableOptions);
-        new Sortable(hiddenContainer, sortableOptions);
-        
-        document.getElementById('column-manager-wrapper').addEventListener('click', e => {
-            if (e.target.classList.contains('visibility-toggle')) {
-                const chip = e.target.closest('.col-chip');
-                const isVisible = chip.parentElement.id === 'visible-cols-container';
-                const targetContainer = isVisible ? hiddenContainer : visibleContainer;
-                targetContainer.appendChild(chip);
-                updateColumnState();
+        // Add remaining (hidden) columns
+        ALL_COLUMNS.forEach(col => {
+            if (!visibleKeys.has(col.key)) {
+                hiddenContainer.appendChild(createColumnChip(col, false, lang));
             }
         });
+        
+        const sortableOptions = { group: 'columns', animation: 150, handle: '.material-icons', onEnd: updateColumnState };
+        new Sortable(visibleContainer, sortableOptions);
+        new Sortable(hiddenContainer, sortableOptions);
     }
+    
+    function createColumnChip(col, isVisible, lang) {
+        const chip = document.createElement('div');
+        chip.className = 'col-chip';
+        chip.dataset.key = col.key;
+        chip.innerHTML = `<i class="material-icons">drag_handle</i> ${translations[lang][col.labelKey]} <i class="material-icons visibility-toggle">${isVisible ? 'visibility' : 'visibility_off'}</i>`;
+        return chip;
+    }
+
+    document.getElementById('column-manager-wrapper').addEventListener('click', e => {
+        if (e.target.classList.contains('visibility-toggle')) {
+            const chip = e.target.closest('.col-chip');
+            const isVisible = chip.parentElement.id === 'visible-cols-container';
+            const targetContainer = isVisible ? document.getElementById('hidden-cols-container') : document.getElementById('visible-cols-container');
+            targetContainer.appendChild(chip);
+            updateColumnState();
+        }
+    });
 
     function updateColumnState() {
         const visibleContainer = document.getElementById('visible-cols-container');
         state.visibleColumns = [...visibleContainer.children].map(chip => chip.dataset.key);
         saveToLS();
         applyColumnOrderAndVisibility();
+        // Redraw column manager to update visibility icons
+        setupColumnManager();
     }
     
     function applyColumnOrderAndVisibility() {
-        // Toggle body classes for simple show/hide CSS rules
         ALL_COLUMNS.forEach(col => document.body.classList.toggle(`show-${col.key}`, state.visibleColumns.includes(col.key)));
 
-        // Reorder DOM elements for precise ordering
         document.querySelectorAll('.table-col-toggle').forEach(table => {
             table.querySelectorAll('thead tr, tbody tr').forEach(row => {
-                const cells = new Map();
-                row.querySelectorAll('th, td').forEach(cell => {
+                const cells = new Map([...row.children].map(cell => {
                     const key = [...cell.classList].find(c => c.startsWith('col-')).replace('col-', '');
-                    cells.set(key, cell);
-                });
-                
-                // Re-append cells in the new order
+                    return [key, cell];
+                }));
                 state.visibleColumns.forEach(key => {
                     if (cells.has(key)) row.appendChild(cells.get(key));
                 });
-                // Always append actions cell last
                 if(cells.has('actions')) row.appendChild(cells.get('actions'));
             });
         });
@@ -993,6 +1015,14 @@
       if (name && city) { if (!state.exceptions) state.exceptions = {}; state.exceptions[name] = { city }; saveToLS(); renderExceptions(); document.getElementById('ex-add-name').value = ''; document.getElementById('ex-add-city').value = ''; M.updateTextFields(); }
     });
 
+    document.getElementById('btn-reset-cols').addEventListener('click', () => {
+        state.visibleColumns = [...defaults.visibleColumns];
+        saveToLS();
+        setupColumnManager();
+        applyColumnOrderAndVisibility();
+        M.toast({html: translations[state.lang].toast_columns_reset});
+    });
+
     function renderExceptions(){ const el = document.getElementById('exceptions-list'); el.innerHTML=''; Object.keys(state.exceptions||{}).forEach(k => { const row = document.createElement('div'); row.className='row'; row.innerHTML = `<div class="col s4">${k}</div><div class="col s4">${state.exceptions[k].city || ''}</div><div class="col s4"><a data-key="${k}" class="btn-small red btn-ex-remove">Remove</a></div>`; el.appendChild(row); row.querySelector('.btn-ex-remove').addEventListener('click', (e)=>{ delete state.exceptions[e.currentTarget.dataset.key]; saveToLS(); renderExceptions(); }); }); }
     
     document.getElementById('btn-clear-local').addEventListener('click', ()=>{ if(confirm(translations[state.lang].confirm_clear_local)){ localStorage.removeItem(LS_KEY); location.reload(); } });
@@ -1011,8 +1041,8 @@
         const getRowData = m => visibleCols.map(key => {
             switch(key) {
                 case 'transport': return m.transport ? (T[`transport_${m.transport.toLowerCase().replace('/','_')}`] || m.transport) : '';
-                case 'new': return m.isNew ? '✔️' : '';
-                case 'leader': return m.leader ? '⭐' : '';
+                case 'new': return m.isNew ? '☑' : '☐';
+                case 'leader': return m.leader ? '☑' : '☐';
                 default: return m[key] || '';
             }
         });
@@ -1024,7 +1054,7 @@
             Object.keys(state.groups).sort().forEach(groupKey => {
                 if(finalY > 180) { doc.addPage(); finalY = 15; }
                 doc.setFontSize(14); doc.text(groupKey, 14, finalY); finalY += 7;
-                const body = state.groups[groupKey].map(getRowData);
+                const body = state.groups[groupKey].sort((a,b) => a.isNew - b.isNew).map(getRowData);
                 doc.autoTable({ head, body, startY: finalY, theme: 'striped', headStyles: { fillColor: [0, 150, 136] } });
                 finalY = doc.previousAutoTable.finalY + 10;
             });
@@ -1035,14 +1065,14 @@
                 Object.values(state.groups).flat().forEach(m => { const t = m.transport || 'Unassigned'; if (!byTransport[t]) byTransport[t] = []; byTransport[t].push(m); });
                 groupsToPrint = byTransport;
             } else { // Master List
-                const all = Object.values(state.groups).flat().sort((a,b) => a.lastName.localeCompare(b.lastName) || a.firstName.localeCompare(b.firstName));
+                const all = Object.values(state.groups).flat().sort((a,b) => (a.isNew - b.isNew) || a.lastName.localeCompare(b.lastName) || a.firstName.localeCompare(b.firstName));
                 groupsToPrint = { [T.tab_master]: all };
             }
             Object.keys(groupsToPrint).sort().forEach(groupKey => {
                 if(finalY > 180 && activeTab !== '#tab-master') { doc.addPage(); finalY = 15; }
                 const groupTitle = T[`transport_${groupKey.toLowerCase().replace('/','_')}`] || groupKey;
                 doc.setFontSize(14); doc.text(groupTitle, 14, finalY); finalY += 7;
-                const body = groupsToPrint[groupKey].map(getRowData);
+                const body = groupsToPrint[groupKey].sort((a,b) => a.isNew - b.isNew).map(getRowData);
                 doc.autoTable({ head, body, startY: finalY, theme: 'striped', headStyles: { fillColor: [0, 150, 136] } });
                 finalY = doc.previousAutoTable.finalY + 10;
             });
@@ -1090,7 +1120,6 @@
         const ls = loadFromLS(); if(ls){ state=ls; }
         state.exceptions = Object.assign({}, defaults.exceptions, state.exceptions||{});
         if (!state.visibleColumns) { state.visibleColumns = defaults.visibleColumns; }
-        // Clean up any old 'tbd' properties from missionaries
         Object.values(state.groups || {}).flat().forEach(m => delete m.tbd);
         saveToLS();
         M.AutoInit();
