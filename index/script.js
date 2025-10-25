@@ -1175,7 +1175,7 @@ document.querySelector("body").addEventListener("click", (e) => {
         `${m.originCity || ""} -> ${m.destinationCity || ""}` +
         (transportName ? ` (${transportName})` : "");
       p.innerHTML = `<label>
-          <input type="checkbox" class="missionary-checkbox" value="${m.id}" checked />
+          <input type="checkbox" class="missionary-checkbox" value="${m.id}" />
           <span>${shortName} (${routeDisplay})</span>
         </label>`;
       checkboxList.appendChild(p);
