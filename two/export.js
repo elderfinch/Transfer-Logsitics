@@ -117,7 +117,7 @@ document.getElementById("btn-export-pdf").addEventListener("click", () => {
       if (val === null || val === undefined) return;
 
       // compute a checkbox size centered in the cell (smaller than before but visible)
-      let boxSize = Math.min(data.cell.width, data.cell.height) * 0.45; // relative (smaller)
+      let boxSize = Math.min(data.cell.width, data.cell.height) * 0.25; // relative (smaller)
       boxSize = Math.min(Math.max(boxSize, 6), 12); // min 6mm, max 12mm
       const x = data.cell.x + (data.cell.width - boxSize) / 2;
       const y = data.cell.y + (data.cell.height - boxSize) / 2;
