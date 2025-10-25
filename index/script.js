@@ -1266,41 +1266,52 @@ document.getElementById("btn-export-outlook").addEventListener("click", () => {
     return;
   }
 
-  // Helper to convert YYYY-MM-DD and HH:MM to iCalendar format (UTC or local with no Z)
-  function formatDateTimeForOutlook(dateStr, timeStr) {
+  // Helper to convert YYYY-MM-DD and HH:MM to iCalendar UTC format: YYYYMMDDTHHMMSSZ
+  function formatDateTimeForICS(dateStr, timeStr) {
     const dt = new Date(`${dateStr}T${timeStr}`);
-    // Use ISO format without milliseconds and Z for local time, then clean up
-    return dt
-      .toISOString()
-      .replace(/[-:]/g, "")
-      .replace(/\.\d{3}/, "")
-      .substring(0, 15);
+    return dt.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
   }
 
-  const startTime = formatDateTimeForOutlook(date, time);
+  const startTime = formatDateTimeForICS(date, time);
   // Assume 2 hours duration for simplicity
   const dtEnd = new Date(`${date}T${time}`);
   dtEnd.setHours(dtEnd.getHours() + 2);
-  const endTime = formatDateTimeForOutlook(
+  const endTime = formatDateTimeForICS(
     dtEnd.toISOString().substring(0, 10),
     dtEnd.toTimeString().substring(0, 5),
   );
 
+  // Location: use selected missionaries' origin cities
   const cityInfo = [
     ...new Set(selectedMissionaries.map((m) => m.originCity)),
   ].join(", ");
 
-  // Outlook/Office 365 URL uses slightly different parameters
-  const outlookUrl = new URL(
-    "https://outlook.live.com/calendar/0/action/compose",
-  );
-  outlookUrl.searchParams.set("subject", title);
-  outlookUrl.searchParams.set("body", description);
-  outlookUrl.searchParams.set("location", cityInfo);
-  outlookUrl.searchParams.set("startdt", `${startTime}`);
-  outlookUrl.searchParams.set("enddt", `${endTime}`);
+  // Create .ics file content
+  const icsContent = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//Transfer Logistics//EN",
+    "BEGIN:VEVENT",
+    `UID:${new Date().toISOString()}@transfer-logistics`,
+    `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "")}`,
+    `DTSTART:${startTime}`,
+    `DTEND:${endTime}`,
+    `SUMMARY:${title}`,
+    `DESCRIPTION:${description.replace(/\n/g, "\\n")}`,
+    `LOCATION:${cityInfo}`,
+    "END:VEVENT",
+    "END:VCALENDAR",
+  ].join("\r\n");
 
-  window.open(outlookUrl.toString(), "_blank");
+  const blob = new Blob([icsContent], { type: "text/calendar" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "travel_event.ics";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 });
 
 // -- Initial Load
