@@ -1,4 +1,5 @@
 // -- Export and Update Functions
+// -- Export and Update Functions
 document.getElementById("btn-export-pdf").addEventListener("click", () => {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation: "l", unit: "mm", format: "a4" });
@@ -99,7 +100,7 @@ document.getElementById("btn-export-pdf").addEventListener("click", () => {
     startY: finalY,
     theme: "striped",
     styles: { fontSize: 10 },
-  headStyles: { fillColor: [0, 150, 136], textColor: 255, fontStyle: 'bold', fontSize: 10 },
+    headStyles: { fillColor: [0, 150, 136] },
     columnStyles: (function(){
       const cs = {};
       checkboxColIndices.forEach(i => { cs[i] = { halign: 'center', cellWidth: 14 }; });
@@ -113,10 +114,9 @@ document.getElementById("btn-export-pdf").addEventListener("click", () => {
       const val = currentCheckboxMatrix[r] && currentCheckboxMatrix[r][c];
       if (val === null || val === undefined) return;
 
-      // compute a small square centered in the cell
-  // make checkbox larger (proportional to cell size), but cap to a reasonable size
-  let boxSize = Math.min(data.cell.width, data.cell.height) * 0.6; // relative
-  boxSize = Math.min(boxSize, 18); // max 18mm
+    // compute a checkbox size centered in the cell (smaller than before but visible)
+    let boxSize = Math.min(data.cell.width, data.cell.height) * 0.45; // relative (smaller)
+    boxSize = Math.min(Math.max(boxSize, 6), 12); // min 6mm, max 12mm
       const x = data.cell.x + (data.cell.width - boxSize) / 2;
       const y = data.cell.y + (data.cell.height - boxSize) / 2;
 
@@ -134,7 +134,7 @@ document.getElementById("btn-export-pdf").addEventListener("click", () => {
         const y2 = y + boxSize - pad;
         const x3 = x + boxSize - pad;
         const y3 = y + pad;
-        data.doc.setLineWidth(Math.max(0.8, boxSize * 0.09));
+        data.doc.setLineWidth(Math.max(0.5, boxSize * 0.07));
         data.doc.line(x1, y1, x2, y2);
         data.doc.line(x2, y2, x3, y3);
       }
@@ -150,13 +150,13 @@ document.getElementById("btn-export-pdf").addEventListener("click", () => {
           finalY = 15;
         }
   const pageWidth = doc.internal.pageSize.getWidth();
-  // render group title using same font and size as table header for a matching look
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
-  doc.text(groupKey, pageWidth / 2, finalY, { align: 'center' });
-  doc.setFont('helvetica', 'normal');
-  finalY += 8;
-        const list = state.groups[groupKey].sort((a, b) => a.isNew - b.isNew);
+    // render group title similar to original: left aligned, larger font
+    doc.setFontSize(14);
+    // ensure display uses ASCII arrow
+    const displayKey = String(groupKey || "").replace(/\s*→\s*/g, ' -> ');
+    doc.text(displayKey, 14, finalY);
+    finalY += 7;
+    const list = state.groups[groupKey].sort((a, b) => a.isNew - b.isNew);
         const built = buildRowsAndCheckboxMatrix(list);
         autoTableOptions.body = built.rows;
         currentCheckboxMatrix = built.checkboxMatrix;
@@ -199,11 +199,11 @@ document.getElementById("btn-export-pdf").addEventListener("click", () => {
           T[`transport_${groupKey.toLowerCase().replace("/", "_")}`] ||
           groupKey;
   const pageWidth = doc.internal.pageSize.getWidth();
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
-  doc.text(groupTitle, pageWidth / 2, finalY, { align: 'center' });
-  doc.setFont('helvetica', 'normal');
-  finalY += 8;
+    // render transport/group title similar to original: left aligned, larger font
+    doc.setFontSize(14);
+    const displayTitle = String(groupTitle || "").replace(/\s*→\s*/g, ' -> ');
+    doc.text(displayTitle, 14, finalY);
+    finalY += 7;
         const list = groupsToPrint[groupKey].sort((a, b) => a.isNew - b.isNew);
         const built = buildRowsAndCheckboxMatrix(list);
         autoTableOptions.body = built.rows;

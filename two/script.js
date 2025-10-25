@@ -435,7 +435,9 @@ function renderGroupsByCity() {
       card.className = "card group-card";
       const content = document.createElement("div");
       content.className = "card-content";
-      content.innerHTML = `<span class="card-title">${key}</span>`;
+      // display ASCII arrow in group titles to match original appearance
+      const displayKey = String(key || "").replace(/\s*→\s*/g, ' -> ');
+      content.innerHTML = `<span class="card-title">${displayKey}</span>`;
       content.appendChild(
         createMissionaryTable(state.groups[key], "city", key),
       );
@@ -1055,7 +1057,9 @@ function createCalendarDescription() {
   description += `${T.missionaries_names}:\n`;
 
   selectedMissionaries.forEach((m) => {
-    const shortName = `${(m.firstName || "")[0] || ""}. ${m.lastName || ""}`.trim();
+    const typeInitial = m.type ? `${(m.type || "")[0].toUpperCase()}.` : "";
+    const firstInitial = (m.firstName || "")[0] ? (m.firstName || "")[0].toUpperCase() : "";
+    const shortName = `${typeInitial} ${firstInitial} ${m.lastName || ""}`.trim();
     description += `- ${shortName}\n`;
   });
 
@@ -1107,25 +1111,45 @@ document.querySelector("body").addEventListener("click", (e) => {
 
     // Set modal values
     // Prepare editable title/date/time/description fields
-    document.getElementById("calendar-event-title").value = document.getElementById("calendar-event-title").value || "Missionary Travel";
+    const T = translations[state.lang] || {};
+    let defaultTitle = "Missionary Travel";
+    if (groupType === 'city') {
+      // keep the displayed title using ASCII arrow to match original table headings
+      defaultTitle = String(currentGroupKey || defaultTitle).replace(/\s*→\s*/g, ' -> ');
+    } else if (groupType === 'transport') {
+      defaultTitle = T[`transport_${String(currentGroupKey || '').toLowerCase().replace('/', '_')}`] || currentGroupKey || defaultTitle;
+    } else {
+      defaultTitle = 'Missionary Travel';
+    }
+    document.getElementById("calendar-event-title").value = defaultTitle;
     document.getElementById("calendar-event-date").value = refMissionary ? (refMissionary.date || "") : "";
     document.getElementById("calendar-event-time").value = refMissionary ? (refMissionary.time || "") : "";
 
-    // Populate checkbox list with ALL missionaries (short names by default)
-    const allMissionaries = Object.values(state.groups || {}).flat();
+    // Populate checkbox list using the current table order (same sorting as the displayed tables)
+    let listToShow = (currentMissionaryGroup && currentMissionaryGroup.length)
+      ? Array.from(currentMissionaryGroup)
+      : Object.values(state.groups || {}).flat();
+    // sort to match createMissionaryTable ordering: isNew, lastName, firstName
+    listToShow.sort((a, b) =>
+      (a.isNew - b.isNew) || a.lastName.localeCompare(b.lastName) || (a.firstName || '').localeCompare(b.firstName)
+    );
     const checkboxList = document.getElementById("missionaries-checkbox-list");
     checkboxList.innerHTML = "";
-    allMissionaries
-      .sort((a, b) => (a.lastName || "").localeCompare(b.lastName || ""))
-      .forEach((m) => {
-        const shortName = `${(m.firstName || "")[0] || ""}. ${m.lastName || ""}`.trim();
-        const p = document.createElement("p");
-        p.innerHTML = `<label>
-                    <input type="checkbox" class="missionary-checkbox" value="${m.id}" />
-                    <span>${shortName} (${m.originCity || ''} → ${m.destinationCity || ''})</span>
-                </label>`;
-        checkboxList.appendChild(p);
-      });
+    listToShow.forEach((m) => {
+      // Short name: Type initial (E. or S.) then first-name initial then last name -> e.g. 'E. B Finch'
+      const typeInitial = m.type ? `${(m.type || "")[0].toUpperCase()}.` : "";
+      const firstInitial = (m.firstName || "")[0] ? (m.firstName || "")[0].toUpperCase() : "";
+      const shortName = `${typeInitial} ${firstInitial} ${m.lastName || ""}`.trim();
+      const transportName = m.transport ? (translations[state.lang][`transport_${(m.transport || "").toLowerCase().replace("/","_")}`] || m.transport) : "";
+      const p = document.createElement("p");
+      // show transport mode after origin -> destination in parentheses for clarity
+      const routeDisplay = `${m.originCity || ''} -> ${m.destinationCity || ''}` + (transportName ? ` (${transportName})` : '');
+      p.innerHTML = `<label>
+          <input type="checkbox" class="missionary-checkbox" value="${m.id}" checked />
+          <span>${shortName} (${routeDisplay})</span>
+        </label>`;
+      checkboxList.appendChild(p);
+    });
 
     // Set default description into editable textarea
     document.getElementById("calendar-description").value = createCalendarDescription();
