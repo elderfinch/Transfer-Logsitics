@@ -88,15 +88,15 @@ const translations = {
     tab_transport: "By Transport",
     tab_master: "Master List",
     calendar_event_title: "Add Missionaries to Calendar Event",
-        event_title: "Event Title",
-        time_date: "Time & Date",
-        event_description: "Description",
-        select_missionaries: "Select Missionaries to Add",
-        export_outlook: "Export to Outlook Calendar",
-        export_google: "Export to Google Calendar",
-        origin_city_label: "Origin City",
-        destination_city_label: "Destination City",
-        missionaries_names: "Names of missionaries"
+    event_title: "Event Title",
+    time_date: "Time & Date",
+    event_description: "Description",
+    select_missionaries: "Select Missionaries to Add",
+    export_outlook: "Export to Outlook Calendar",
+    export_google: "Export to Google Calendar",
+    origin_city_label: "Origin City",
+    destination_city_label: "Destination City",
+    missionaries_names: "Names of missionaries",
   },
   pt: {
     app_title: "Logística de Transferência",
@@ -195,6 +195,6 @@ const translations = {
     export_google: "Exportar para o Google Calendar",
     origin_city_label: "Cidade de Origem",
     destination_city_label: "Cidade de Destino",
-    missionaries_names: "Nomes dos missionários"
+    missionaries_names: "Nomes dos missionários",
   },
 };

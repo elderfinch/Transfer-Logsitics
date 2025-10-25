@@ -8,14 +8,17 @@ document.getElementById("btn-export-pdf").addEventListener("click", () => {
 
   const view = getActiveView();
   const visibleCols = state.columnSettings[view];
+  // support multiple key naming conventions: destCity/destinationCity, destArea/destinationArea
   const allHeaders = {
     type: T.table_header_type,
     lastName: T.table_header_last_name,
     firstName: T.table_header_first_name,
     originCity: T.origin_city,
     destCity: T.dest_city,
+    destinationCity: T.dest_city,
     originArea: T.table_header_origin_area,
     destArea: T.table_header_dest_area,
+    destinationArea: T.table_header_dest_area,
     companion: T.table_header_companion,
     transport: T.table_header_transport,
     date: T.table_header_date,
@@ -24,23 +27,43 @@ document.getElementById("btn-export-pdf").addEventListener("click", () => {
     new: T.table_header_new,
     leader: T.table_header_leader,
   };
-  const head = [visibleCols.map((key) => allHeaders[key])];
+
+  const head = [visibleCols.map((key) => allHeaders[key] || key)];
+
+  const resolveFieldValue = (m, key) => {
+    // normalize known aliases
+    if (key === "destCity" || key === "destinationCity")
+      return m.destinationCity || m.destCity || "";
+    if (key === "destArea" || key === "destinationArea")
+      return m.destinationArea || m.destArea || "";
+    if (key === "originCity") return m.originCity || m.origin || "";
+    if (key === "originArea") return m.originArea || m.origin_area || "";
+    if (key === "new") return m.isNew;
+    // leader may be boolean or truthy flag
+    if (key === "leader") return m.leader;
+    // default fallback
+    return m[key] !== undefined ? m[key] : "";
+  };
+
+  const renderCell = (val, key) => {
+    // transport has localized label
+    if (key === "transport") {
+      if (!val) return "";
+      return (
+        T[`transport_${String(val).toLowerCase().replace("/", "_")}`] || val
+      );
+    }
+    // booleans / checkbox-like fields
+    if (typeof val === "boolean") return val ? "✅" : "";
+    if (val === "true" || val === "True" || val === 1) return "✅";
+    if (val === "false" || val === "False" || val === 0) return "";
+    return String(val || "");
+  };
 
   const getRowData = (m) =>
     visibleCols.map((key) => {
-      switch (key) {
-        case "transport":
-          return m.transport
-            ? T[`transport_${m.transport.toLowerCase().replace("/", "_")}`] ||
-                m.transport
-            : "";
-        case "new":
-          return m.isNew ? "✅" : "";
-        case "leader":
-          return m.leader ? "✅" : "";
-        default:
-          return m[key] || "";
-      }
+      const raw = resolveFieldValue(m, key);
+      return renderCell(raw, key);
     });
 
   let finalY = 15;
