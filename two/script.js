@@ -521,35 +521,6 @@ function setLanguage(lang) {
         restoredMissionaries.forEach(m => { const key = `${m.originCity} -> ${m.destinationCity}`; if (!state.groups[key]) state.groups[key] = []; state.groups[key].push(m); });
         saveToLS(); M.toast({ html: translations[state.lang].toast_restored }); location.reload();
     });
-
-    // -- Calendar Functionality (New Section)
-    const CALENDAR_HEADERS = {
-        calendar_event_title: "Add Missionaries to Calendar Event",
-        event_title: "Event Title",
-        time_date: "Time & Date",
-        event_description: "Description",
-        select_missionaries: "Select Missionaries to Add",
-        export_outlook: "Export to Outlook Calendar",
-        export_google: "Export to Google Calendar",
-        origin_city_label: "Origin City",
-        destination_city_label: "Destination City",
-        missionaries_names: "Names of missionaries"
-    };
-    
-    // Add new translations for the calendar modal
-    translations.en = Object.assign(translations.en, CALENDAR_HEADERS);
-    translations.pt = Object.assign(translations.pt, {
-        calendar_event_title: "Adicionar Missionários ao Evento de Calendário",
-        event_title: "Título do Evento",
-        time_date: "Hora e Data",
-        event_description: "Descrição",
-        select_missionaries: "Selecione Missionários para Adicionar",
-        export_outlook: "Exportar para o Calendário Outlook",
-        export_google: "Exportar para o Google Calendar",
-        origin_city_label: "Cidade de Origem",
-        destination_city_label: "Cidade de Destino",
-        missionaries_names: "Nomes dos missionários"
-    });
     
     // Global variable to hold the list of missionaries for the currently open group
     let currentMissionaryGroup = [];
