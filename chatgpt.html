@@ -1,185 +1,395 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Transfers Logistics</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
-  <style>
-    body{padding:16px}
-    .origin-badge{width:12px;height:12px;border-radius:50%;display:inline-block;margin-right:6px}
-    .table-row { vertical-align: middle; }
-    .zone-color { color: #fff; padding:2px 6px; border-radius:4px; }
-    .clickable { cursor:pointer }
-    .nowrap { white-space:nowrap }
-    .modal-body .form-label { font-weight:600 }
-  </style>
-</head>
-<body>
-<div class="container">
-  <h2 class="mb-3">Transfers Logistics</h2>
-  <div class="mb-3">
-    <div class="btn-group" role="group">
-      <input id="fileOld" type="file" accept=".xlsx,.xls,.csv" class="form-control">
-      <input id="fileNew" type="file" accept=".xlsx,.xls,.csv" class="form-control">
-    </div>
-    <button id="processBtn" class="btn btn-primary mt-2">Upload & Process</button>
-    <button id="openExceptions" class="btn btn-outline-secondary mt-2">Area/District Exceptions</button>
-    <button id="addMissionaryBtn" class="btn btn-success mt-2">+ Add Missionary</button>
-    <div class="float-end">
-      <div class="btn-group" role="group">
-        <button id="exportMasterExcel" class="btn btn-outline-primary">Export Master (Excel)</button>
-        <button id="exportSeparateExcel" class="btn btn-outline-primary">Export Separate (Excel)</button>
-        <button id="settingsBtn" class="btn btn-outline-secondary">Settings</button>
-      </div>
-    </div>
-  </div>
-
-  <ul class="nav nav-tabs" id="viewsTabs">
-    <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#masterView">Master Table</a></li>
-    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#separateView">Separate Tables</a></li>
-  </ul>
-  <div class="tab-content mt-3">
-    <div class="tab-pane fade show active" id="masterView">
-      <div id="masterTableWrap"></div>
-    </div>
-    <div class="tab-pane fade" id="separateView">
-      <div id="separateTablesWrap"></div>
-    </div>
-  </div>
-
-</div>
-
-<!-- Exceptions modal -->
-<div class="modal fade" id="exceptionsModal" tabindex="-1">
-  <div class="modal-dialog modal-lg">
-    <div class="modal-content">
-      <div class="modal-header"><h5 class="modal-title">Area / District Exceptions</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
-      <div class="modal-body">
-        <p>Assign areas/districts to a specific city (if they are not the zone city).</p>
-        <div class="row">
-          <div class="col-md-6">
-            <label class="form-label">Select Area/District</label>
-            <select id="exceptionAreaSelect" class="form-select"></select>
-          </div>
-          <div class="col-md-4">
-            <label class="form-label">Assign to City</label>
-            <select id="exceptionCitySelect" class="form-select"></select>
-          </div>
-          <div class="col-md-2 d-flex align-items-end">
-            <button id="saveExceptionBtn" class="btn btn-primary">Save</button>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Transfers Logistics</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        padding: 16px;
+      }
+      .origin-badge {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 6px;
+      }
+      .table-row {
+        vertical-align: middle;
+      }
+      .zone-color {
+        color: #fff;
+        padding: 2px 6px;
+        border-radius: 4px;
+      }
+      .clickable {
+        cursor: pointer;
+      }
+      .nowrap {
+        white-space: nowrap;
+      }
+      .modal-body .form-label {
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h2 class="mb-3">Transfers Logistics</h2>
+      <div class="mb-3">
+        <div class="btn-group" role="group">
+          <input
+            id="fileOld"
+            type="file"
+            accept=".xlsx,.xls,.csv"
+            class="form-control"
+          />
+          <input
+            id="fileNew"
+            type="file"
+            accept=".xlsx,.xls,.csv"
+            class="form-control"
+          />
+        </div>
+        <button id="processBtn" class="btn btn-primary mt-2">
+          Upload & Process
+        </button>
+        <button id="openExceptions" class="btn btn-outline-secondary mt-2">
+          Area/District Exceptions
+        </button>
+        <button id="addMissionaryBtn" class="btn btn-success mt-2">
+          + Add Missionary
+        </button>
+        <div class="float-end">
+          <div class="btn-group" role="group">
+            <button id="exportMasterExcel" class="btn btn-outline-primary">
+              Export Master (Excel)
+            </button>
+            <button id="exportSeparateExcel" class="btn btn-outline-primary">
+              Export Separate (Excel)
+            </button>
+            <button id="settingsBtn" class="btn btn-outline-secondary">
+              Settings
+            </button>
           </div>
         </div>
-        <hr>
-        <h6>Current Exceptions</h6>
-        <ul id="exceptionsList" class="list-group"></ul>
-        <hr>
-        <h6>Add custom city</h6>
-        <div class="input-group">
-          <input id="newCityName" class="form-control" placeholder="City name (e.g. Caia)">
-          <select id="newCityType" class="form-select"><option value="area">Area</option><option value="district">District</option></select>
-          <button id="addCityBtn" class="btn btn-outline-secondary">Add City</button>
+      </div>
+
+      <ul class="nav nav-tabs" id="viewsTabs">
+        <li class="nav-item">
+          <a class="nav-link active" data-bs-toggle="tab" href="#masterView"
+            >Master Table</a
+          >
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" data-bs-toggle="tab" href="#separateView"
+            >Separate Tables</a
+          >
+        </li>
+      </ul>
+      <div class="tab-content mt-3">
+        <div class="tab-pane fade show active" id="masterView">
+          <div id="masterTableWrap"></div>
+        </div>
+        <div class="tab-pane fade" id="separateView">
+          <div id="separateTablesWrap"></div>
         </div>
       </div>
     </div>
-  </div>
-</div>
 
-<!-- Add missionary modal -->
-<div class="modal fade" id="addModal" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header"><h5 class="modal-title">Add Missionary</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
-      <div class="modal-body">
-        <form id="addForm">
-          <div class="mb-2"><label class="form-label">Type</label><select id="addType" class="form-select"><option>Elder</option><option>Sister</option></select></div>
-          <div class="mb-2"><label class="form-label">Name</label><input id="addName" class="form-control"></div>
-          <div class="mb-2"><label class="form-label">Origin City</label><select id="addOrigin" class="form-select"></select></div>
-          <div class="mb-2"><label class="form-label">Destination City</label><select id="addDestination" class="form-select"></select></div>
-          <div class="mb-2"><label class="form-label">Destination Area</label><select id="addDestinationArea" class="form-select"></select></div>
-          <div class="mb-2"><label class="form-label">Transportation</label><select id="addTransport" class="form-select"><option>Bus</option><option>Airplane</option><option>Chapa</option><option>Txopela/Taxi</option><option>Ride</option></select></div>
-          <div class="mb-2"><label class="form-label">Date of travel</label><input id="addDate" type="date" class="form-control"><div class="form-check"><input id="addTbd" type="checkbox" class="form-check-input"><label class="form-check-label">TBD</label></div></div>
-          <div class="mb-2"><label class="form-label">Time of departure</label><input id="addTime" type="time" class="form-control"></div>
-          <div class="mb-2"><label class="form-label">Travel Instructions</label><textarea id="addInstr" class="form-control"></textarea></div>
-          <div class="form-check mb-2"><input id="addLeader" class="form-check-input" type="checkbox"><label class="form-check-label">Travel Leader</label></div>
-        </form>
+    <!-- Exceptions modal -->
+    <div class="modal fade" id="exceptionsModal" tabindex="-1">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Area / District Exceptions</h5>
+            <button class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <p>
+              Assign areas/districts to a specific city (if they are not the
+              zone city).
+            </p>
+            <div class="row">
+              <div class="col-md-6">
+                <label class="form-label">Select Area/District</label>
+                <select id="exceptionAreaSelect" class="form-select"></select>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Assign to City</label>
+                <select id="exceptionCitySelect" class="form-select"></select>
+              </div>
+              <div class="col-md-2 d-flex align-items-end">
+                <button id="saveExceptionBtn" class="btn btn-primary">
+                  Save
+                </button>
+              </div>
+            </div>
+            <hr />
+            <h6>Current Exceptions</h6>
+            <ul id="exceptionsList" class="list-group"></ul>
+            <hr />
+            <h6>Add custom city</h6>
+            <div class="input-group">
+              <input
+                id="newCityName"
+                class="form-control"
+                placeholder="City name (e.g. Caia)"
+              />
+              <select id="newCityType" class="form-select">
+                <option value="area">Area</option>
+                <option value="district">District</option>
+              </select>
+              <button id="addCityBtn" class="btn btn-outline-secondary">
+                Add City
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="modal-footer"><button id="saveAddBtn" class="btn btn-primary">Add</button></div>
     </div>
-  </div>
-</div>
 
-<!-- Settings modal -->
-<div class="modal fade" id="settingsModal" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header"><h5 class="modal-title">Settings</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
-      <div class="modal-body">
-        <div class="mb-2"><label class="form-label">Language</label><select id="langSelect" class="form-select"><option value="en">English</option><option value="pt">Português</option></select></div>
-        <div class="mb-2"><button id="deleteAllBtn" class="btn btn-danger">Delete All Missionary Travel (Clear LocalStorage)</button></div>
+    <!-- Add missionary modal -->
+    <div class="modal fade" id="addModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Add Missionary</h5>
+            <button class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <form id="addForm">
+              <div class="mb-2">
+                <label class="form-label">Type</label
+                ><select id="addType" class="form-select">
+                  <option>Elder</option>
+                  <option>Sister</option>
+                </select>
+              </div>
+              <div class="mb-2">
+                <label class="form-label">Name</label
+                ><input id="addName" class="form-control" />
+              </div>
+              <div class="mb-2">
+                <label class="form-label">Origin City</label
+                ><select id="addOrigin" class="form-select"></select>
+              </div>
+              <div class="mb-2">
+                <label class="form-label">Destination City</label
+                ><select id="addDestination" class="form-select"></select>
+              </div>
+              <div class="mb-2">
+                <label class="form-label">Destination Area</label
+                ><select id="addDestinationArea" class="form-select"></select>
+              </div>
+              <div class="mb-2">
+                <label class="form-label">Transportation</label
+                ><select id="addTransport" class="form-select">
+                  <option>Bus</option>
+                  <option>Airplane</option>
+                  <option>Chapa</option>
+                  <option>Txopela/Taxi</option>
+                  <option>Ride</option>
+                </select>
+              </div>
+              <div class="mb-2">
+                <label class="form-label">Date of travel</label
+                ><input id="addDate" type="date" class="form-control" />
+                <div class="form-check">
+                  <input
+                    id="addTbd"
+                    type="checkbox"
+                    class="form-check-input"
+                  /><label class="form-check-label">TBD</label>
+                </div>
+              </div>
+              <div class="mb-2">
+                <label class="form-label">Time of departure</label
+                ><input id="addTime" type="time" class="form-control" />
+              </div>
+              <div class="mb-2">
+                <label class="form-label">Travel Instructions</label
+                ><textarea id="addInstr" class="form-control"></textarea>
+              </div>
+              <div class="form-check mb-2">
+                <input
+                  id="addLeader"
+                  class="form-check-input"
+                  type="checkbox"
+                /><label class="form-check-label">Travel Leader</label>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button id="saveAddBtn" class="btn btn-primary">Add</button>
+          </div>
+        </div>
       </div>
     </div>
-  </div>
-</div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
+    <!-- Settings modal -->
+    <div class="modal fade" id="settingsModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Settings</h5>
+            <button class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-2">
+              <label class="form-label">Language</label
+              ><select id="langSelect" class="form-select">
+                <option value="en">English</option>
+                <option value="pt">Português</option>
+              </select>
+            </div>
+            <div class="mb-2">
+              <button id="deleteAllBtn" class="btn btn-danger">
+                Delete All Missionary Travel (Clear LocalStorage)
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
-<script>
-// ---- App state and defaults ----
-const LS_KEY = 'transfers_app_data_v1';
-let state = {
-  cities: [], // {name}
-  exceptions: {}, // area/district -> city
-  missionaries: [], // list of objects
-  settings: {lang:'en'}
-};
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
 
-const DEFAULT_EXCEPTIONS = {
-  'Quelimane District': 'Quelimane',
-  'Nhamatanda': 'Nhamatanda',
-  'Marromeu': 'Marromeu',
-  'Caia': 'Caia',
-  'Munhava': 'Beira',
-  'Inhamizua': 'Beira',
-  'Manga': 'Beira'
-};
+    <script>
+      // ---- App state and defaults ----
+      const LS_KEY = "transfers_app_data_v1";
+      let state = {
+        cities: [], // {name}
+        exceptions: {}, // area/district -> city
+        missionaries: [], // list of objects
+        settings: { lang: "en" },
+      };
 
-const TRANSPORT_DEFAULTS = (from,to)=>{
-  const t=(a,b)=>((['Tete','Chimoio','Beira'].includes(a) && ['Tete','Chimoio','Beira'].includes(b)) || (['Quelimane','Nampula'].includes(a)&&['Quelimane','Nampula'].includes(b)))? 'Bus' : ((['Tete','Chimoio','Beira'].includes(a) && b==='Nampula')? 'Airplane' : (a===b? (a==='Beira'?'Ride':'Txopela/Taxi') : 'Bus'));
-  return t(from,to);
-};
+      const DEFAULT_EXCEPTIONS = {
+        "Quelimane District": "Quelimane",
+        Nhamatanda: "Nhamatanda",
+        Marromeu: "Marromeu",
+        Caia: "Caia",
+        Munhava: "Beira",
+        Inhamizua: "Beira",
+        Manga: "Beira",
+      };
 
-function saveState(){ localStorage.setItem(LS_KEY, JSON.stringify(state)); }
-function loadState(){ const s=localStorage.getItem(LS_KEY); if(s){ state=JSON.parse(s); } else { state.exceptions = {...DEFAULT_EXCEPTIONS}; state.cities = ['Tete','Chimoio','Beira','Quelimane','Nampula']; saveState(); } }
-loadState();
+      const TRANSPORT_DEFAULTS = (from, to) => {
+        const t = (a, b) =>
+          (["Tete", "Chimoio", "Beira"].includes(a) &&
+            ["Tete", "Chimoio", "Beira"].includes(b)) ||
+          (["Quelimane", "Nampula"].includes(a) &&
+            ["Quelimane", "Nampula"].includes(b))
+            ? "Bus"
+            : ["Tete", "Chimoio", "Beira"].includes(a) && b === "Nampula"
+              ? "Airplane"
+              : a === b
+                ? a === "Beira"
+                  ? "Ride"
+                  : "Txopela/Taxi"
+                : "Bus";
+        return t(from, to);
+      };
 
-// ---- Utilities ----
-function normalizeZoneName(z){ if(!z) return '';
-  return z.replace(/ZONA/ig,'').trim().toLowerCase().replace(/(^|\s)\S/g,m=>m.toUpperCase());
-}
+      function saveState() {
+        localStorage.setItem(LS_KEY, JSON.stringify(state));
+      }
+      function loadState() {
+        const s = localStorage.getItem(LS_KEY);
+        if (s) {
+          state = JSON.parse(s);
+        } else {
+          state.exceptions = { ...DEFAULT_EXCEPTIONS };
+          state.cities = ["Tete", "Chimoio", "Beira", "Quelimane", "Nampula"];
+          saveState();
+        }
+      }
+      loadState();
 
-function ensureCityExists(name){ if(!name) return; name=normalizeZoneName(name); if(!state.cities.includes(name)){ state.cities.push(name); saveState(); } }
+      // ---- Utilities ----
+      function normalizeZoneName(z) {
+        if (!z) return "";
+        return z
+          .replace(/ZONA/gi, "")
+          .trim()
+          .toLowerCase()
+          .replace(/(^|\s)\S/g, (m) => m.toUpperCase());
+      }
 
-function colorForZone(zone){ // simple hash
-  const colors=['#6c757d','#0d6efd','#198754','#fd7e14','#6610f2','#d63384','#20c997','#0dcaf0','#ffc107'];
-  let h=0; for(let i=0;i<zone.length;i++) h=(h*31+zone.charCodeAt(i))%colors.length; return colors[h];
-}
+      function ensureCityExists(name) {
+        if (!name) return;
+        name = normalizeZoneName(name);
+        if (!state.cities.includes(name)) {
+          state.cities.push(name);
+          saveState();
+        }
+      }
 
-// ---- Parse spreadsheets and map columns UI ----
-async function readWorkbookFromFile(file){ return new Promise((res,rej)=>{ const reader=new FileReader(); reader.onload=(e)=>{ const data=new Uint8Array(e.target.result); const wb=XLSX.read(data,{type:'array'}); res(wb); }; reader.onerror=rej; reader.readAsArrayBuffer(file); }); }
+      function colorForZone(zone) {
+        // simple hash
+        const colors = [
+          "#6c757d",
+          "#0d6efd",
+          "#198754",
+          "#fd7e14",
+          "#6610f2",
+          "#d63384",
+          "#20c997",
+          "#0dcaf0",
+          "#ffc107",
+        ];
+        let h = 0;
+        for (let i = 0; i < zone.length; i++)
+          h = (h * 31 + zone.charCodeAt(i)) % colors.length;
+        return colors[h];
+      }
 
-function sheetToJson(wb){ const first=wb.Sheets[wb.SheetNames[0]]; return XLSX.utils.sheet_to_json(first,{defval:''}); }
+      // ---- Parse spreadsheets and map columns UI ----
+      async function readWorkbookFromFile(file) {
+        return new Promise((res, rej) => {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const data = new Uint8Array(e.target.result);
+            const wb = XLSX.read(data, { type: "array" });
+            res(wb);
+          };
+          reader.onerror = rej;
+          reader.readAsArrayBuffer(file);
+        });
+      }
 
-function promptColumnMapping(rowsOld, rowsNew){ // produce a modal style mapping UI inline (simple)
-  const cols = Array.from(new Set([...Object.keys(rowsOld[0]||{}), ...Object.keys(rowsNew[0]||{})]));
-  return new Promise((res)=>{
-    const modal = new bootstrap.Modal(document.createElement('div'));
-    const container = document.createElement('div'); container.className='modal fade'; container.tabIndex=-1;
-    container.innerHTML = `
+      function sheetToJson(wb) {
+        const first = wb.Sheets[wb.SheetNames[0]];
+        return XLSX.utils.sheet_to_json(first, { defval: "" });
+      }
+
+      function promptColumnMapping(rowsOld, rowsNew) {
+        // produce a modal style mapping UI inline (simple)
+        const cols = Array.from(
+          new Set([
+            ...Object.keys(rowsOld[0] || {}),
+            ...Object.keys(rowsNew[0] || {}),
+          ]),
+        );
+        return new Promise((res) => {
+          const modal = new bootstrap.Modal(document.createElement("div"));
+          const container = document.createElement("div");
+          container.className = "modal fade";
+          container.tabIndex = -1;
+          container.innerHTML = `
       <div class="modal-dialog modal-lg"><div class="modal-content">
       <div class="modal-header"><h5 class="modal-title">Map Columns</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
       <div class="modal-body">
@@ -194,185 +404,586 @@ function promptColumnMapping(rowsOld, rowsNew){ // produce a modal style mapping
       </div>
       <div class="modal-footer"><button id='mapOk' class='btn btn-primary'>OK</button></div>
       </div></div>`;
-    document.body.appendChild(container);
-    const selects = container.querySelectorAll('select');
-    selects.forEach(s=>{ cols.forEach(c=>{ const opt=document.createElement('option'); opt.value=c; opt.textContent=c; s.appendChild(opt); }); const blank=document.createElement('option'); blank.value=''; blank.textContent='(none)'; s.insertBefore(blank,s.firstChild); });
-    const bs = new bootstrap.Modal(container); bs.show(); container.querySelector('#mapOk').onclick=()=>{
-      const mapping = { name:container.querySelector('#map_name').value, type:container.querySelector('#map_type').value, id:container.querySelector('#map_id').value, zone:container.querySelector('#map_zone').value, area:container.querySelector('#map_area').value };
-      bs.hide(); container.remove(); res(mapping);
-    };
-  });
-}
+          document.body.appendChild(container);
+          const selects = container.querySelectorAll("select");
+          selects.forEach((s) => {
+            cols.forEach((c) => {
+              const opt = document.createElement("option");
+              opt.value = c;
+              opt.textContent = c;
+              s.appendChild(opt);
+            });
+            const blank = document.createElement("option");
+            blank.value = "";
+            blank.textContent = "(none)";
+            s.insertBefore(blank, s.firstChild);
+          });
+          const bs = new bootstrap.Modal(container);
+          bs.show();
+          container.querySelector("#mapOk").onclick = () => {
+            const mapping = {
+              name: container.querySelector("#map_name").value,
+              type: container.querySelector("#map_type").value,
+              id: container.querySelector("#map_id").value,
+              zone: container.querySelector("#map_zone").value,
+              area: container.querySelector("#map_area").value,
+            };
+            bs.hide();
+            container.remove();
+            res(mapping);
+          };
+        });
+      }
 
-// ---- Determine transfers ----
-function computeTransfers(oldRows,newRows,mapping){ // returns array of missionary objects
-  // Build maps by id or by name fallback
-  const keyFn = (r)=>{ if(mapping.id) return String(r[mapping.id]||'').trim().toLowerCase(); if(mapping.name) return String(r[mapping.name]||'').trim().toLowerCase(); return ''; };
-  const oldMap = {}; oldRows.forEach(r=> oldMap[keyFn(r)] = r);
-  const transfers = [];
-  newRows.forEach(nr=>{
-    const id = keyFn(nr);
-    const or = oldMap[id];
-    const oldZone = or ? normalizeZoneName(or[mapping.zone]||or[mapping.area]||'') : '';
-    const newZone = normalizeZoneName(nr[mapping.zone]||nr[mapping.area]||'');
-    const oldArea = or ? (or[mapping.area]||'') : '';
-    const newArea = nr[mapping.area]||'';
-    const name = nr[mapping.name] || nr['Name'] || `${nr['First']||''} ${nr['Last']||''}`.trim();
-    const type = (nr[mapping.type]||'').trim() || (or? (or[mapping.type]||'') : '') || 'Elder';
-    const originCity = oldZone || (or? normalizeZoneName(or[mapping.zone]||'') : '') || normalizeZoneName(or && or[mapping.area] ? or[mapping.area] : '') || normalizeZoneName(nr['Origin']||'') || '';
-    const destinationCity = newZone || normalizeZoneName(nr[mapping.zone]||'') || '';
-    // apply exceptions mapping from area/district names
-    const areaKey = (nr[mapping.area]||'').trim();
-    const originAreaName = (or && (or[mapping.area]||'')) || '';
-    const finalOrigin = state.exceptions[originAreaName] || state.exceptions[areaKey] || originCity || normalizeZoneName(oldZone);
-    const finalDest = state.exceptions[newArea] || state.exceptions[areaKey] || destinationCity;
+      // ---- Determine transfers ----
+      function computeTransfers(oldRows, newRows, mapping) {
+        // returns array of missionary objects
+        // Build maps by id or by name fallback
+        const keyFn = (r) => {
+          if (mapping.id)
+            return String(r[mapping.id] || "")
+              .trim()
+              .toLowerCase();
+          if (mapping.name)
+            return String(r[mapping.name] || "")
+              .trim()
+              .toLowerCase();
+          return "";
+        };
+        const oldMap = {};
+        oldRows.forEach((r) => (oldMap[keyFn(r)] = r));
+        const transfers = [];
+        newRows.forEach((nr) => {
+          const id = keyFn(nr);
+          const or = oldMap[id];
+          const oldZone = or
+            ? normalizeZoneName(or[mapping.zone] || or[mapping.area] || "")
+            : "";
+          const newZone = normalizeZoneName(
+            nr[mapping.zone] || nr[mapping.area] || "",
+          );
+          const oldArea = or ? or[mapping.area] || "" : "";
+          const newArea = nr[mapping.area] || "";
+          const name =
+            nr[mapping.name] ||
+            nr["Name"] ||
+            `${nr["First"] || ""} ${nr["Last"] || ""}`.trim();
+          const type =
+            (nr[mapping.type] || "").trim() ||
+            (or ? or[mapping.type] || "" : "") ||
+            "Elder";
+          const originCity =
+            oldZone ||
+            (or ? normalizeZoneName(or[mapping.zone] || "") : "") ||
+            normalizeZoneName(or && or[mapping.area] ? or[mapping.area] : "") ||
+            normalizeZoneName(nr["Origin"] || "") ||
+            "";
+          const destinationCity =
+            newZone || normalizeZoneName(nr[mapping.zone] || "") || "";
+          // apply exceptions mapping from area/district names
+          const areaKey = (nr[mapping.area] || "").trim();
+          const originAreaName = (or && (or[mapping.area] || "")) || "";
+          const finalOrigin =
+            state.exceptions[originAreaName] ||
+            state.exceptions[areaKey] ||
+            originCity ||
+            normalizeZoneName(oldZone);
+          const finalDest =
+            state.exceptions[newArea] ||
+            state.exceptions[areaKey] ||
+            destinationCity;
 
-    // Decide if transferred: if origin and destination exist and differ OR area differs
-    const transferred = (finalOrigin && finalDest && normalizeZoneName(finalOrigin)!==normalizeZoneName(finalDest)) || (originAreaName !== newArea);
-    const obj = {
-      id: id || Math.random().toString(36).slice(2,9),
-      type: type || 'Elder',
-      name: name || 'Unknown',
-      originCity: finalOrigin || normalizeZoneName(originCity) || 'Unknown',
-      destinationCity: finalDest || normalizeZoneName(destinationCity) || 'Unknown',
-      destinationArea: newArea||'',
-      transport: TRANSPORT_DEFAULTS(finalOrigin||normalizeZoneName(originCity), finalDest||normalizeZoneName(destinationCity)),
-      date: '', tbd:false, time:'', instructions:'', leader:false
-    };
-    if(transferred) transfers.push(obj);
-  });
-  return transfers;
-}
+          // Decide if transferred: if origin and destination exist and differ OR area differs
+          const transferred =
+            (finalOrigin &&
+              finalDest &&
+              normalizeZoneName(finalOrigin) !==
+                normalizeZoneName(finalDest)) ||
+            originAreaName !== newArea;
+          const obj = {
+            id: id || Math.random().toString(36).slice(2, 9),
+            type: type || "Elder",
+            name: name || "Unknown",
+            originCity:
+              finalOrigin || normalizeZoneName(originCity) || "Unknown",
+            destinationCity:
+              finalDest || normalizeZoneName(destinationCity) || "Unknown",
+            destinationArea: newArea || "",
+            transport: TRANSPORT_DEFAULTS(
+              finalOrigin || normalizeZoneName(originCity),
+              finalDest || normalizeZoneName(destinationCity),
+            ),
+            date: "",
+            tbd: false,
+            time: "",
+            instructions: "",
+            leader: false,
+          };
+          if (transferred) transfers.push(obj);
+        });
+        return transfers;
+      }
 
-// ---- Rendering ----
-function renderMaster(){ const wrap=document.getElementById('masterTableWrap'); wrap.innerHTML='';
-  const table=document.createElement('table'); table.className='table table-sm table-bordered';
-  const thead=document.createElement('thead'); thead.innerHTML=`<tr><th>Type</th><th>Name</th><th>Origin City</th><th>Destination City</th><th>Destination Area</th><th>Transportation</th><th>Date</th><th>Time</th><th>Travel Instructions</th><th>Leader</th><th></th></tr>`;
-  table.appendChild(thead);
-  const tbody=document.createElement('tbody');
-  state.missionaries.forEach(m=>{
-    const tr=document.createElement('tr'); tr.className='table-row'; tr.dataset.id=m.id;
-    tr.innerHTML = `
-      <td><select class='form-select form-select-sm col-type'><option ${m.type==='Elder'?'selected':''}>Elder</option><option ${m.type==='Sister'?'selected':''}>Sister</option></select></td>
+      // ---- Rendering ----
+      function renderMaster() {
+        const wrap = document.getElementById("masterTableWrap");
+        wrap.innerHTML = "";
+        const table = document.createElement("table");
+        table.className = "table table-sm table-bordered";
+        const thead = document.createElement("thead");
+        thead.innerHTML = `<tr><th>Type</th><th>Name</th><th>Origin City</th><th>Destination City</th><th>Destination Area</th><th>Transportation</th><th>Date</th><th>Time</th><th>Travel Instructions</th><th>Leader</th><th></th></tr>`;
+        table.appendChild(thead);
+        const tbody = document.createElement("tbody");
+        state.missionaries.forEach((m) => {
+          const tr = document.createElement("tr");
+          tr.className = "table-row";
+          tr.dataset.id = m.id;
+          tr.innerHTML = `
+      <td><select class='form-select form-select-sm col-type'><option ${m.type === "Elder" ? "selected" : ""}>Elder</option><option ${m.type === "Sister" ? "selected" : ""}>Sister</option></select></td>
       <td><input class='form-control form-control-sm col-name' value="${escapeHtml(m.name)}"></td>
       <td><select class='form-select form-select-sm col-origin'></select></td>
       <td><select class='form-select form-select-sm col-dest'></select></td>
       <td><select class='form-select form-select-sm col-area'></select></td>
       <td><select class='form-select form-select-sm col-trans'><option>Bus</option><option>Airplane</option><option>Chapa</option><option>Txopela/Taxi</option><option>Ride</option></select></td>
-      <td><div class='d-flex'><input type='date' class='form-control form-control-sm col-date' value='${m.date}'><div class='form-check ms-2'><input class='form-check-input col-tbd' type='checkbox' ${m.tbd?'checked':''}></div></div></td>
+      <td><div class='d-flex'><input type='date' class='form-control form-control-sm col-date' value='${m.date}'><div class='form-check ms-2'><input class='form-check-input col-tbd' type='checkbox' ${m.tbd ? "checked" : ""}></div></div></td>
       <td><input type='time' class='form-control form-control-sm col-time' value='${m.time}'></td>
       <td><input class='form-control form-control-sm col-instr' value='${escapeHtml(m.instructions)}'></td>
-      <td class='text-center'><input class='form-check-input col-leader' type='checkbox' ${m.leader?'checked':''}></td>
+      <td class='text-center'><input class='form-check-input col-leader' type='checkbox' ${m.leader ? "checked" : ""}></td>
       <td class='text-center'><button class='btn btn-sm btn-danger col-trash'><i class='fa fa-trash'></i></button></td>
     `;
-    // populate origin/dest/area selects
-    const originSel = tr.querySelector('.col-origin'); const destSel = tr.querySelector('.col-dest'); const areaSel = tr.querySelector('.col-area');
-    state.cities.forEach(c=>{ const o=document.createElement('option'); o.value=c; o.textContent=c; if(c===m.originCity) o.selected=true; originSel.appendChild(o); });
-    state.cities.forEach(c=>{ const o=document.createElement('option'); o.value=c; o.textContent=c; if(c===m.destinationCity) o.selected=true; destSel.appendChild(o); });
-    // destination area list - gather unique areas from missionaries
-    const areas = Array.from(new Set(state.missionaries.map(x=>x.destinationArea).filter(Boolean))).sort(); areas.forEach(a=>{ const o=document.createElement('option'); o.value=a; o.textContent=a; if(a===m.destinationArea) o.selected=true; areaSel.appendChild(o); });
-    // set transport
-    tr.querySelector('.col-trans').value = m.transport;
-    // listeners
-    tr.querySelectorAll('input,select').forEach(inp=> inp.addEventListener('change', ()=>{ applyRowToState(tr); saveState(); renderMaster(); renderSeparate(); }));
-    tr.querySelector('.col-trash').addEventListener('click', ()=>{ if(confirm('Remove missionary from travel plans?')){ state.missionaries = state.missionaries.filter(x=>x.id!==m.id); saveState(); renderMaster(); renderSeparate(); } });
-    tbody.appendChild(tr);
-  });
-  table.appendChild(tbody); wrap.appendChild(table);
-}
+          // populate origin/dest/area selects
+          const originSel = tr.querySelector(".col-origin");
+          const destSel = tr.querySelector(".col-dest");
+          const areaSel = tr.querySelector(".col-area");
+          state.cities.forEach((c) => {
+            const o = document.createElement("option");
+            o.value = c;
+            o.textContent = c;
+            if (c === m.originCity) o.selected = true;
+            originSel.appendChild(o);
+          });
+          state.cities.forEach((c) => {
+            const o = document.createElement("option");
+            o.value = c;
+            o.textContent = c;
+            if (c === m.destinationCity) o.selected = true;
+            destSel.appendChild(o);
+          });
+          // destination area list - gather unique areas from missionaries
+          const areas = Array.from(
+            new Set(
+              state.missionaries.map((x) => x.destinationArea).filter(Boolean),
+            ),
+          ).sort();
+          areas.forEach((a) => {
+            const o = document.createElement("option");
+            o.value = a;
+            o.textContent = a;
+            if (a === m.destinationArea) o.selected = true;
+            areaSel.appendChild(o);
+          });
+          // set transport
+          tr.querySelector(".col-trans").value = m.transport;
+          // listeners
+          tr.querySelectorAll("input,select").forEach((inp) =>
+            inp.addEventListener("change", () => {
+              applyRowToState(tr);
+              saveState();
+              renderMaster();
+              renderSeparate();
+            }),
+          );
+          tr.querySelector(".col-trash").addEventListener("click", () => {
+            if (confirm("Remove missionary from travel plans?")) {
+              state.missionaries = state.missionaries.filter(
+                (x) => x.id !== m.id,
+              );
+              saveState();
+              renderMaster();
+              renderSeparate();
+            }
+          });
+          tbody.appendChild(tr);
+        });
+        table.appendChild(tbody);
+        wrap.appendChild(table);
+      }
 
-function renderSeparate(){ const wrap=document.getElementById('separateTablesWrap'); wrap.innerHTML='';
-  // group by origin->destination
-  const groups = {};
-  state.missionaries.forEach(m=>{ const k=`${m.originCity}__TO__${m.destinationCity}`; if(!groups[k]) groups[k]=[]; groups[k].push(m); });
-  Object.keys(groups).forEach(k=>{
-    const [from,to]=k.split('__TO__');
-    const card=document.createElement('div'); card.className='card mb-3';
-    const head=document.createElement('div'); head.className='card-header'; head.textContent=`${from} to ${to}`;
-    const body=document.createElement('div'); body.className='card-body';
-    const table=document.createElement('table'); table.className='table table-sm table-bordered';
-    const thead=document.createElement('thead'); thead.innerHTML=`<tr><th>Type</th><th>Name</th><th>Dest Area</th><th>Transport</th><th>Date</th><th>Time</th><th>Leader</th><th></th></tr>`;
-    const tbody=document.createElement('tbody'); groups[k].forEach(m=>{
-      const tr=document.createElement('tr'); tr.innerHTML = `
+      function renderSeparate() {
+        const wrap = document.getElementById("separateTablesWrap");
+        wrap.innerHTML = "";
+        // group by origin->destination
+        const groups = {};
+        state.missionaries.forEach((m) => {
+          const k = `${m.originCity}__TO__${m.destinationCity}`;
+          if (!groups[k]) groups[k] = [];
+          groups[k].push(m);
+        });
+        Object.keys(groups).forEach((k) => {
+          const [from, to] = k.split("__TO__");
+          const card = document.createElement("div");
+          card.className = "card mb-3";
+          const head = document.createElement("div");
+          head.className = "card-header";
+          head.textContent = `${from} to ${to}`;
+          const body = document.createElement("div");
+          body.className = "card-body";
+          const table = document.createElement("table");
+          table.className = "table table-sm table-bordered";
+          const thead = document.createElement("thead");
+          thead.innerHTML = `<tr><th>Type</th><th>Name</th><th>Dest Area</th><th>Transport</th><th>Date</th><th>Time</th><th>Leader</th><th></th></tr>`;
+          const tbody = document.createElement("tbody");
+          groups[k].forEach((m) => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
         <td>${m.type}</td>
         <td>${escapeHtml(m.name)}</td>
-        <td>${escapeHtml(m.destinationArea||'')}</td>
+        <td>${escapeHtml(m.destinationArea || "")}</td>
         <td>${m.transport}</td>
-        <td>${m.tbd? 'TBD' : (m.date||'')}</td>
-        <td>${m.time||''}</td>
-        <td>${m.leader? '&#10003;':''}</td>
+        <td>${m.tbd ? "TBD" : m.date || ""}</td>
+        <td>${m.time || ""}</td>
+        <td>${m.leader ? "&#10003;" : ""}</td>
         <td><button class='btn btn-sm btn-danger remove-btn'>Remove</button></td>
       `;
-      tr.querySelector('.remove-btn').addEventListener('click', ()=>{ if(confirm('Remove?')){ state.missionaries = state.missionaries.filter(x=>x.id!==m.id); saveState(); renderMaster(); renderSeparate(); } });
-      tbody.appendChild(tr);
-    });
-    table.appendChild(thead); table.appendChild(tbody);
-    body.appendChild(table);
-    card.appendChild(head); card.appendChild(body);
-    wrap.appendChild(card);
-  });
-}
+            tr.querySelector(".remove-btn").addEventListener("click", () => {
+              if (confirm("Remove?")) {
+                state.missionaries = state.missionaries.filter(
+                  (x) => x.id !== m.id,
+                );
+                saveState();
+                renderMaster();
+                renderSeparate();
+              }
+            });
+            tbody.appendChild(tr);
+          });
+          table.appendChild(thead);
+          table.appendChild(tbody);
+          body.appendChild(table);
+          card.appendChild(head);
+          card.appendChild(body);
+          wrap.appendChild(card);
+        });
+      }
 
-function applyRowToState(tr){ const id=tr.dataset.id; const m = state.missionaries.find(x=>x.id===id); if(!m) return; m.type = tr.querySelector('.col-type').value; m.name = tr.querySelector('.col-name').value; m.originCity = tr.querySelector('.col-origin').value; m.destinationCity = tr.querySelector('.col-dest').value; m.destinationArea = tr.querySelector('.col-area').value; m.transport = tr.querySelector('.col-trans').value; m.date = tr.querySelector('.col-date').value; m.tbd = tr.querySelector('.col-tbd').checked; m.time = tr.querySelector('.col-time').value; m.instructions = tr.querySelector('.col-instr').value; m.leader = tr.querySelector('.col-leader').checked; }
+      function applyRowToState(tr) {
+        const id = tr.dataset.id;
+        const m = state.missionaries.find((x) => x.id === id);
+        if (!m) return;
+        m.type = tr.querySelector(".col-type").value;
+        m.name = tr.querySelector(".col-name").value;
+        m.originCity = tr.querySelector(".col-origin").value;
+        m.destinationCity = tr.querySelector(".col-dest").value;
+        m.destinationArea = tr.querySelector(".col-area").value;
+        m.transport = tr.querySelector(".col-trans").value;
+        m.date = tr.querySelector(".col-date").value;
+        m.tbd = tr.querySelector(".col-tbd").checked;
+        m.time = tr.querySelector(".col-time").value;
+        m.instructions = tr.querySelector(".col-instr").value;
+        m.leader = tr.querySelector(".col-leader").checked;
+      }
 
-function escapeHtml(s){ return (''+s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
+      function escapeHtml(s) {
+        return ("" + s)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;");
+      }
 
-// ---- Export functions ----
-function exportMasterExcel(){ const wb = XLSX.utils.book_new(); const data=[['Type','Name','Origin City','Destination City','Destination Area','Transportation','Date','TBD','Time','Instructions','Leader']]; state.missionaries.forEach(m=> data.push([m.type,m.name,m.originCity,m.destinationCity,m.destinationArea,m.transport,m.date,m.tbd? 'Yes':'',m.time,m.instructions,m.leader? 'Yes':''])); const ws=XLSX.utils.aoa_to_sheet(data); XLSX.utils.book_append_sheet(wb,ws,'Master'); const wbout=XLSX.write(wb,{bookType:'xlsx',type:'array'}); saveAs(new Blob([wbout],{type:'application/octet-stream'}),'master_travel.xlsx'); }
+      // ---- Export functions ----
+      function exportMasterExcel() {
+        const wb = XLSX.utils.book_new();
+        const data = [
+          [
+            "Type",
+            "Name",
+            "Origin City",
+            "Destination City",
+            "Destination Area",
+            "Transportation",
+            "Date",
+            "TBD",
+            "Time",
+            "Instructions",
+            "Leader",
+          ],
+        ];
+        state.missionaries.forEach((m) =>
+          data.push([
+            m.type,
+            m.name,
+            m.originCity,
+            m.destinationCity,
+            m.destinationArea,
+            m.transport,
+            m.date,
+            m.tbd ? "Yes" : "",
+            m.time,
+            m.instructions,
+            m.leader ? "Yes" : "",
+          ]),
+        );
+        const ws = XLSX.utils.aoa_to_sheet(data);
+        XLSX.utils.book_append_sheet(wb, ws, "Master");
+        const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+        saveAs(
+          new Blob([wbout], { type: "application/octet-stream" }),
+          "master_travel.xlsx",
+        );
+      }
 
-function exportSeparateExcel(){ const wb = XLSX.utils.book_new(); const groups = {}; state.missionaries.forEach(m=>{ const k=`${m.originCity} -> ${m.destinationCity}`; if(!groups[k]) groups[k]=[]; groups[k].push(m); }); Object.keys(groups).forEach(k=>{ const data=[['Type','Name','Destination Area','Transportation','Date','TBD','Time','Instructions','Leader']]; groups[k].forEach(m=> data.push([m.type,m.name,m.destinationArea,m.transport,m.date,m.tbd?'Yes':'',m.time,m.instructions,m.leader?'Yes':''])); const ws=XLSX.utils.aoa_to_sheet(data); XLSX.utils.book_append_sheet(wb,ws,k.slice(0,31)); }); const wbout=XLSX.write(wb,{bookType:'xlsx',type:'array'}); saveAs(new Blob([wbout],{type:'application/octet-stream'}),'separate_travel.xlsx'); }
+      function exportSeparateExcel() {
+        const wb = XLSX.utils.book_new();
+        const groups = {};
+        state.missionaries.forEach((m) => {
+          const k = `${m.originCity} -> ${m.destinationCity}`;
+          if (!groups[k]) groups[k] = [];
+          groups[k].push(m);
+        });
+        Object.keys(groups).forEach((k) => {
+          const data = [
+            [
+              "Type",
+              "Name",
+              "Destination Area",
+              "Transportation",
+              "Date",
+              "TBD",
+              "Time",
+              "Instructions",
+              "Leader",
+            ],
+          ];
+          groups[k].forEach((m) =>
+            data.push([
+              m.type,
+              m.name,
+              m.destinationArea,
+              m.transport,
+              m.date,
+              m.tbd ? "Yes" : "",
+              m.time,
+              m.instructions,
+              m.leader ? "Yes" : "",
+            ]),
+          );
+          const ws = XLSX.utils.aoa_to_sheet(data);
+          XLSX.utils.book_append_sheet(wb, ws, k.slice(0, 31));
+        });
+        const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+        saveAs(
+          new Blob([wbout], { type: "application/octet-stream" }),
+          "separate_travel.xlsx",
+        );
+      }
 
-function exportMasterPdf(){ const el=document.getElementById('masterTableWrap'); html2pdf().from(el).save('master_travel.pdf'); }
+      function exportMasterPdf() {
+        const el = document.getElementById("masterTableWrap");
+        html2pdf().from(el).save("master_travel.pdf");
+      }
 
-// ---- Event bindings ----
-document.getElementById('processBtn').addEventListener('click', async ()=>{
-  const f1=document.getElementById('fileOld').files[0]; const f2=document.getElementById('fileNew').files[0];
-  if(!f1||!f2){ alert('Please select both old and new transferboard files'); return; }
-  const wb1 = await readWorkbookFromFile(f1); const wb2 = await readWorkbookFromFile(f2);
-  const rowsOld = sheetToJson(wb1); const rowsNew = sheetToJson(wb2);
-  const mapping = await promptColumnMapping(rowsOld, rowsNew);
-  const transfers = computeTransfers(rowsOld, rowsNew, mapping);
-  // add defaults and ensure cities
-  transfers.forEach(t=>{ ensureCityExists(t.originCity); ensureCityExists(t.destinationCity); });
-  state.missionaries = transfers.concat(state.missionaries||[]);
-  saveState(); renderMaster(); renderSeparate(); alert('Processed. Please review exceptions (if any) and update city assignments or transports.');
-});
+      // ---- Event bindings ----
+      document
+        .getElementById("processBtn")
+        .addEventListener("click", async () => {
+          const f1 = document.getElementById("fileOld").files[0];
+          const f2 = document.getElementById("fileNew").files[0];
+          if (!f1 || !f2) {
+            alert("Please select both old and new transferboard files");
+            return;
+          }
+          const wb1 = await readWorkbookFromFile(f1);
+          const wb2 = await readWorkbookFromFile(f2);
+          const rowsOld = sheetToJson(wb1);
+          const rowsNew = sheetToJson(wb2);
+          const mapping = await promptColumnMapping(rowsOld, rowsNew);
+          const transfers = computeTransfers(rowsOld, rowsNew, mapping);
+          // add defaults and ensure cities
+          transfers.forEach((t) => {
+            ensureCityExists(t.originCity);
+            ensureCityExists(t.destinationCity);
+          });
+          state.missionaries = transfers.concat(state.missionaries || []);
+          saveState();
+          renderMaster();
+          renderSeparate();
+          alert(
+            "Processed. Please review exceptions (if any) and update city assignments or transports.",
+          );
+        });
 
-document.getElementById('openExceptions').addEventListener('click', ()=>{ populateExceptionsModal(); new bootstrap.Modal(document.getElementById('exceptionsModal')).show(); });
+      document
+        .getElementById("openExceptions")
+        .addEventListener("click", () => {
+          populateExceptionsModal();
+          new bootstrap.Modal(
+            document.getElementById("exceptionsModal"),
+          ).show();
+        });
 
-function populateExceptionsModal(){ const sel = document.getElementById('exceptionAreaSelect'); const citySel = document.getElementById('exceptionCitySelect'); sel.innerHTML=''; citySel.innerHTML='';
-  // gather areas/districts
-  const areas = Array.from(new Set(state.missionaries.map(m=>m.destinationArea).filter(Boolean).concat(Object.keys(state.exceptions)))).sort(); areas.forEach(a=>{ const o=document.createElement('option'); o.value=a; o.textContent=a; sel.appendChild(o); });
-  state.cities.forEach(c=>{ const o=document.createElement('option'); o.value=c; o.textContent=c; citySel.appendChild(o); });
-  // show current exceptions
-  const list=document.getElementById('exceptionsList'); list.innerHTML=''; Object.keys(state.exceptions).forEach(k=>{ const li=document.createElement('li'); li.className='list-group-item d-flex justify-content-between align-items-center'; li.textContent=`${k} → ${state.exceptions[k]}`; const btn=document.createElement('button'); btn.className='btn btn-sm btn-outline-danger'; btn.textContent='Remove'; btn.onclick=()=>{ delete state.exceptions[k]; saveState(); populateExceptionsModal(); }; li.appendChild(btn); list.appendChild(li); });
-}
+      function populateExceptionsModal() {
+        const sel = document.getElementById("exceptionAreaSelect");
+        const citySel = document.getElementById("exceptionCitySelect");
+        sel.innerHTML = "";
+        citySel.innerHTML = "";
+        // gather areas/districts
+        const areas = Array.from(
+          new Set(
+            state.missionaries
+              .map((m) => m.destinationArea)
+              .filter(Boolean)
+              .concat(Object.keys(state.exceptions)),
+          ),
+        ).sort();
+        areas.forEach((a) => {
+          const o = document.createElement("option");
+          o.value = a;
+          o.textContent = a;
+          sel.appendChild(o);
+        });
+        state.cities.forEach((c) => {
+          const o = document.createElement("option");
+          o.value = c;
+          o.textContent = c;
+          citySel.appendChild(o);
+        });
+        // show current exceptions
+        const list = document.getElementById("exceptionsList");
+        list.innerHTML = "";
+        Object.keys(state.exceptions).forEach((k) => {
+          const li = document.createElement("li");
+          li.className =
+            "list-group-item d-flex justify-content-between align-items-center";
+          li.textContent = `${k} → ${state.exceptions[k]}`;
+          const btn = document.createElement("button");
+          btn.className = "btn btn-sm btn-outline-danger";
+          btn.textContent = "Remove";
+          btn.onclick = () => {
+            delete state.exceptions[k];
+            saveState();
+            populateExceptionsModal();
+          };
+          li.appendChild(btn);
+          list.appendChild(li);
+        });
+      }
 
-document.getElementById('saveExceptionBtn').addEventListener('click', ()=>{ const area = document.getElementById('exceptionAreaSelect').value; const city = document.getElementById('exceptionCitySelect').value; if(!area||!city) return alert('Select both'); state.exceptions[area]=city; ensureCityExists(city); saveState(); populateExceptionsModal(); renderMaster(); renderSeparate(); });
+      document
+        .getElementById("saveExceptionBtn")
+        .addEventListener("click", () => {
+          const area = document.getElementById("exceptionAreaSelect").value;
+          const city = document.getElementById("exceptionCitySelect").value;
+          if (!area || !city) return alert("Select both");
+          state.exceptions[area] = city;
+          ensureCityExists(city);
+          saveState();
+          populateExceptionsModal();
+          renderMaster();
+          renderSeparate();
+        });
 
-document.getElementById('addCityBtn').addEventListener('click', ()=>{ const name=document.getElementById('newCityName').value.trim(); if(!name) return; ensureCityExists(name); saveState(); populateExceptionsModal(); alert('City added'); });
+      document.getElementById("addCityBtn").addEventListener("click", () => {
+        const name = document.getElementById("newCityName").value.trim();
+        if (!name) return;
+        ensureCityExists(name);
+        saveState();
+        populateExceptionsModal();
+        alert("City added");
+      });
 
-// add missionary modal
-const addModalEl = document.getElementById('addModal'); const addModal = new bootstrap.Modal(addModalEl);
-document.getElementById('addMissionaryBtn').addEventListener('click', ()=>{ // populate city selects
-  const origin = document.getElementById('addOrigin'); const dest = document.getElementById('addDestination'); const destArea = document.getElementById('addDestinationArea'); origin.innerHTML=''; dest.innerHTML=''; destArea.innerHTML=''; state.cities.forEach(c=>{ const o=document.createElement('option'); o.value=c; o.textContent=c; origin.appendChild(o); dest.appendChild(o); }); const areas = Array.from(new Set(state.missionaries.map(x=>x.destinationArea).filter(Boolean))).sort(); areas.forEach(a=>{ const o=document.createElement('option'); o.value=a; o.textContent=a; destArea.appendChild(o); }); addModal.show(); });
+      // add missionary modal
+      const addModalEl = document.getElementById("addModal");
+      const addModal = new bootstrap.Modal(addModalEl);
+      document
+        .getElementById("addMissionaryBtn")
+        .addEventListener("click", () => {
+          // populate city selects
+          const origin = document.getElementById("addOrigin");
+          const dest = document.getElementById("addDestination");
+          const destArea = document.getElementById("addDestinationArea");
+          origin.innerHTML = "";
+          dest.innerHTML = "";
+          destArea.innerHTML = "";
+          state.cities.forEach((c) => {
+            const o = document.createElement("option");
+            o.value = c;
+            o.textContent = c;
+            origin.appendChild(o);
+            dest.appendChild(o);
+          });
+          const areas = Array.from(
+            new Set(
+              state.missionaries.map((x) => x.destinationArea).filter(Boolean),
+            ),
+          ).sort();
+          areas.forEach((a) => {
+            const o = document.createElement("option");
+            o.value = a;
+            o.textContent = a;
+            destArea.appendChild(o);
+          });
+          addModal.show();
+        });
 
-document.getElementById('saveAddBtn').addEventListener('click', ()=>{ const obj = { id: Math.random().toString(36).slice(2,9), type: document.getElementById('addType').value, name: document.getElementById('addName').value, originCity: document.getElementById('addOrigin').value, destinationCity: document.getElementById('addDestination').value, destinationArea: document.getElementById('addDestinationArea').value, transport: document.getElementById('addTransport').value, date: document.getElementById('addDate').value, tbd: document.getElementById('addTbd').checked, time: document.getElementById('addTime').value, instructions: document.getElementById('addInstr').value, leader: document.getElementById('addLeader').checked };
-  state.missionaries.push(obj); saveState(); addModal.hide(); renderMaster(); renderSeparate(); });
+      document.getElementById("saveAddBtn").addEventListener("click", () => {
+        const obj = {
+          id: Math.random().toString(36).slice(2, 9),
+          type: document.getElementById("addType").value,
+          name: document.getElementById("addName").value,
+          originCity: document.getElementById("addOrigin").value,
+          destinationCity: document.getElementById("addDestination").value,
+          destinationArea: document.getElementById("addDestinationArea").value,
+          transport: document.getElementById("addTransport").value,
+          date: document.getElementById("addDate").value,
+          tbd: document.getElementById("addTbd").checked,
+          time: document.getElementById("addTime").value,
+          instructions: document.getElementById("addInstr").value,
+          leader: document.getElementById("addLeader").checked,
+        };
+        state.missionaries.push(obj);
+        saveState();
+        addModal.hide();
+        renderMaster();
+        renderSeparate();
+      });
 
-// settings
-document.getElementById('settingsBtn').addEventListener('click', ()=>{ document.getElementById('langSelect').value = state.settings.lang || 'en'; new bootstrap.Modal(document.getElementById('settingsModal')).show(); });
-document.getElementById('langSelect').addEventListener('change', (e)=>{ state.settings.lang = e.target.value; saveState(); alert('Language changed (UI strings not fully localized in this demo)'); });
-document.getElementById('deleteAllBtn').addEventListener('click', ()=>{ if(confirm('Delete all missionary travel data? This clears localStorage for this app.')){ localStorage.removeItem(LS_KEY); state.missionaries=[]; saveState(); renderMaster(); renderSeparate(); } });
+      // settings
+      document.getElementById("settingsBtn").addEventListener("click", () => {
+        document.getElementById("langSelect").value =
+          state.settings.lang || "en";
+        new bootstrap.Modal(document.getElementById("settingsModal")).show();
+      });
+      document.getElementById("langSelect").addEventListener("change", (e) => {
+        state.settings.lang = e.target.value;
+        saveState();
+        alert("Language changed (UI strings not fully localized in this demo)");
+      });
+      document.getElementById("deleteAllBtn").addEventListener("click", () => {
+        if (
+          confirm(
+            "Delete all missionary travel data? This clears localStorage for this app.",
+          )
+        ) {
+          localStorage.removeItem(LS_KEY);
+          state.missionaries = [];
+          saveState();
+          renderMaster();
+          renderSeparate();
+        }
+      });
 
-// exports
-document.getElementById('exportMasterExcel').addEventListener('click', exportMasterExcel);
-document.getElementById('exportSeparateExcel').addEventListener('click', exportSeparateExcel);
+      // exports
+      document
+        .getElementById("exportMasterExcel")
+        .addEventListener("click", exportMasterExcel);
+      document
+        .getElementById("exportSeparateExcel")
+        .addEventListener("click", exportSeparateExcel);
 
-// initial render
-if(!state.missionaries) state.missionaries = [];
-renderMaster(); renderSeparate();
-
-</script>
-</body>
+      // initial render
+      if (!state.missionaries) state.missionaries = [];
+      renderMaster();
+      renderSeparate();
+    </script>
+  </body>
 </html>

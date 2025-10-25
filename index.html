@@ -1,97 +1,540 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Transfer Logistics</title>
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" rel="stylesheet">
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
-  <style>
-    body { 
-        padding: 16px; 
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
-    }
-    .container { width: 98%; max-width: initial; }
-    .group-card { margin-bottom: 18px; }
-    .btn-group .btn { margin-right: 8px; margin-bottom: 8px; }
-    #modal-add h6, #modal-edit h6 { margin: 10px 0 2px 0; font-size: 0.9rem; color: #555; }
-    .hidden-input, .hidden-file-input { display: none; }
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Transfer Logistics</title>
+    <link
+      href="https://fonts.googleapis.com/icon?family=Material+Icons"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+      rel="stylesheet"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+    <style>
+      body {
+        padding: 16px;
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans,
+          Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+      }
+      .container {
+        width: 98%;
+        max-width: initial;
+      }
+      .group-card {
+        margin-bottom: 18px;
+      }
+      .btn-group .btn {
+        margin-right: 8px;
+        margin-bottom: 8px;
+      }
+      #modal-add h6,
+      #modal-edit h6 {
+        margin: 10px 0 2px 0;
+        font-size: 0.9rem;
+        color: #555;
+      }
+      .hidden-input,
+      .hidden-file-input {
+        display: none;
+      }
 
-    /* --- Balanced Compact Table Styles --- */
-    .group-card .card-content { padding: 12px 16px; }
-    .table-col-toggle th, .table-col-toggle td {
+      /* --- Balanced Compact Table Styles --- */
+      .group-card .card-content {
+        padding: 12px 16px;
+      }
+      .table-col-toggle th,
+      .table-col-toggle td {
         padding: 10px 8px;
         font-size: 0.88rem;
         vertical-align: middle;
-    }
-    .table-col-toggle th { white-space: nowrap; }
-    .table-col-toggle .input-field { margin: 0; }
-    .table-col-toggle input[type=date], .table-col-toggle input[type=time], 
-    .table-col-toggle .browser-default {
+      }
+      .table-col-toggle th {
+        white-space: nowrap;
+      }
+      .table-col-toggle .input-field {
+        margin: 0;
+      }
+      .table-col-toggle input[type="date"],
+      .table-col-toggle input[type="time"],
+      .table-col-toggle .browser-default {
         height: 2.2rem;
         font-size: 0.9rem;
         padding: 0 5px;
         border-radius: 3px;
         border: 1px solid #ddd;
         box-sizing: border-box;
-    }
-    .table-col-toggle .materialize-textarea {
-        padding: 5px !important; min-height: 38px; line-height: 1.3;
-    }
+      }
+      .table-col-toggle .materialize-textarea {
+        padding: 5px !important;
+        min-height: 38px;
+        line-height: 1.3;
+      }
 
-    /* --- Column Visibility & Reordering --- */
-    #column-manager-wrapper { border: 1px solid #e0e0e0; padding: 10px; border-radius: 4px; position: relative; }
-    #column-manager-wrapper h6 { font-size: 1rem; color: #444; margin-top: 5px; }
-    #btn-reset-cols { position: absolute; top: 10px; right: 10px; font-size: 0.8rem; }
-    .col-dragger-container { display: flex; flex-wrap: wrap; gap: 8px; min-height: 40px; background: #f9f9f9; padding: 8px; border-radius: 4px; }
-    .col-chip { cursor: grab; display: inline-flex; align-items: center; background-color: #e0e0e0; border-radius: 16px; padding: 0 12px; height: 32px; font-size: 13px; }
-    .col-chip .visibility-toggle { cursor: pointer; margin-left: 8px; color: #666; }
-    .col-chip.sortable-ghost { background: #bbdefb; }
-    #hidden-cols-container .col-chip { background-color: #f5f5f5; color: #9e9e9e; }
-    
-    .table-col-toggle th, .table-col-toggle td { display: none; }
-    .table-col-toggle th.col-actions, .table-col-toggle td.col-actions { display: table-cell; }
-    
-    body.show-type .table-col-toggle th.col-type, body.show-type .table-col-toggle td.col-type { display: table-cell; }
-    body.show-lastName .table-col-toggle th.col-lastName, body.show-lastName .table-col-toggle td.col-lastName { display: table-cell; }
-    body.show-firstName .table-col-toggle th.col-firstName, body.show-firstName .table-col-toggle td.col-firstName { display: table-cell; }
-    body.show-originCity .table-col-toggle th.col-originCity, body.show-originCity .table-col-toggle td.col-originCity { display: table-cell; }
-    body.show-destCity .table-col-toggle th.col-destCity, body.show-destCity .table-col-toggle td.col-destCity { display: table-cell; }
-    body.show-originArea .table-col-toggle th.col-originArea, body.show-originArea .table-col-toggle td.col-originArea { display: table-cell; }
-    body.show-destArea .table-col-toggle th.col-destArea, body.show-destArea .table-col-toggle td.col-destArea { display: table-cell; }
-    body.show-companion .table-col-toggle th.col-companion, body.show-companion .table-col-toggle td.col-companion { display: table-cell; }
-    body.show-transport .table-col-toggle th.col-transport, body.show-transport .table-col-toggle td.col-transport { display: table-cell; }
-    body.show-date .table-col-toggle th.col-date, body.show-date .table-col-toggle td.col-date { display: table-cell; }
-    body.show-time .table-col-toggle th.col-time, body.show-time .table-col-toggle td.col-time { display: table-cell; }
-    body.show-instructions .table-col-toggle th.col-instructions, body.show-instructions .table-col-toggle td.col-instructions { display: table-cell; }
-    body.show-new .table-col-toggle th.col-new, body.show-new .table-col-toggle td.col-new { display: table-cell; }
-    body.show-leader .table-col-toggle th.col-leader, body.show-leader .table-col-toggle td.col-leader { display: table-cell; }
-  </style>
-</head>
-<body>
-  <nav>
-    <div class="nav-wrapper teal">
-      <a href="#" class="brand-logo center" data-translate="app_title">Transfer Logistics</a>
-      <ul id="nav-mobile" class="left">
-        <li><a id="btn-settings" href="#modal-settings" class="modal-trigger"><i class="fa fa-cog"></i></a></li>
-      </ul>
-    </div>
-  </nav>
+      /* --- Column Visibility & Reordering --- */
+      #column-manager-wrapper {
+        border: 1px solid #e0e0e0;
+        padding: 10px;
+        border-radius: 4px;
+        position: relative;
+      }
+      #column-manager-wrapper h6 {
+        font-size: 1rem;
+        color: #444;
+        margin-top: 5px;
+      }
+      #btn-reset-cols {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        font-size: 0.8rem;
+      }
+      .col-dragger-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        min-height: 40px;
+        background: #f9f9f9;
+        padding: 8px;
+        border-radius: 4px;
+      }
+      .col-chip {
+        cursor: grab;
+        display: inline-flex;
+        align-items: center;
+        background-color: #e0e0e0;
+        border-radius: 16px;
+        padding: 0 12px;
+        height: 32px;
+        font-size: 13px;
+      }
+      .col-chip .visibility-toggle {
+        cursor: pointer;
+        margin-left: 8px;
+        color: #666;
+      }
+      .col-chip.sortable-ghost {
+        background: #bbdefb;
+      }
+      #hidden-cols-container .col-chip {
+        background-color: #f5f5f5;
+        color: #9e9e9e;
+      }
 
-  <div class="container">
-    <div class="section">
-      <div id="upload-section">
-        <div class="row valign-wrapper">
-          <div class="col s6">
-            <h5 data-translate="upload_title">Start New Plan</h5>
+      .table-col-toggle th,
+      .table-col-toggle td {
+        display: none;
+      }
+      .table-col-toggle th.col-actions,
+      .table-col-toggle td.col-actions {
+        display: table-cell;
+      }
+
+      body.show-type .table-col-toggle th.col-type,
+      body.show-type .table-col-toggle td.col-type {
+        display: table-cell;
+      }
+      body.show-lastName .table-col-toggle th.col-lastName,
+      body.show-lastName .table-col-toggle td.col-lastName {
+        display: table-cell;
+      }
+      body.show-firstName .table-col-toggle th.col-firstName,
+      body.show-firstName .table-col-toggle td.col-firstName {
+        display: table-cell;
+      }
+      body.show-originCity .table-col-toggle th.col-originCity,
+      body.show-originCity .table-col-toggle td.col-originCity {
+        display: table-cell;
+      }
+      body.show-destCity .table-col-toggle th.col-destCity,
+      body.show-destCity .table-col-toggle td.col-destCity {
+        display: table-cell;
+      }
+      body.show-originArea .table-col-toggle th.col-originArea,
+      body.show-originArea .table-col-toggle td.col-originArea {
+        display: table-cell;
+      }
+      body.show-destArea .table-col-toggle th.col-destArea,
+      body.show-destArea .table-col-toggle td.col-destArea {
+        display: table-cell;
+      }
+      body.show-companion .table-col-toggle th.col-companion,
+      body.show-companion .table-col-toggle td.col-companion {
+        display: table-cell;
+      }
+      body.show-transport .table-col-toggle th.col-transport,
+      body.show-transport .table-col-toggle td.col-transport {
+        display: table-cell;
+      }
+      body.show-date .table-col-toggle th.col-date,
+      body.show-date .table-col-toggle td.col-date {
+        display: table-cell;
+      }
+      body.show-time .table-col-toggle th.col-time,
+      body.show-time .table-col-toggle td.col-time {
+        display: table-cell;
+      }
+      body.show-instructions .table-col-toggle th.col-instructions,
+      body.show-instructions .table-col-toggle td.col-instructions {
+        display: table-cell;
+      }
+      body.show-new .table-col-toggle th.col-new,
+      body.show-new .table-col-toggle td.col-new {
+        display: table-cell;
+      }
+      body.show-leader .table-col-toggle th.col-leader,
+      body.show-leader .table-col-toggle td.col-leader {
+        display: table-cell;
+      }
+    </style>
+  </head>
+  <body>
+    <nav>
+      <div class="nav-wrapper teal">
+        <a href="#" class="brand-logo center" data-translate="app_title"
+          >Transfer Logistics</a
+        >
+        <ul id="nav-mobile" class="left">
+          <li>
+            <a id="btn-settings" href="#modal-settings" class="modal-trigger"
+              ><i class="fa fa-cog"></i
+            ></a>
+          </li>
+        </ul>
+      </div>
+    </nav>
+
+    <div class="container">
+      <div class="section">
+        <div id="upload-section">
+          <div class="row valign-wrapper">
+            <div class="col s6">
+              <h5 data-translate="upload_title">Start New Plan</h5>
+            </div>
+            <div
+              class="col s6 input-field"
+              style="max-width: 250px; margin-left: auto"
+            >
+              <select class="lang-select">
+                <option value="en">English</option>
+                <option value="pt">Português</option>
+              </select>
+              <label data-translate="language">Language</label>
+            </div>
           </div>
-          <div class="col s6 input-field" style="max-width: 250px; margin-left: auto;">
+          <div class="row">
+            <div class="col s12 m6">
+              <label data-translate="old_board_label"
+                >Old transferboard (from)</label
+              >
+              <input id="file-old" type="file" accept=".xlsx,.xls,.csv" />
+            </div>
+            <div class="col s12 m6">
+              <label data-translate="new_board_label"
+                >New transferboard (to)</label
+              >
+              <input id="file-new" type="file" accept=".xlsx,.xls,.csv" />
+            </div>
+          </div>
+          <a id="btn-process" class="btn" data-translate="process_upload"
+            >Process upload</a
+          >
+          <hr style="margin: 30px 0" />
+          <h5 data-translate="restore_title">Restore Plan from CSV</h5>
+          <div class="row">
+            <div class="col s12 m8">
+              <label data-translate="restore_desc"
+                >Upload travel_plans.csv file to restore progress</label
+              >
+              <input id="file-restore" type="file" accept=".csv" />
+            </div>
+            <div class="col s12 m4" style="padding-top: 25px">
+              <a id="btn-restore" class="btn" data-translate="restore_button"
+                >Restore</a
+              >
+            </div>
+          </div>
+        </div>
+
+        <div class="btn-group">
+          <a
+            id="btn-export-pdf"
+            class="btn btn-small green"
+            data-translate="export_pdf"
+            >Export PDF</a
+          >
+          <a
+            id="btn-export-csv"
+            class="btn btn-small blue"
+            data-translate="export_csv"
+            >Export CSV</a
+          >
+          <a
+            id="btn-clear-local"
+            class="btn btn-small red"
+            data-translate="clear_all_travel"
+            >Clear All Saved Travel</a
+          >
+        </div>
+      </div>
+
+      <div class="section" id="controls-section" style="display: none">
+        <div id="column-manager-wrapper">
+          <a
+            id="btn-reset-cols"
+            class="waves-effect waves-light"
+            data-translate="reset_columns"
+            >Reset Columns</a
+          >
+          <div class="row" style="margin-bottom: 5px">
+            <div class="col s12 m6">
+              <h6 data-translate="visible_columns_label">
+                Visible Columns (drag to reorder)
+              </h6>
+              <div
+                id="visible-cols-container"
+                class="col-dragger-container"
+              ></div>
+            </div>
+            <div class="col s12 m6">
+              <h6 data-translate="hidden_columns_label">Hidden Columns</h6>
+              <div
+                id="hidden-cols-container"
+                class="col-dragger-container"
+              ></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row" id="tabs-section" style="display: none">
+        <div class="col s12">
+          <ul class="tabs">
+            <li class="tab col s4">
+              <a class="active" href="#tab-city" data-translate="tab_city"
+                >By City</a
+              >
+            </li>
+            <li class="tab col s4">
+              <a href="#tab-transport" data-translate="tab_transport"
+                >By Transport</a
+              >
+            </li>
+            <li class="tab col s4">
+              <a href="#tab-master" data-translate="tab_master">Master List</a>
+            </li>
+          </ul>
+        </div>
+        <div id="tab-city" class="col s12">
+          <div class="section" style="padding-top: 1rem">
+            <div id="groups-by-city"></div>
+          </div>
+        </div>
+        <div id="tab-transport" class="col s12">
+          <div class="section" style="padding-top: 1rem">
+            <div id="groups-by-transport"></div>
+          </div>
+        </div>
+        <div id="tab-master" class="col s12">
+          <div class="section" style="padding-top: 1rem">
+            <div id="groups-master"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="fixed-action-btn">
+        <a class="btn-floating btn-large teal modal-trigger" href="#modal-add"
+          ><i class="large material-icons">add</i></a
+        >
+      </div>
+    </div>
+
+    <div id="modal-add" class="modal">
+      <div class="modal-content">
+        <h5 data-translate="add_missionary_title">Add Missionary</h5>
+        <div class="row">
+          <div class="col s2">
+            <h6 data-translate="type">Type</h6>
+            <select id="add-type" class="browser-default">
+              <option value="" disabled selected data-translate="choose_option">
+                Choose...
+              </option>
+              <option value="Elder">Elder</option>
+              <option value="Sister">Sister</option>
+            </select>
+          </div>
+          <div class="col s4">
+            <h6 data-translate="name">Name</h6>
+            <input id="add-name" placeholder="Last, First" />
+          </div>
+          <div class="col s3">
+            <h6 data-translate="origin_city">Origin City</h6>
+            <select id="add-origin-select" class="browser-default"></select>
+            <input
+              id="add-origin-other"
+              class="hidden-input"
+              placeholder="Custom City"
+            />
+          </div>
+          <div class="col s3">
+            <h6 data-translate="dest_city">Destination City</h6>
+            <select id="add-dest-select" class="browser-default"></select>
+            <input
+              id="add-dest-other"
+              class="hidden-input"
+              placeholder="Custom City"
+            />
+          </div>
+        </div>
+        <div class="row">
+          <div class="col s3">
+            <h6 data-translate="origin_area">Origin Area</h6>
+            <input id="add-originarea" />
+          </div>
+          <div class="col s3">
+            <h6 data-translate="dest_area">Destination Area</h6>
+            <input id="add-destarea" />
+          </div>
+          <div class="col s3">
+            <h6 data-translate="transportation">Transportation</h6>
+            <select id="add-transport" class="browser-default"></select>
+          </div>
+          <div class="col s3">
+            <h6 data-translate="table_header_companion">Companion</h6>
+            <input id="add-companion" />
+          </div>
+        </div>
+        <div class="row">
+          <div class="col s2">
+            <h6 data-translate="date">Date</h6>
+            <input id="add-date" type="date" />
+          </div>
+          <div class="col s2">
+            <h6 data-translate="departure_time">Departure Time</h6>
+            <input id="add-time" type="time" />
+          </div>
+          <div class="col s5">
+            <h6 data-translate="travel_instructions">Travel Instructions</h6>
+            <input id="add-instructions" />
+          </div>
+          <div class="col s1" style="padding-top: 30px">
+            <label
+              ><input type="checkbox" id="add-new" />
+              <span data-translate="table_header_new">New</span></label
+            >
+          </div>
+          <div class="col s2" style="padding-top: 30px">
+            <label>
+              <input type="checkbox" id="add-leader" />
+              <span data-translate="travel_leader">Travel Leader</span>
+            </label>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <a id="btn-add-save" class="modal-close btn" data-translate="save"
+          >Save</a
+        >
+      </div>
+    </div>
+
+    <div id="modal-edit" class="modal">
+      <div class="modal-content">
+        <h5 data-translate="edit_missionary_title">Edit Missionary</h5>
+        <input type="hidden" id="edit-id" />
+        <div class="row">
+          <div class="col s2">
+            <h6 data-translate="type">Type</h6>
+            <select id="edit-type" class="browser-default">
+              <option value="Elder">Elder</option>
+              <option value="Sister">Sister</option>
+            </select>
+          </div>
+          <div class="col s4">
+            <h6 data-translate="name">Name</h6>
+            <input id="edit-name" placeholder="Last, First" />
+          </div>
+          <div class="col s3">
+            <h6 data-translate="origin_city">Origin City</h6>
+            <select id="edit-origin-select" class="browser-default"></select>
+            <input
+              id="edit-origin-other"
+              class="hidden-input"
+              placeholder="Custom City"
+            />
+          </div>
+          <div class="col s3">
+            <h6 data-translate="dest_city">Destination City</h6>
+            <select id="edit-dest-select" class="browser-default"></select>
+            <input
+              id="edit-dest-other"
+              class="hidden-input"
+              placeholder="Custom City"
+            />
+          </div>
+        </div>
+        <div class="row">
+          <div class="col s3">
+            <h6 data-translate="origin_area">Origin Area</h6>
+            <input id="edit-originarea" />
+          </div>
+          <div class="col s3">
+            <h6 data-translate="dest_area">Destination Area</h6>
+            <input id="edit-destarea" />
+          </div>
+          <div class="col s3">
+            <h6 data-translate="transportation">Transportation</h6>
+            <select id="edit-transport" class="browser-default"></select>
+          </div>
+          <div class="col s3">
+            <h6 data-translate="table_header_companion">Companion</h6>
+            <input id="edit-companion" />
+          </div>
+        </div>
+        <div class="row">
+          <div class="col s2">
+            <h6 data-translate="date">Date</h6>
+            <input id="edit-date" type="date" />
+          </div>
+          <div class="col s2">
+            <h6 data-translate="departure_time">Departure Time</h6>
+            <input id="edit-time" type="time" />
+          </div>
+          <div class="col s5">
+            <h6 data-translate="travel_instructions">Travel Instructions</h6>
+            <input id="edit-instructions" />
+          </div>
+          <div class="col s3" style="padding-top: 30px">
+            <label>
+              <input type="checkbox" id="edit-leader" />
+              <span data-translate="travel_leader">Travel Leader</span>
+            </label>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <a id="btn-edit-save" class="modal-close btn" data-translate="save"
+          >Save</a
+        >
+      </div>
+    </div>
+
+    <div id="modal-settings" class="modal">
+      <div class="modal-content">
+        <h5 data-translate="settings">Settings</h5>
+        <div class="row">
+          <div class="input-field col s6">
             <select class="lang-select">
               <option value="en">English</option>
               <option value="pt">Português</option>
@@ -99,673 +542,792 @@
             <label data-translate="language">Language</label>
           </div>
         </div>
-        <div class="row">
-          <div class="col s12 m6">
-            <label data-translate="old_board_label">Old transferboard (from)</label>
-            <input id="file-old" type="file" accept=".xlsx,.xls,.csv" />
-          </div>
-          <div class="col s12 m6">
-            <label data-translate="new_board_label">New transferboard (to)</label>
-            <input id="file-new" type="file" accept=".xlsx,.xls,.csv" />
-          </div>
-        </div>
-        <a id="btn-process" class="btn" data-translate="process_upload">Process upload</a>
-        <hr style="margin: 30px 0;">
-        <h5 data-translate="restore_title">Restore Plan from CSV</h5>
-        <div class="row">
-            <div class="col s12 m8">
-                <label data-translate="restore_desc">Upload travel_plans.csv file to restore progress</label>
-                <input id="file-restore" type="file" accept=".csv" />
+        <h6 data-translate="exceptions_title">Area/District Exceptions</h6>
+        <div id="exceptions-list"></div>
+        <div class="section">
+          <h6 data-translate="add_exception_title">Add New Exception</h6>
+          <div class="row">
+            <div class="input-field col s5">
+              <input id="ex-add-name" type="text" />
+              <label for="ex-add-name" data-translate="area_zone_name"
+                >Area/District/Zone Name</label
+              >
             </div>
-            <div class="col s12 m4" style="padding-top: 25px;">
-                <a id="btn-restore" class="btn" data-translate="restore_button">Restore</a>
+            <div class="input-field col s5">
+              <input id="ex-add-city" type="text" />
+              <label for="ex-add-city" data-translate="override_city"
+                >Override City</label
+              >
             </div>
-        </div>
-      </div>
-
-      <div class="btn-group">
-          <a id="btn-export-pdf" class="btn btn-small green" data-translate="export_pdf">Export PDF</a>
-          <a id="btn-export-csv" class="btn btn-small blue" data-translate="export_csv">Export CSV</a>
-          <a id="btn-clear-local" class="btn btn-small red" data-translate="clear_all_travel">Clear All Saved Travel</a>
-      </div>
-    </div>
-
-    <div class="section" id="controls-section" style="display: none;">
-        <div id="column-manager-wrapper">
-             <a id="btn-reset-cols" class="waves-effect waves-light" data-translate="reset_columns">Reset Columns</a>
-             <div class="row" style="margin-bottom: 5px;">
-                <div class="col s12 m6">
-                    <h6 data-translate="visible_columns_label">Visible Columns (drag to reorder)</h6>
-                    <div id="visible-cols-container" class="col-dragger-container"></div>
-                </div>
-                <div class="col s12 m6">
-                    <h6 data-translate="hidden_columns_label">Hidden Columns</h6>
-                    <div id="hidden-cols-container" class="col-dragger-container"></div>
-                </div>
+            <div class="input-field col s2">
+              <a id="btn-save-exception" class="btn" data-translate="save"
+                >Save</a
+              >
             </div>
-        </div>
-    </div>
-    
-    <div class="row" id="tabs-section" style="display: none;">
-        <div class="col s12">
-            <ul class="tabs">
-                <li class="tab col s4"><a class="active" href="#tab-city" data-translate="tab_city">By City</a></li>
-                <li class="tab col s4"><a href="#tab-transport" data-translate="tab_transport">By Transport</a></li>
-                <li class="tab col s4"><a href="#tab-master" data-translate="tab_master">Master List</a></li>
-            </ul>
-        </div>
-        <div id="tab-city" class="col s12">
-            <div class="section" style="padding-top: 1rem;">
-                <div id="groups-by-city"></div>
-            </div>
-        </div>
-        <div id="tab-transport" class="col s12">
-            <div class="section" style="padding-top: 1rem;">
-                <div id="groups-by-transport"></div>
-            </div>
-        </div>
-        <div id="tab-master" class="col s12">
-            <div class="section" style="padding-top: 1rem;">
-                <div id="groups-master"></div>
-            </div>
-        </div>
-    </div>
-
-    <div class="fixed-action-btn">
-      <a class="btn-floating btn-large teal modal-trigger" href="#modal-add"><i class="large material-icons">add</i></a>
-    </div>
-  </div>
-
-  <div id="modal-add" class="modal">
-    <div class="modal-content">
-      <h5 data-translate="add_missionary_title">Add Missionary</h5>
-      <div class="row">
-        <div class="col s2">
-          <h6 data-translate="type">Type</h6>
-          <select id="add-type" class="browser-default">
-            <option value="" disabled selected data-translate="choose_option">Choose...</option>
-            <option value="Elder">Elder</option>
-            <option value="Sister">Sister</option>
-          </select>
-        </div>
-        <div class="col s4">
-          <h6 data-translate="name">Name</h6>
-          <input id="add-name" placeholder="Last, First">
-        </div>
-        <div class="col s3">
-          <h6 data-translate="origin_city">Origin City</h6>
-          <select id="add-origin-select" class="browser-default"></select>
-          <input id="add-origin-other" class="hidden-input" placeholder="Custom City">
-        </div>
-        <div class="col s3">
-          <h6 data-translate="dest_city">Destination City</h6>
-          <select id="add-dest-select" class="browser-default"></select>
-          <input id="add-dest-other" class="hidden-input" placeholder="Custom City">
-        </div>
-      </div>
-      <div class="row">
-        <div class="col s3">
-            <h6 data-translate="origin_area">Origin Area</h6>
-            <input id="add-originarea">
-        </div>
-        <div class="col s3">
-          <h6 data-translate="dest_area">Destination Area</h6>
-          <input id="add-destarea">
-        </div>
-        <div class="col s3">
-          <h6 data-translate="transportation">Transportation</h6>
-          <select id="add-transport" class="browser-default"></select>
-        </div>
-         <div class="col s3">
-            <h6 data-translate="table_header_companion">Companion</h6>
-            <input id="add-companion">
-        </div>
-      </div>
-      <div class="row">
-        <div class="col s2">
-          <h6 data-translate="date">Date</h6>
-          <input id="add-date" type="date">
-        </div>
-        <div class="col s2">
-          <h6 data-translate="departure_time">Departure Time</h6>
-          <input id="add-time" type="time">
-        </div>
-        <div class="col s5">
-          <h6 data-translate="travel_instructions">Travel Instructions</h6>
-          <input id="add-instructions">
-        </div>
-        <div class="col s1" style="padding-top: 30px;">
-          <label><input type="checkbox" id="add-new" /> <span data-translate="table_header_new">New</span></label>
-        </div>
-        <div class="col s2" style="padding-top: 30px;">
-          <label>
-            <input type="checkbox" id="add-leader" />
-            <span data-translate="travel_leader">Travel Leader</span>
-          </label>
-        </div>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <a id="btn-add-save" class="modal-close btn" data-translate="save">Save</a>
-    </div>
-  </div>
-  
-  <div id="modal-edit" class="modal">
-    <div class="modal-content">
-      <h5 data-translate="edit_missionary_title">Edit Missionary</h5>
-      <input type="hidden" id="edit-id">
-      <div class="row">
-        <div class="col s2">
-          <h6 data-translate="type">Type</h6>
-          <select id="edit-type" class="browser-default">
-            <option value="Elder">Elder</option>
-            <option value="Sister">Sister</option>
-          </select>
-        </div>
-        <div class="col s4">
-          <h6 data-translate="name">Name</h6>
-          <input id="edit-name" placeholder="Last, First">
-        </div>
-        <div class="col s3">
-          <h6 data-translate="origin_city">Origin City</h6>
-          <select id="edit-origin-select" class="browser-default"></select>
-          <input id="edit-origin-other" class="hidden-input" placeholder="Custom City">
-        </div>
-        <div class="col s3">
-          <h6 data-translate="dest_city">Destination City</h6>
-          <select id="edit-dest-select" class="browser-default"></select>
-          <input id="edit-dest-other" class="hidden-input" placeholder="Custom City">
-        </div>
-      </div>
-      <div class="row">
-        <div class="col s3">
-            <h6 data-translate="origin_area">Origin Area</h6>
-            <input id="edit-originarea">
-        </div>
-        <div class="col s3">
-          <h6 data-translate="dest_area">Destination Area</h6>
-          <input id="edit-destarea">
-        </div>
-        <div class="col s3">
-          <h6 data-translate="transportation">Transportation</h6>
-          <select id="edit-transport" class="browser-default"></select>
-        </div>
-        <div class="col s3">
-            <h6 data-translate="table_header_companion">Companion</h6>
-            <input id="edit-companion">
-        </div>
-      </div>
-      <div class="row">
-        <div class="col s2">
-          <h6 data-translate="date">Date</h6>
-          <input id="edit-date" type="date">
-        </div>
-        <div class="col s2">
-          <h6 data-translate="departure_time">Departure Time</h6>
-          <input id="edit-time" type="time">
-        </div>
-        <div class="col s5">
-          <h6 data-translate="travel_instructions">Travel Instructions</h6>
-          <input id="edit-instructions">
-        </div>
-        <div class="col s3" style="padding-top: 30px;">
-          <label>
-            <input type="checkbox" id="edit-leader" />
-            <span data-translate="travel_leader">Travel Leader</span>
-          </label>
-        </div>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <a id="btn-edit-save" class="modal-close btn" data-translate="save">Save</a>
-    </div>
-  </div>
-
-  <div id="modal-settings" class="modal">
-    <div class="modal-content">
-      <h5 data-translate="settings">Settings</h5>
-      <div class="row">
-          <div class="input-field col s6">
-              <select class="lang-select">
-                <option value="en">English</option>
-                <option value="pt">Português</option>
-              </select>
-              <label data-translate="language">Language</label>
-          </div>
-      </div>
-      <h6 data-translate="exceptions_title">Area/District Exceptions</h6>
-      <div id="exceptions-list"></div>
-      <div class="section">
-        <h6 data-translate="add_exception_title">Add New Exception</h6>
-        <div class="row">
-          <div class="input-field col s5">
-            <input id="ex-add-name" type="text">
-            <label for="ex-add-name" data-translate="area_zone_name">Area/District/Zone Name</label>
-          </div>
-          <div class="input-field col s5">
-            <input id="ex-add-city" type="text">
-            <label for="ex-add-city" data-translate="override_city">Override City</label>
-          </div>
-          <div class="input-field col s2">
-            <a id="btn-save-exception" class="btn" data-translate="save">Save</a>
           </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <div id="modal-map" class="modal">
-    <div class="modal-content">
-      <h5 data-translate="map_columns_title">Map columns...</h5>
-      <div id="mapping-forms"></div>
+    <div id="modal-map" class="modal">
+      <div class="modal-content">
+        <h5 data-translate="map_columns_title">Map columns...</h5>
+        <div id="mapping-forms"></div>
+      </div>
+      <div class="modal-footer">
+        <a
+          id="btn-map-apply"
+          class="modal-close btn"
+          data-translate="apply_mapping"
+          >Apply Mapping</a
+        >
+      </div>
     </div>
-    <div class="modal-footer">
-      <a id="btn-map-apply" class="modal-close btn" data-translate="apply_mapping">Apply Mapping</a>
-    </div>
-  </div>
 
-  <div id="modal-exceptions" class="modal modal-fixed-footer">
-    <div class="modal-content">
-      <h5 data-translate="assign_exceptions_title">Assign exceptions...</h5>
-      <p data-translate="assign_exceptions_desc">For any area or zone below, you can enter a city name to override the default. Check "Apply" to save the exception.</p>
-      <div id="exceptions-assign"></div>
+    <div id="modal-exceptions" class="modal modal-fixed-footer">
+      <div class="modal-content">
+        <h5 data-translate="assign_exceptions_title">Assign exceptions...</h5>
+        <p data-translate="assign_exceptions_desc">
+          For any area or zone below, you can enter a city name to override the
+          default. Check "Apply" to save the exception.
+        </p>
+        <div id="exceptions-assign"></div>
+      </div>
+      <div class="modal-footer">
+        <a
+          id="btn-exceptions-apply"
+          class="modal-close btn"
+          data-translate="save_exceptions"
+          >Save Exceptions</a
+        >
+      </div>
     </div>
-    <div class="modal-footer">
-      <a id="btn-exceptions-apply" class="modal-close btn" data-translate="save_exceptions">Save Exceptions</a>
-    </div>
-  </div>
-  
-  <div id="modal-transport-defaults" class="modal modal-fixed-footer">
-    <div class="modal-content">
-      <h5 data-translate="transport_defaults_title">Set Default Transportation</h5>
-      <p data-translate="transport_defaults_desc">Select the default mode of transport for each travel group. This will be applied to all missionaries in that group.</p>
-      <div id="transport-defaults-list"></div>
-    </div>
-    <div class="modal-footer">
-      <a id="btn-transport-apply" class="modal-close btn">Apply & Process</a>
-    </div>
-  </div>
 
-  <script>
-    // -- Constants, Defaults & State
-    const LS_KEY = 'transfer_logistics_data_v6';
-    const defaults = {
-      exceptions: {
-        'Quelimane': { city: 'Quelimane' }, 'Quelimane District': { city: 'Quelimane' }, 'Nhamatanda': { city: 'Nhamatanda' }, 'Marromeu': { city: 'Marromeu' }, 'Caia': { city: 'Caia' }, 'ZONA INHAMIZUA': { city: 'Beira' }, 'ZONA MANGA': { city: 'Beira' }, 'ZONA MUNHAVA': { city: 'Beira' }
-      },
-      columnSettings: {
-          city: ['type', 'lastName', 'originArea', 'destArea', 'transport', 'date', 'time', 'instructions', 'new', 'leader'],
-          transport: ['type', 'lastName', 'originCity', 'destCity', 'transport', 'date', 'time', 'instructions', 'new', 'leader'],
-          master: ['type', 'lastName', 'originCity', 'destCity', 'transport', 'date', 'time', 'instructions', 'new', 'leader']
-      }
-    };
-    let state = loadFromLS() || { groups: {}, exceptions: defaults.exceptions, lang: 'pt', columnSettings: JSON.parse(JSON.stringify(defaults.columnSettings)) };
-    let fileOldRows = null; let fileNewRows = null;
-    let mapping = { name: null, type: null, area: null, district: null, zone: null, companion: null };
-    let pendingMissionaries = [];
+    <div id="modal-transport-defaults" class="modal modal-fixed-footer">
+      <div class="modal-content">
+        <h5 data-translate="transport_defaults_title">
+          Set Default Transportation
+        </h5>
+        <p data-translate="transport_defaults_desc">
+          Select the default mode of transport for each travel group. This will
+          be applied to all missionaries in that group.
+        </p>
+        <div id="transport-defaults-list"></div>
+      </div>
+      <div class="modal-footer">
+        <a id="btn-transport-apply" class="modal-close btn">Apply & Process</a>
+      </div>
+    </div>
 
-    // -- Translations
-    const translations = {
+    <script>
+      // -- Constants, Defaults & State
+      const LS_KEY = "transfer_logistics_data_v6";
+      const defaults = {
+        exceptions: {
+          Quelimane: { city: "Quelimane" },
+          "Quelimane District": { city: "Quelimane" },
+          Nhamatanda: { city: "Nhamatanda" },
+          Marromeu: { city: "Marromeu" },
+          Caia: { city: "Caia" },
+          "ZONA INHAMIZUA": { city: "Beira" },
+          "ZONA MANGA": { city: "Beira" },
+          "ZONA MUNHAVA": { city: "Beira" },
+        },
+        columnSettings: {
+          city: [
+            "type",
+            "lastName",
+            "originArea",
+            "destArea",
+            "transport",
+            "date",
+            "time",
+            "instructions",
+            "new",
+            "leader",
+          ],
+          transport: [
+            "type",
+            "lastName",
+            "originCity",
+            "destCity",
+            "transport",
+            "date",
+            "time",
+            "instructions",
+            "new",
+            "leader",
+          ],
+          master: [
+            "type",
+            "lastName",
+            "originCity",
+            "destCity",
+            "transport",
+            "date",
+            "time",
+            "instructions",
+            "new",
+            "leader",
+          ],
+        },
+      };
+      let state = loadFromLS() || {
+        groups: {},
+        exceptions: defaults.exceptions,
+        lang: "pt",
+        columnSettings: JSON.parse(JSON.stringify(defaults.columnSettings)),
+      };
+      let fileOldRows = null;
+      let fileNewRows = null;
+      let mapping = {
+        name: null,
+        type: null,
+        area: null,
+        district: null,
+        zone: null,
+        companion: null,
+      };
+      let pendingMissionaries = [];
+
+      // -- Translations
+      const translations = {
         en: {
-            app_title: "Transfer Logistics",
-            upload_title: "Start New Plan",
-            restore_title: "Restore Plan from CSV",
-            restore_desc: "Upload travel_plans.csv file to restore progress",
-            restore_button: "Restore",
-            old_board_label: "Old transferboard (from)",
-            new_board_label: "New transferboard (to)",
-            process_upload: "Process upload",
-            export_pdf: "Export PDF",
-            export_csv: "Export CSV",
-            clear_all_travel: "Clear All Saved Travel",
-            reset_columns: "Reset Columns",
-            add_missionary_title: "Add Missionary",
-            edit_missionary_title: "Edit Missionary",
-            type: "Type",
-            name: "Name (Last, First)",
-            origin_city: "Origin City",
-            dest_city: "Destination City",
-            origin_area: "Origin Area",
-            dest_area: "Destination Area",
-            transportation: "Transportation",
-            date: "Date",
-            departure_time: "Departure Time",
-            travel_instructions: "Travel Instructions",
-            travel_leader: "Travel Leader",
-            save: "Save",
-            settings: "Settings",
-            language: "Language",
-            exceptions_title: "Area/District Exceptions",
-            add_exception_title: "Add New Exception",
-            area_zone_name: "Area/District/Zone Name",
-            override_city: "Override City",
-            map_columns_title: "Map columns (choose which column in your spreadsheet corresponds to these fields)",
-            apply_mapping: "Apply Mapping",
-            assign_exceptions_title: "Assign exceptions (areas/districts that map to a different city)",
-            assign_exceptions_desc: "For any area or zone below, you can enter a city name to override the default. Check 'Apply' to save the exception.",
-            save_exceptions: "Save Exceptions",
-            transport_defaults_title: "Set Default Transportation",
-            transport_defaults_desc: "Select the default mode of transport for each travel group. This will be applied to all missionaries in that group.",
-            table_header_type: "Type",
-            table_header_last_name: "Last Name",
-            table_header_first_name: "First Name",
-            table_header_companion: "Companion",
-            table_header_new: "New",
-            table_header_origin_area: "Origin Area",
-            table_header_dest_area: "Destination Area",
-            table_header_transport: "Transportation",
-            table_header_date: "Date",
-            table_header_time: "Time",
-            table_header_instructions: "Instructions",
-            table_header_leader: "Leader",
-            table_header_actions: "Actions",
-            bulk_edit_title: "Bulk Edit for This Group:",
-            bulk_edit_instructions_placeholder: "Set instructions for all",
-            bulk_edit_transport_placeholder: "Set Transport",
-            toast_select_files: "Please select both files",
-            toast_restore_file: "Please select a CSV file to restore",
-            toast_processed: "Processed {count} missionaries (transfers and new arrivals).",
-            toast_added: "Added",
-            toast_restored: "Plan restored successfully.",
-            toast_updated: "Updated {field} for all in group.",
-            toast_columns_reset: "Column layout has been reset to default.",
-            toast_pdf_generating: "Generating PDF... Please wait.",
-            toast_pdf_generated: "PDF generated successfully.",
-            confirm_remove_missionary: "Remove this missionary from travel plans?",
-            confirm_delete_all: "Delete ALL missionary travel? This will clear saved groups.",
-            confirm_clear_local: "Clear local storage? This will delete all saved travel and settings.",
-            transport_bus: "Bus", transport_plane: "Plane", transport_chapa: "Chapa", transport_taxi: "Txopela/Taxi", transport_ride: "Ride",
-            choose_option: "Choose...", other_option: "Other...",
-            visible_columns_label: "Visible Columns",
-            hidden_columns_label: "Hidden Columns",
-            tab_city: "By City", tab_transport: "By Transport", tab_master: "Master List"
+          app_title: "Transfer Logistics",
+          upload_title: "Start New Plan",
+          restore_title: "Restore Plan from CSV",
+          restore_desc: "Upload travel_plans.csv file to restore progress",
+          restore_button: "Restore",
+          old_board_label: "Old transferboard (from)",
+          new_board_label: "New transferboard (to)",
+          process_upload: "Process upload",
+          export_pdf: "Export PDF",
+          export_csv: "Export CSV",
+          clear_all_travel: "Clear All Saved Travel",
+          reset_columns: "Reset Columns",
+          add_missionary_title: "Add Missionary",
+          edit_missionary_title: "Edit Missionary",
+          type: "Type",
+          name: "Name (Last, First)",
+          origin_city: "Origin City",
+          dest_city: "Destination City",
+          origin_area: "Origin Area",
+          dest_area: "Destination Area",
+          transportation: "Transportation",
+          date: "Date",
+          departure_time: "Departure Time",
+          travel_instructions: "Travel Instructions",
+          travel_leader: "Travel Leader",
+          save: "Save",
+          settings: "Settings",
+          language: "Language",
+          exceptions_title: "Area/District Exceptions",
+          add_exception_title: "Add New Exception",
+          area_zone_name: "Area/District/Zone Name",
+          override_city: "Override City",
+          map_columns_title:
+            "Map columns (choose which column in your spreadsheet corresponds to these fields)",
+          apply_mapping: "Apply Mapping",
+          assign_exceptions_title:
+            "Assign exceptions (areas/districts that map to a different city)",
+          assign_exceptions_desc:
+            "For any area or zone below, you can enter a city name to override the default. Check 'Apply' to save the exception.",
+          save_exceptions: "Save Exceptions",
+          transport_defaults_title: "Set Default Transportation",
+          transport_defaults_desc:
+            "Select the default mode of transport for each travel group. This will be applied to all missionaries in that group.",
+          table_header_type: "Type",
+          table_header_last_name: "Last Name",
+          table_header_first_name: "First Name",
+          table_header_companion: "Companion",
+          table_header_new: "New",
+          table_header_origin_area: "Origin Area",
+          table_header_dest_area: "Destination Area",
+          table_header_transport: "Transportation",
+          table_header_date: "Date",
+          table_header_time: "Time",
+          table_header_instructions: "Instructions",
+          table_header_leader: "Leader",
+          table_header_actions: "Actions",
+          bulk_edit_title: "Bulk Edit for This Group:",
+          bulk_edit_instructions_placeholder: "Set instructions for all",
+          bulk_edit_transport_placeholder: "Set Transport",
+          toast_select_files: "Please select both files",
+          toast_restore_file: "Please select a CSV file to restore",
+          toast_processed:
+            "Processed {count} missionaries (transfers and new arrivals).",
+          toast_added: "Added",
+          toast_restored: "Plan restored successfully.",
+          toast_updated: "Updated {field} for all in group.",
+          toast_columns_reset: "Column layout has been reset to default.",
+          toast_pdf_generating: "Generating PDF... Please wait.",
+          toast_pdf_generated: "PDF generated successfully.",
+          confirm_remove_missionary:
+            "Remove this missionary from travel plans?",
+          confirm_delete_all:
+            "Delete ALL missionary travel? This will clear saved groups.",
+          confirm_clear_local:
+            "Clear local storage? This will delete all saved travel and settings.",
+          transport_bus: "Bus",
+          transport_plane: "Plane",
+          transport_chapa: "Chapa",
+          transport_taxi: "Txopela/Taxi",
+          transport_ride: "Ride",
+          choose_option: "Choose...",
+          other_option: "Other...",
+          visible_columns_label: "Visible Columns",
+          hidden_columns_label: "Hidden Columns",
+          tab_city: "By City",
+          tab_transport: "By Transport",
+          tab_master: "Master List",
         },
         pt: {
-            app_title: "Logística de Transferência",
-            upload_title: "Iniciar Novo Plano",
-            restore_title: "Restaurar Plano do CSV",
-            restore_desc: "Carregar ficheiro travel_plans.csv para restaurar o progresso",
-            restore_button: "Restaurar",
-            old_board_label: "Quadro de transferência antigo (de)",
-            new_board_label: "Quadro de transferência novo (para)",
-            process_upload: "Processar carregamento",
-            export_pdf: "Exportar PDF",
-            export_csv: "Exportar CSV",
-            clear_all_travel: "Limpar Viagens Guardadas",
-            reset_columns: "Redefinir Colunas",
-            add_missionary_title: "Adicionar Missionário",
-            edit_missionary_title: "Editar Missionário",
-            type: "Tipo",
-            name: "Nome (Apelido, Nome)",
-            origin_city: "Cidade de Origem",
-            dest_city: "Cidade de Destino",
-            origin_area: "Área de Origem",
-            dest_area: "Área de Destino",
-            transportation: "Transporte",
-            date: "Data",
-            departure_time: "Hora de Partida",
-            travel_instructions: "Instruções de Viagem",
-            travel_leader: "Líder de Viagem",
-            save: "Guardar",
-            settings: "Definições",
-            language: "Idioma",
-            exceptions_title: "Exceções de Área/Distrito",
-            add_exception_title: "Adicionar Nova Exceção",
-            area_zone_name: "Nome da Área/Distrito/Zona",
-            override_city: "Cidade Alternativa",
-            map_columns_title: "Mapear colunas (escolha qual coluna da sua planilha corresponde a estes campos)",
-            apply_mapping: "Aplicar Mapeamento",
-            assign_exceptions_title: "Atribuir exceções (áreas/distritos que mapeiam para uma cidade diferente)",
-            assign_exceptions_desc: "Para qualquer área ou zona abaixo, pode inserir um nome de cidade para substituir o padrão. Marque 'Aplicar' para guardar a exceção.",
-            save_exceptions: "Guardar Exceções",
-            transport_defaults_title: "Definir Transporte Padrão",
-            transport_defaults_desc: "Selecione o modo de transporte padrão para cada grupo de viagem. Isso será aplicado a todos os missionários desse grupo.",
-            table_header_type: "Tipo",
-            table_header_last_name: "Apelido",
-            table_header_first_name: "Nome",
-            table_header_companion: "Companheiro",
-            table_header_new: "Novo",
-            table_header_origin_area: "Área de Origem",
-            table_header_dest_area: "Área de Destino",
-            table_header_transport: "Transporte",
-            table_header_date: "Data",
-            table_header_time: "Hora",
-            table_header_instructions: "Instruções",
-            table_header_leader: "Líder",
-            table_header_actions: "Ações",
-            bulk_edit_title: "Edição em Massa para Este Grupo:",
-            bulk_edit_instructions_placeholder: "Definir instruções para todos",
-            bulk_edit_transport_placeholder: "Definir Transporte",
-            toast_select_files: "Por favor, selecione ambos os ficheiros",
-            toast_restore_file: "Por favor, selecione um ficheiro CSV para restaurar",
-            toast_processed: "Processados {count} missionários (transferências e novas chegadas).",
-            toast_added: "Adicionado",
-            toast_restored: "Plano restaurado com sucesso.",
-            toast_updated: "{field} atualizado para todos no grupo.",
-            toast_columns_reset: "O layout das colunas foi redefinido para o padrão.",
-            toast_pdf_generating: "A gerar PDF... Por favor, aguarde.",
-            toast_pdf_generated: "PDF gerado com sucesso.",
-            confirm_remove_missionary: "Remover este missionário dos planos de viagem?",
-            confirm_delete_all: "Apagar TODAS as viagens de missionários? Isto irá limpar os grupos guardados.",
-            confirm_clear_local: "Limpar armazenamento local? Isto irá apagar todas as viagens e definições guardadas.",
-            transport_bus: "Ônibus", transport_plane: "Avião", transport_chapa: "Chapa", transport_taxi: "Txopela/Táxi", transport_ride: "Boleia",
-            choose_option: "Escolha...", other_option: "Outro...",
-            visible_columns_label: "Colunas Visíveis",
-            hidden_columns_label: "Colunas Ocultas",
-            tab_city: "Por Cidade", tab_transport: "Por Transporte", tab_master: "Lista Geral"
-        }
-    };
+          app_title: "Logística de Transferência",
+          upload_title: "Iniciar Novo Plano",
+          restore_title: "Restaurar Plano do CSV",
+          restore_desc:
+            "Carregar ficheiro travel_plans.csv para restaurar o progresso",
+          restore_button: "Restaurar",
+          old_board_label: "Quadro de transferência antigo (de)",
+          new_board_label: "Quadro de transferência novo (para)",
+          process_upload: "Processar carregamento",
+          export_pdf: "Exportar PDF",
+          export_csv: "Exportar CSV",
+          clear_all_travel: "Limpar Viagens Guardadas",
+          reset_columns: "Redefinir Colunas",
+          add_missionary_title: "Adicionar Missionário",
+          edit_missionary_title: "Editar Missionário",
+          type: "Tipo",
+          name: "Nome (Apelido, Nome)",
+          origin_city: "Cidade de Origem",
+          dest_city: "Cidade de Destino",
+          origin_area: "Área de Origem",
+          dest_area: "Área de Destino",
+          transportation: "Transporte",
+          date: "Data",
+          departure_time: "Hora de Partida",
+          travel_instructions: "Instruções de Viagem",
+          travel_leader: "Líder de Viagem",
+          save: "Guardar",
+          settings: "Definições",
+          language: "Idioma",
+          exceptions_title: "Exceções de Área/Distrito",
+          add_exception_title: "Adicionar Nova Exceção",
+          area_zone_name: "Nome da Área/Distrito/Zona",
+          override_city: "Cidade Alternativa",
+          map_columns_title:
+            "Mapear colunas (escolha qual coluna da sua planilha corresponde a estes campos)",
+          apply_mapping: "Aplicar Mapeamento",
+          assign_exceptions_title:
+            "Atribuir exceções (áreas/distritos que mapeiam para uma cidade diferente)",
+          assign_exceptions_desc:
+            "Para qualquer área ou zona abaixo, pode inserir um nome de cidade para substituir o padrão. Marque 'Aplicar' para guardar a exceção.",
+          save_exceptions: "Guardar Exceções",
+          transport_defaults_title: "Definir Transporte Padrão",
+          transport_defaults_desc:
+            "Selecione o modo de transporte padrão para cada grupo de viagem. Isso será aplicado a todos os missionários desse grupo.",
+          table_header_type: "Tipo",
+          table_header_last_name: "Apelido",
+          table_header_first_name: "Nome",
+          table_header_companion: "Companheiro",
+          table_header_new: "Novo",
+          table_header_origin_area: "Área de Origem",
+          table_header_dest_area: "Área de Destino",
+          table_header_transport: "Transporte",
+          table_header_date: "Data",
+          table_header_time: "Hora",
+          table_header_instructions: "Instruções",
+          table_header_leader: "Líder",
+          table_header_actions: "Ações",
+          bulk_edit_title: "Edição em Massa para Este Grupo:",
+          bulk_edit_instructions_placeholder: "Definir instruções para todos",
+          bulk_edit_transport_placeholder: "Definir Transporte",
+          toast_select_files: "Por favor, selecione ambos os ficheiros",
+          toast_restore_file:
+            "Por favor, selecione um ficheiro CSV para restaurar",
+          toast_processed:
+            "Processados {count} missionários (transferências e novas chegadas).",
+          toast_added: "Adicionado",
+          toast_restored: "Plano restaurado com sucesso.",
+          toast_updated: "{field} atualizado para todos no grupo.",
+          toast_columns_reset:
+            "O layout das colunas foi redefinido para o padrão.",
+          toast_pdf_generating: "A gerar PDF... Por favor, aguarde.",
+          toast_pdf_generated: "PDF gerado com sucesso.",
+          confirm_remove_missionary:
+            "Remover este missionário dos planos de viagem?",
+          confirm_delete_all:
+            "Apagar TODAS as viagens de missionários? Isto irá limpar os grupos guardados.",
+          confirm_clear_local:
+            "Limpar armazenamento local? Isto irá apagar todas as viagens e definições guardadas.",
+          transport_bus: "Ônibus",
+          transport_plane: "Avião",
+          transport_chapa: "Chapa",
+          transport_taxi: "Txopela/Táxi",
+          transport_ride: "Boleia",
+          choose_option: "Escolha...",
+          other_option: "Outro...",
+          visible_columns_label: "Colunas Visíveis",
+          hidden_columns_label: "Colunas Ocultas",
+          tab_city: "Por Cidade",
+          tab_transport: "Por Transporte",
+          tab_master: "Lista Geral",
+        },
+      };
 
-    function setLanguage(lang) {
+      function setLanguage(lang) {
         state.lang = lang;
-        document.querySelectorAll('[data-translate]').forEach(el => {
-            const key = el.getAttribute('data-translate');
-            if (translations[lang] && translations[lang][key]) {
-                const isPlaceholder = el.hasAttribute('placeholder');
-                if (isPlaceholder) { el.setAttribute('placeholder', translations[lang][key]); } 
-                else { el.textContent = translations[lang][key]; }
+        document.querySelectorAll("[data-translate]").forEach((el) => {
+          const key = el.getAttribute("data-translate");
+          if (translations[lang] && translations[lang][key]) {
+            const isPlaceholder = el.hasAttribute("placeholder");
+            if (isPlaceholder) {
+              el.setAttribute("placeholder", translations[lang][key]);
+            } else {
+              el.textContent = translations[lang][key];
             }
+          }
         });
-        document.querySelectorAll('.lang-select').forEach(sel => { sel.value = lang; M.FormSelect.init(sel); });
+        document.querySelectorAll(".lang-select").forEach((sel) => {
+          sel.value = lang;
+          M.FormSelect.init(sel);
+        });
         populateTransportDropdowns();
         renderAllViews();
-    }
-    
-    function populateTransportDropdowns() {
-        const lang = state.lang || 'pt';
-        const transportOptions = `<option value="Bus">${translations[lang].transport_bus}</option><option value="Plane">${translations[lang].transport_plane}</option><option value="Chapa">${translations[lang].transport_chapa}</option><option value="Txopela/Taxi">${translations[lang].transport_taxi}</option><option value="Ride">${translations[lang].transport_ride}</option>`;
-        document.getElementById('add-transport').innerHTML = transportOptions;
-        document.getElementById('edit-transport').innerHTML = transportOptions;
-    }
+      }
 
-    // -- State Management
-    function loadFromLS() { try { return JSON.parse(localStorage.getItem(LS_KEY)); } catch(e){return null} }
-    function saveToLS() { localStorage.setItem(LS_KEY, JSON.stringify(state)); }
-    function loadState(){
+      function populateTransportDropdowns() {
+        const lang = state.lang || "pt";
+        const transportOptions = `<option value="Bus">${translations[lang].transport_bus}</option><option value="Plane">${translations[lang].transport_plane}</option><option value="Chapa">${translations[lang].transport_chapa}</option><option value="Txopela/Taxi">${translations[lang].transport_taxi}</option><option value="Ride">${translations[lang].transport_ride}</option>`;
+        document.getElementById("add-transport").innerHTML = transportOptions;
+        document.getElementById("edit-transport").innerHTML = transportOptions;
+      }
+
+      // -- State Management
+      function loadFromLS() {
+        try {
+          return JSON.parse(localStorage.getItem(LS_KEY));
+        } catch (e) {
+          return null;
+        }
+      }
+      function saveToLS() {
+        localStorage.setItem(LS_KEY, JSON.stringify(state));
+      }
+      function loadState() {
         renderExceptions();
         renderAllViews();
         setupColumnManager();
-        setLanguage(state.lang || 'pt');
+        setLanguage(state.lang || "pt");
 
         if (Object.keys(state.groups || {}).length > 0) {
-            document.getElementById('upload-section').style.display = 'none';
-            document.getElementById('controls-section').style.display = 'block';
-            document.getElementById('tabs-section').style.display = 'block';
-            M.Tabs.init(document.querySelector('.tabs'));
-            document.querySelectorAll('.tabs .tab a').forEach(tab => {
-                tab.addEventListener('click', () => {
-                    setTimeout(() => setupColumnManager(), 50);
-                });
+          document.getElementById("upload-section").style.display = "none";
+          document.getElementById("controls-section").style.display = "block";
+          document.getElementById("tabs-section").style.display = "block";
+          M.Tabs.init(document.querySelector(".tabs"));
+          document.querySelectorAll(".tabs .tab a").forEach((tab) => {
+            tab.addEventListener("click", () => {
+              setTimeout(() => setupColumnManager(), 50);
             });
+          });
         }
-    }
+      }
 
-    // -- Helpers
-    function getActiveView() {
-        const activeTab = document.querySelector('.tabs .tab a.active');
-        if (!activeTab) return 'city';
-        return activeTab.getAttribute('href').replace('#tab-', '');
-    }
-    function normalizeZoneName(name){ if(!name) return ''; name = name.replace(/ZONA/i,'').trim(); return name.charAt(0).toUpperCase()+name.slice(1).toLowerCase(); }
-    function autoResizeTextarea(element) { element.style.height = 'auto'; element.style.height = (element.scrollHeight) + 'px'; }
-    function determineCity(loc) {
-        if (loc.area && state.exceptions[loc.area]) return state.exceptions[loc.area].city;
-        if (loc.district && state.exceptions[loc.district]) return state.exceptions[loc.district].city;
-        if (loc.zone && state.exceptions[loc.zone]) return state.exceptions[loc.zone].city;
+      // -- Helpers
+      function getActiveView() {
+        const activeTab = document.querySelector(".tabs .tab a.active");
+        if (!activeTab) return "city";
+        return activeTab.getAttribute("href").replace("#tab-", "");
+      }
+      function normalizeZoneName(name) {
+        if (!name) return "";
+        name = name.replace(/ZONA/i, "").trim();
+        return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+      }
+      function autoResizeTextarea(element) {
+        element.style.height = "auto";
+        element.style.height = element.scrollHeight + "px";
+      }
+      function determineCity(loc) {
+        if (loc.area && state.exceptions[loc.area])
+          return state.exceptions[loc.area].city;
+        if (loc.district && state.exceptions[loc.district])
+          return state.exceptions[loc.district].city;
+        if (loc.zone && state.exceptions[loc.zone])
+          return state.exceptions[loc.zone].city;
         return normalizeZoneName(loc.zone || loc.district || loc.area);
-    }
-    function findMissionary(missionaryId) {
+      }
+      function findMissionary(missionaryId) {
         for (const key in state.groups) {
-            const missionary = state.groups[key].find(m => m.id === missionaryId);
-            if (missionary) return { missionary, groupKey: key };
+          const missionary = state.groups[key].find(
+            (m) => m.id === missionaryId,
+          );
+          if (missionary) return { missionary, groupKey: key };
         }
         return { missionary: null, groupKey: null };
-    }
+      }
 
-
-    // -- File Processing
-    document.getElementById('btn-process').addEventListener('click', async ()=>{
-      const fOld = document.getElementById('file-old').files[0]; const fNew = document.getElementById('file-new').files[0];
-      if(!fOld || !fNew){ M.toast({html: translations[state.lang].toast_select_files}); return; }
-      fileOldRows = await readFileRows(fOld); fileNewRows = await readFileRows(fNew);
-      showMappingModal(fileOldRows[0] || fileNewRows[0]);
-    });
-
-    async function readFileRows(file){ const data = await file.arrayBuffer(); const wb = XLSX.read(data); return XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {defval: ''}); }
-
-    function showMappingModal(sampleRow){
-      const container = document.getElementById('mapping-forms'); container.innerHTML = '';
-      const keys = Object.keys(sampleRow || {});
-      const fields = [ {id:'name', label:'Name (Last, First)'}, {id:'type', label:'Type (Elder/Sister)'}, {id:'area', label:'Area/Neighborhood'}, {id:'district', label:'District'}, {id:'zone', label:'Zone'}, {id:'companion', label:'Companion'} ];
-      fields.forEach(f=>{
-        const div = document.createElement('div'); div.style.marginBottom = '20px';
-        const h6 = document.createElement('h6'); h6.textContent = f.label;
-        const select = document.createElement('select'); select.id = 'map-'+f.id; select.className = 'browser-default';
-        select.innerHTML = `<option value="">-- Select column --</option>` + keys.map(k=>`<option value="${k}">${k}</option>`).join('');
-        div.appendChild(h6); div.appendChild(select); container.appendChild(div);
-      });
-      M.Modal.getInstance(document.getElementById('modal-map')).open();
-    }
-
-    document.getElementById('btn-map-apply').addEventListener('click', ()=>{
-      ['name','type','area', 'district', 'zone', 'companion'].forEach(f=>mapping[f]=document.getElementById('map-'+f).value || null);
-      prepareExceptionsAssignment();
-    });
-
-    function prepareExceptionsAssignment(){
-      const allUnique = { zones: new Set(), districts: new Set(), areas: new Set() };
-      [fileOldRows,fileNewRows].forEach(rows=>{ (rows||[]).forEach(r=>{
-        if (mapping.zone && r[mapping.zone]) allUnique.zones.add(r[mapping.zone].toString().trim());
-        if (mapping.district && r[mapping.district]) allUnique.districts.add(r[mapping.district].toString().trim());
-        if (mapping.area && r[mapping.area]) allUnique.areas.add(r[mapping.area].toString().trim());
-      }); });
-      const container = document.getElementById('exceptions-assign'); container.innerHTML='';
-      const createSection = (title, list) => {
-        if (list.size === 0) return;
-        const titleEl = document.createElement('h5'); titleEl.textContent = title; container.appendChild(titleEl);
-        Array.from(list).sort((x,y)=>x.localeCompare(y)).forEach(val=>{
-          const row = document.createElement('div'); row.className='row valign-wrapper'; row.style.marginBottom = '0px';
-          const existingCity = state.exceptions[val]?.city || '';
-          row.innerHTML = `<div class="input-field col s5"><input value="${val}" readonly></div><div class="input-field col s5"><input class="ex-city" data-key="${val}" value="${existingCity}" placeholder="e.g., Beira" /></div><div class="col s2"><label><input type="checkbox" class="ex-apply" data-key="${val}" ${existingCity ? 'checked' : ''} /><span>Apply</span></label></div>`;
-          container.appendChild(row);
+      // -- File Processing
+      document
+        .getElementById("btn-process")
+        .addEventListener("click", async () => {
+          const fOld = document.getElementById("file-old").files[0];
+          const fNew = document.getElementById("file-new").files[0];
+          if (!fOld || !fNew) {
+            M.toast({ html: translations[state.lang].toast_select_files });
+            return;
+          }
+          fileOldRows = await readFileRows(fOld);
+          fileNewRows = await readFileRows(fNew);
+          showMappingModal(fileOldRows[0] || fileNewRows[0]);
         });
-      };
-      createSection('Area Overrides', allUnique.areas); createSection('District Overrides', allUnique.districts); createSection('Zone Overrides', allUnique.zones);
-      M.AutoInit(); M.Modal.getInstance(document.getElementById('modal-exceptions')).open();
-    }
 
-    document.getElementById('btn-exceptions-apply').addEventListener('click', ()=>{
-      document.querySelectorAll('.ex-apply').forEach(chk => {
-          const key = chk.dataset.key; const city = document.querySelector(`.ex-city[data-key="${key}"]`).value.trim();
-          if (chk.checked && city) { state.exceptions[key] = { city: city }; } 
-          else if (state.exceptions[key] && !defaults.exceptions[key]) { delete state.exceptions[key]; }
+      async function readFileRows(file) {
+        const data = await file.arrayBuffer();
+        const wb = XLSX.read(data);
+        return XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {
+          defval: "",
+        });
+      }
+
+      function showMappingModal(sampleRow) {
+        const container = document.getElementById("mapping-forms");
+        container.innerHTML = "";
+        const keys = Object.keys(sampleRow || {});
+        const fields = [
+          { id: "name", label: "Name (Last, First)" },
+          { id: "type", label: "Type (Elder/Sister)" },
+          { id: "area", label: "Area/Neighborhood" },
+          { id: "district", label: "District" },
+          { id: "zone", label: "Zone" },
+          { id: "companion", label: "Companion" },
+        ];
+        fields.forEach((f) => {
+          const div = document.createElement("div");
+          div.style.marginBottom = "20px";
+          const h6 = document.createElement("h6");
+          h6.textContent = f.label;
+          const select = document.createElement("select");
+          select.id = "map-" + f.id;
+          select.className = "browser-default";
+          select.innerHTML =
+            `<option value="">-- Select column --</option>` +
+            keys.map((k) => `<option value="${k}">${k}</option>`).join("");
+          div.appendChild(h6);
+          div.appendChild(select);
+          container.appendChild(div);
+        });
+        M.Modal.getInstance(document.getElementById("modal-map")).open();
+      }
+
+      document.getElementById("btn-map-apply").addEventListener("click", () => {
+        ["name", "type", "area", "district", "zone", "companion"].forEach(
+          (f) =>
+            (mapping[f] = document.getElementById("map-" + f).value || null),
+        );
+        prepareExceptionsAssignment();
       });
-      state.exceptions = Object.assign({}, defaults.exceptions, state.exceptions);
-      saveToLS(); prepareAndShowTransportModal();
-    });
-    
-    function prepareAndShowTransportModal() {
-        const oldIdx = {};
-        (fileOldRows||[]).forEach(r=>{ const nameVal = mapping.name ? (r[mapping.name]||'') : ''; const key = nameVal.toString().trim().toLowerCase(); if(key) oldIdx[key]=r; });
-        pendingMissionaries = [];
-        (fileNewRows||[]).forEach(r=>{
-            const nameVal = (mapping.name ? r[mapping.name] : '').toString().trim();
-            const id = nameVal.toLowerCase(); if(!id) return;
-            const nameParts = nameVal.split(',').map(p => p.trim());
-            const old = oldIdx[id];
-            const newLoc = { zone: (mapping.zone ? r[mapping.zone] : '').toString(), district: (mapping.district ? r[mapping.district] : '').toString(), area: (mapping.area ? r[mapping.area] : '').toString() };
-            const baseMissionary = { id, name: nameVal, lastName: nameParts[0] || '', firstName: nameParts[1] || '', type: /^(elder|sister)$/i.test((r[mapping.type]||'').toString().trim()) ? (r[mapping.type]||'').toString().trim() : '', date: '', time: '', instructions:'', leader:false, companion: (mapping.companion && r[mapping.companion]) ? r[mapping.companion].toString().trim() : '' };
-            if (old) {
-                const oldLoc = { zone: (mapping.zone ? old[mapping.zone] : '').toString(), district: (mapping.district ? old[mapping.district] : '').toString(), area: (mapping.area ? old[mapping.area] : '').toString() };
-                if (oldLoc.area !== newLoc.area) { // Simplified transfer condition
-                    pendingMissionaries.push({ ...baseMissionary, originCity: determineCity(oldLoc), originArea: oldLoc.area, originDistrict: oldLoc.district, originZone: oldLoc.zone, destinationCity: determineCity(newLoc), destinationArea: newLoc.area, destinationDistrict: newLoc.district, destinationZone: newLoc.zone, isNew: false });
-                }
-            } else {
-                pendingMissionaries.push({ ...baseMissionary, originCity: 'Beira', originArea: '', originDistrict: '', originZone: '', destinationCity: determineCity(newLoc), destinationArea: newLoc.area, destinationDistrict: newLoc.district, destinationZone: newLoc.zone, isNew: true });
+
+      function prepareExceptionsAssignment() {
+        const allUnique = {
+          zones: new Set(),
+          districts: new Set(),
+          areas: new Set(),
+        };
+        [fileOldRows, fileNewRows].forEach((rows) => {
+          (rows || []).forEach((r) => {
+            if (mapping.zone && r[mapping.zone])
+              allUnique.zones.add(r[mapping.zone].toString().trim());
+            if (mapping.district && r[mapping.district])
+              allUnique.districts.add(r[mapping.district].toString().trim());
+            if (mapping.area && r[mapping.area])
+              allUnique.areas.add(r[mapping.area].toString().trim());
+          });
+        });
+        const container = document.getElementById("exceptions-assign");
+        container.innerHTML = "";
+        const createSection = (title, list) => {
+          if (list.size === 0) return;
+          const titleEl = document.createElement("h5");
+          titleEl.textContent = title;
+          container.appendChild(titleEl);
+          Array.from(list)
+            .sort((x, y) => x.localeCompare(y))
+            .forEach((val) => {
+              const row = document.createElement("div");
+              row.className = "row valign-wrapper";
+              row.style.marginBottom = "0px";
+              const existingCity = state.exceptions[val]?.city || "";
+              row.innerHTML = `<div class="input-field col s5"><input value="${val}" readonly></div><div class="input-field col s5"><input class="ex-city" data-key="${val}" value="${existingCity}" placeholder="e.g., Beira" /></div><div class="col s2"><label><input type="checkbox" class="ex-apply" data-key="${val}" ${existingCity ? "checked" : ""} /><span>Apply</span></label></div>`;
+              container.appendChild(row);
+            });
+        };
+        createSection("Area Overrides", allUnique.areas);
+        createSection("District Overrides", allUnique.districts);
+        createSection("Zone Overrides", allUnique.zones);
+        M.AutoInit();
+        M.Modal.getInstance(document.getElementById("modal-exceptions")).open();
+      }
+
+      document
+        .getElementById("btn-exceptions-apply")
+        .addEventListener("click", () => {
+          document.querySelectorAll(".ex-apply").forEach((chk) => {
+            const key = chk.dataset.key;
+            const city = document
+              .querySelector(`.ex-city[data-key="${key}"]`)
+              .value.trim();
+            if (chk.checked && city) {
+              state.exceptions[key] = { city: city };
+            } else if (state.exceptions[key] && !defaults.exceptions[key]) {
+              delete state.exceptions[key];
             }
+          });
+          state.exceptions = Object.assign(
+            {},
+            defaults.exceptions,
+            state.exceptions,
+          );
+          saveToLS();
+          prepareAndShowTransportModal();
         });
-        const uniqueRoutes = new Set(pendingMissionaries.map(m => `${m.originCity} -> ${m.destinationCity}`));
-        const container = document.getElementById('transport-defaults-list'); container.innerHTML = ''; const lang = state.lang || 'pt'; const T = translations[lang];
+
+      function prepareAndShowTransportModal() {
+        const oldIdx = {};
+        (fileOldRows || []).forEach((r) => {
+          const nameVal = mapping.name ? r[mapping.name] || "" : "";
+          const key = nameVal.toString().trim().toLowerCase();
+          if (key) oldIdx[key] = r;
+        });
+        pendingMissionaries = [];
+        (fileNewRows || []).forEach((r) => {
+          const nameVal = (mapping.name ? r[mapping.name] : "")
+            .toString()
+            .trim();
+          const id = nameVal.toLowerCase();
+          if (!id) return;
+          const nameParts = nameVal.split(",").map((p) => p.trim());
+          const old = oldIdx[id];
+          const newLoc = {
+            zone: (mapping.zone ? r[mapping.zone] : "").toString(),
+            district: (mapping.district ? r[mapping.district] : "").toString(),
+            area: (mapping.area ? r[mapping.area] : "").toString(),
+          };
+          const baseMissionary = {
+            id,
+            name: nameVal,
+            lastName: nameParts[0] || "",
+            firstName: nameParts[1] || "",
+            type: /^(elder|sister)$/i.test(
+              (r[mapping.type] || "").toString().trim(),
+            )
+              ? (r[mapping.type] || "").toString().trim()
+              : "",
+            date: "",
+            time: "",
+            instructions: "",
+            leader: false,
+            companion:
+              mapping.companion && r[mapping.companion]
+                ? r[mapping.companion].toString().trim()
+                : "",
+          };
+          if (old) {
+            const oldLoc = {
+              zone: (mapping.zone ? old[mapping.zone] : "").toString(),
+              district: (mapping.district
+                ? old[mapping.district]
+                : ""
+              ).toString(),
+              area: (mapping.area ? old[mapping.area] : "").toString(),
+            };
+            if (oldLoc.area !== newLoc.area) {
+              // Simplified transfer condition
+              pendingMissionaries.push({
+                ...baseMissionary,
+                originCity: determineCity(oldLoc),
+                originArea: oldLoc.area,
+                originDistrict: oldLoc.district,
+                originZone: oldLoc.zone,
+                destinationCity: determineCity(newLoc),
+                destinationArea: newLoc.area,
+                destinationDistrict: newLoc.district,
+                destinationZone: newLoc.zone,
+                isNew: false,
+              });
+            }
+          } else {
+            pendingMissionaries.push({
+              ...baseMissionary,
+              originCity: "Beira",
+              originArea: "",
+              originDistrict: "",
+              originZone: "",
+              destinationCity: determineCity(newLoc),
+              destinationArea: newLoc.area,
+              destinationDistrict: newLoc.district,
+              destinationZone: newLoc.zone,
+              isNew: true,
+            });
+          }
+        });
+        const uniqueRoutes = new Set(
+          pendingMissionaries.map(
+            (m) => `${m.originCity} -> ${m.destinationCity}`,
+          ),
+        );
+        const container = document.getElementById("transport-defaults-list");
+        container.innerHTML = "";
+        const lang = state.lang || "pt";
+        const T = translations[lang];
         const transportOptions = `<option value="Bus">${T.transport_bus}</option><option value="Plane">${T.transport_plane}</option><option value="Chapa">${T.transport_chapa}</option><option value="Txopela/Taxi">${T.transport_taxi}</option><option value="Ride">${T.transport_ride}</option>`;
-        Array.from(uniqueRoutes).sort().forEach(route => {
-            const [origin, destination] = route.split(' -> ');
-            const row = document.createElement('div'); row.className = 'row valign-wrapper';
+        Array.from(uniqueRoutes)
+          .sort()
+          .forEach((route) => {
+            const [origin, destination] = route.split(" -> ");
+            const row = document.createElement("div");
+            row.className = "row valign-wrapper";
             row.innerHTML = `<div class="col s6"><h6>${route}</h6></div><div class="col s6"><select class="browser-default transport-default-select" data-route="${route}">${transportOptions}</select></div>`;
-            container.appendChild(row); row.querySelector('select').value = defaultTransportForPair(origin, destination);
+            container.appendChild(row);
+            row.querySelector("select").value = defaultTransportForPair(
+              origin,
+              destination,
+            );
+          });
+        M.Modal.getInstance(
+          document.getElementById("modal-transport-defaults"),
+        ).open();
+      }
+
+      document
+        .getElementById("btn-transport-apply")
+        .addEventListener("click", () => {
+          const transportDefaults = {};
+          document
+            .querySelectorAll(".transport-default-select")
+            .forEach((sel) => {
+              transportDefaults[sel.dataset.route] = sel.value;
+            });
+          pendingMissionaries.forEach((m) => {
+            m.transport =
+              transportDefaults[`${m.originCity} -> ${m.destinationCity}`] ||
+              defaultTransportForPair(m.originCity, m.destinationCity);
+          });
+          state.groups = {};
+          pendingMissionaries.forEach((m) => {
+            const key = `${m.originCity} -> ${m.destinationCity}`;
+            if (!state.groups[key]) state.groups[key] = [];
+            state.groups[key].push(m);
+          });
+          saveToLS();
+          M.toast({
+            html: translations[state.lang].toast_processed.replace(
+              "{count}",
+              pendingMissionaries.length,
+            ),
+          });
+          location.reload();
         });
-        M.Modal.getInstance(document.getElementById('modal-transport-defaults')).open();
-    }
 
-    document.getElementById('btn-transport-apply').addEventListener('click', () => {
-        const transportDefaults = {}; document.querySelectorAll('.transport-default-select').forEach(sel => { transportDefaults[sel.dataset.route] = sel.value; });
-        pendingMissionaries.forEach(m => { m.transport = transportDefaults[`${m.originCity} -> ${m.destinationCity}`] || defaultTransportForPair(m.originCity, m.destinationCity); });
-        state.groups = {};
-        pendingMissionaries.forEach(m => { const key = `${m.originCity} -> ${m.destinationCity}`; if (!state.groups[key]) state.groups[key] = []; state.groups[key].push(m); });
-        saveToLS(); M.toast({html: translations[state.lang].toast_processed.replace('{count}', pendingMissionaries.length)}); location.reload();
-    });
+      function defaultTransportForPair(from, to) {
+        const f = (from || "").toLowerCase(),
+          t = (to || "").toLowerCase();
+        if (
+          (f === "nampula" && t === "quelimane") ||
+          (t === "nampula" && f === "quelimane")
+        )
+          return "Bus";
+        if (f === "nampula" || t === "nampula") return "Plane";
+        const main = ["tete", "chimoio", "beira"];
+        if (main.includes(f) && main.includes(t) && f !== t) return "Bus";
+        if (f === t) {
+          if (f === "beira") return "Ride";
+          return "Txopela/Taxi";
+        }
+        return "Bus";
+      }
 
-    function defaultTransportForPair(from, to){
-      const f = (from||'').toLowerCase(), t = (to||'').toLowerCase();
-      if((f === 'nampula' && t === 'quelimane') || (t === 'nampula' && f === 'quelimane')) return 'Bus'; if (f === 'nampula' || t === 'nampula') return 'Plane'; const main = ['tete','chimoio','beira']; if(main.includes(f) && main.includes(t) && f !== t) return 'Bus'; if(f === t){ if(f==='beira') return 'Ride'; return 'Txopela/Taxi'; } return 'Bus';
-    }
-
-    // -- UI Rendering
-    function renderAllViews(){ renderGroupsByCity(); renderGroupsByTransport(); renderMasterTable(); populateCityDropdowns(); M.AutoInit(); applyColumnOrderAndVisibility(); }
-    function renderGroupsByCity(){
-      const container = document.getElementById('groups-by-city'); container.innerHTML = '';
-      Object.keys(state.groups||{}).sort().forEach(key => {
-        const card = document.createElement('div'); card.className='card group-card';
-        const content = document.createElement('div'); content.className='card-content'; content.innerHTML = `<span class="card-title">${key}</span>`;
-        content.appendChild(createMissionaryTable(state.groups[key], 'city', key)); card.appendChild(content); container.appendChild(card);
-      });
-    }
-    function renderGroupsByTransport() {
-        const container = document.getElementById('groups-by-transport'); container.innerHTML = '';
+      // -- UI Rendering
+      function renderAllViews() {
+        renderGroupsByCity();
+        renderGroupsByTransport();
+        renderMasterTable();
+        populateCityDropdowns();
+        M.AutoInit();
+        applyColumnOrderAndVisibility();
+      }
+      function renderGroupsByCity() {
+        const container = document.getElementById("groups-by-city");
+        container.innerHTML = "";
+        Object.keys(state.groups || {})
+          .sort()
+          .forEach((key) => {
+            const card = document.createElement("div");
+            card.className = "card group-card";
+            const content = document.createElement("div");
+            content.className = "card-content";
+            content.innerHTML = `<span class="card-title">${key}</span>`;
+            content.appendChild(
+              createMissionaryTable(state.groups[key], "city", key),
+            );
+            card.appendChild(content);
+            container.appendChild(card);
+          });
+      }
+      function renderGroupsByTransport() {
+        const container = document.getElementById("groups-by-transport");
+        container.innerHTML = "";
         const byTransport = {};
-        Object.values(state.groups || {}).flat().forEach(m => {
-            const transport = m.transport || 'Unassigned';
-            if (!byTransport[transport]) byTransport[transport] = []; byTransport[transport].push(m);
-        });
-        Object.keys(byTransport).sort().forEach(key => {
-            const card = document.createElement('div'); card.className = 'card group-card';
-            const content = document.createElement('div'); content.className = 'card-content';
-            const lang = state.lang || 'pt'; const T = translations[lang]; const transportName = T[`transport_${key.toLowerCase().replace('/','_')}`] || key;
+        Object.values(state.groups || {})
+          .flat()
+          .forEach((m) => {
+            const transport = m.transport || "Unassigned";
+            if (!byTransport[transport]) byTransport[transport] = [];
+            byTransport[transport].push(m);
+          });
+        Object.keys(byTransport)
+          .sort()
+          .forEach((key) => {
+            const card = document.createElement("div");
+            card.className = "card group-card";
+            const content = document.createElement("div");
+            content.className = "card-content";
+            const lang = state.lang || "pt";
+            const T = translations[lang];
+            const transportName =
+              T[`transport_${key.toLowerCase().replace("/", "_")}`] || key;
             content.innerHTML = `<span class="card-title">${transportName}</span>`;
-            content.appendChild(createMissionaryTable(byTransport[key], 'transport', key)); card.appendChild(content); container.appendChild(card);
-        });
-    }
-    function renderMasterTable() {
-        const container = document.getElementById('groups-master'); container.innerHTML = '';
+            content.appendChild(
+              createMissionaryTable(byTransport[key], "transport", key),
+            );
+            card.appendChild(content);
+            container.appendChild(card);
+          });
+      }
+      function renderMasterTable() {
+        const container = document.getElementById("groups-master");
+        container.innerHTML = "";
         const allMissionaries = Object.values(state.groups || {}).flat();
-        container.appendChild(createMissionaryTable(allMissionaries, 'master', null));
-    }
+        container.appendChild(
+          createMissionaryTable(allMissionaries, "master", null),
+        );
+      }
 
-    function createMissionaryTable(missionaries, groupType, groupKey) {
-      const table = document.createElement('table'); table.className='striped table-col-toggle'; const lang = state.lang || 'pt'; const T = translations[lang];
-      const sortedMissionaries = [...missionaries].sort((a,b) => (a.isNew - b.isNew) || a.lastName.localeCompare(b.lastName) || a.firstName.localeCompare(b.firstName));
-      const allowBulkEdit = groupType === 'city' || groupType === 'transport';
-      
-      const bulkEditRow = allowBulkEdit ? `<tr class="bulk-edit-row">
+      function createMissionaryTable(missionaries, groupType, groupKey) {
+        const table = document.createElement("table");
+        table.className = "striped table-col-toggle";
+        const lang = state.lang || "pt";
+        const T = translations[lang];
+        const sortedMissionaries = [...missionaries].sort(
+          (a, b) =>
+            a.isNew - b.isNew ||
+            a.lastName.localeCompare(b.lastName) ||
+            a.firstName.localeCompare(b.firstName),
+        );
+        const allowBulkEdit = groupType === "city" || groupType === "transport";
+
+        const bulkEditRow = allowBulkEdit
+          ? `<tr class="bulk-edit-row">
             <th class="col-type"></th><th class="col-lastName"></th><th class="col-firstName"></th>
             <th class="col-originCity"></th><th class="col-destCity"></th>
             <th class="col-originArea"></th><th class="col-destArea"></th><th class="col-companion"></th>
@@ -774,9 +1336,10 @@
             <th class="col-time"><input type="time" class="bulk-time-input"></th>
             <th class="col-instructions"><textarea class="materialize-textarea bulk-instr-input" placeholder="${T.bulk_edit_instructions_placeholder}"></textarea></th>
             <th class="col-new"></th><th class="col-leader"></th><th class="col-actions"></th>
-        </tr>` : '';
+        </tr>`
+          : "";
 
-      table.innerHTML = `<thead>
+        table.innerHTML = `<thead>
         <tr class="header-row">
             <th class="col-type">${T.table_header_type}</th><th class="col-lastName">${T.table_header_last_name}</th><th class="col-firstName">${T.table_header_first_name}</th>
             <th class="col-originCity">${T.origin_city}</th><th class="col-destCity">${T.dest_city}</th>
@@ -787,366 +1350,736 @@
         </tr>
         ${bulkEditRow}
         </thead>`;
-      const tbody = document.createElement('tbody');
-      sortedMissionaries.forEach(m =>{
-          const tr = document.createElement('tr'); tr.dataset.id = m.id;
-          let typeCellContent = (m.type === 'Elder' || m.type === 'Sister') ? `<span>${m.type}</span>` : `<select class="type-select-editable browser-default"><option value="" selected disabled>${T.choose_option}</option><option value="Elder">Elder</option><option value="Sister">Sister</option></select>`;
+        const tbody = document.createElement("tbody");
+        sortedMissionaries.forEach((m) => {
+          const tr = document.createElement("tr");
+          tr.dataset.id = m.id;
+          let typeCellContent =
+            m.type === "Elder" || m.type === "Sister"
+              ? `<span>${m.type}</span>`
+              : `<select class="type-select-editable browser-default"><option value="" selected disabled>${T.choose_option}</option><option value="Elder">Elder</option><option value="Sister">Sister</option></select>`;
 
           tr.innerHTML = `
             <td class="col-type">${typeCellContent}</td><td class="col-lastName">${m.lastName}</td><td class="col-firstName">${m.firstName}</td>
             <td class="col-originCity">${m.originCity}</td><td class="col-destCity">${m.destinationCity}</td>
-            <td class="col-originArea">${m.originArea || ''}</td><td class="col-destArea">${m.destinationArea}</td>
-            <td class="col-companion"><span>${m.companion || ''}</span></td>
+            <td class="col-originArea">${m.originArea || ""}</td><td class="col-destArea">${m.destinationArea}</td>
+            <td class="col-companion"><span>${m.companion || ""}</span></td>
             <td class="col-transport"><select class="transport-select browser-default"><option value="Bus">${T.transport_bus}</option><option value="Plane">${T.transport_plane}</option><option value="Chapa">${T.transport_chapa}</option><option value="Txopela/Taxi">${T.transport_taxi}</option><option value="Ride">${T.transport_ride}</option></select></td>
             <td class="col-date"><input type="date" class="date-input" value="${m.date}"></td>
             <td class="col-time"><input type="time" class="time-input" value="${m.time}"></td>
-            <td class="col-instructions"><textarea class="instr-input materialize-textarea">${m.instructions || ''}</textarea></td>
-            <td class="col-new" style="text-align:center;">${m.isNew ? '<i class="material-icons green-text">check_box</i>' : ''}</td>
-            <td class="col-leader"><label><input type="checkbox" class="leader-checkbox" ${m.leader ? 'checked':''}><span></span></label></td>
+            <td class="col-instructions"><textarea class="instr-input materialize-textarea">${m.instructions || ""}</textarea></td>
+            <td class="col-new" style="text-align:center;">${m.isNew ? '<i class="material-icons green-text">check_box</i>' : ""}</td>
+            <td class="col-leader"><label><input type="checkbox" class="leader-checkbox" ${m.leader ? "checked" : ""}><span></span></label></td>
             <td class="col-actions"><div class="action-buttons"><a class="btn-small blue edit-btn"><i class="fa fa-pencil"></i></a><a class="btn-small red remove-btn"><i class="fa fa-trash"></i></a></div></td>`;
           tbody.appendChild(tr);
 
-          const instrTextarea = tr.querySelector('.instr-input');
-          instrTextarea.addEventListener('input', () => autoResizeTextarea(instrTextarea)); setTimeout(() => autoResizeTextarea(instrTextarea), 0);
-          tr.querySelector('.transport-select').value = m.transport;
-          
-          tr.querySelectorAll('input, select, textarea').forEach(el => {
-              el.addEventListener('change', (e) => {
-                  const trElement = e.target.closest('tr'); const missionaryId = trElement.dataset.id;
-                  const { missionary } = findMissionary(missionaryId);
-                  if (missionary) {
-                      missionary.transport = trElement.querySelector('.transport-select').value; missionary.date = trElement.querySelector('.date-input').value; missionary.time = trElement.querySelector('.time-input').value; missionary.instructions = trElement.querySelector('.instr-input').value; missionary.leader = trElement.querySelector('.leader-checkbox').checked; 
-                      if (el.classList.contains('type-select-editable')) { missionary.type = el.value; }
-                      saveToLS();
-                      if (el.classList.contains('type-select-editable')) renderAllViews();
-                  }
-              });
-          });
-          tr.querySelector('.remove-btn').addEventListener('click', (e)=>{ 
-            if(confirm(T.confirm_remove_missionary)){
-                const missionaryId = e.currentTarget.closest('tr').dataset.id;
-                const { groupKey } = findMissionary(missionaryId);
-                if (groupKey) {
-                    const indexToRemove = state.groups[groupKey].findIndex(miss => miss.id === missionaryId);
-                    if(indexToRemove > -1) { state.groups[groupKey].splice(indexToRemove, 1); if(state.groups[groupKey].length===0) delete state.groups[groupKey]; }
+          const instrTextarea = tr.querySelector(".instr-input");
+          instrTextarea.addEventListener("input", () =>
+            autoResizeTextarea(instrTextarea),
+          );
+          setTimeout(() => autoResizeTextarea(instrTextarea), 0);
+          tr.querySelector(".transport-select").value = m.transport;
+
+          tr.querySelectorAll("input, select, textarea").forEach((el) => {
+            el.addEventListener("change", (e) => {
+              const trElement = e.target.closest("tr");
+              const missionaryId = trElement.dataset.id;
+              const { missionary } = findMissionary(missionaryId);
+              if (missionary) {
+                missionary.transport =
+                  trElement.querySelector(".transport-select").value;
+                missionary.date = trElement.querySelector(".date-input").value;
+                missionary.time = trElement.querySelector(".time-input").value;
+                missionary.instructions =
+                  trElement.querySelector(".instr-input").value;
+                missionary.leader =
+                  trElement.querySelector(".leader-checkbox").checked;
+                if (el.classList.contains("type-select-editable")) {
+                  missionary.type = el.value;
                 }
-                saveToLS(); renderAllViews();
+                saveToLS();
+                if (el.classList.contains("type-select-editable"))
+                  renderAllViews();
+              }
+            });
+          });
+          tr.querySelector(".remove-btn").addEventListener("click", (e) => {
+            if (confirm(T.confirm_remove_missionary)) {
+              const missionaryId = e.currentTarget.closest("tr").dataset.id;
+              const { groupKey } = findMissionary(missionaryId);
+              if (groupKey) {
+                const indexToRemove = state.groups[groupKey].findIndex(
+                  (miss) => miss.id === missionaryId,
+                );
+                if (indexToRemove > -1) {
+                  state.groups[groupKey].splice(indexToRemove, 1);
+                  if (state.groups[groupKey].length === 0)
+                    delete state.groups[groupKey];
+                }
+              }
+              saveToLS();
+              renderAllViews();
             }
           });
-          tr.querySelector('.edit-btn').addEventListener('click', (e) => openEditModal(e.currentTarget.closest('tr').dataset.id));
+          tr.querySelector(".edit-btn").addEventListener("click", (e) =>
+            openEditModal(e.currentTarget.closest("tr").dataset.id),
+          );
         });
-      table.appendChild(tbody);
-      if(allowBulkEdit && groupKey) {
-        const bulkUpdate = (field, value) => {
-            if(!value && field !== 'instructions') return;
+        table.appendChild(tbody);
+        if (allowBulkEdit && groupKey) {
+          const bulkUpdate = (field, value) => {
+            if (!value && field !== "instructions") return;
             let missionariesToUpdate = [];
-            if (groupType === 'city') {
-                missionariesToUpdate = state.groups[groupKey] || [];
-            } else if (groupType === 'transport') {
-                missionariesToUpdate = Object.values(state.groups).flat().filter(m => (m.transport || 'Unassigned') === groupKey);
+            if (groupType === "city") {
+              missionariesToUpdate = state.groups[groupKey] || [];
+            } else if (groupType === "transport") {
+              missionariesToUpdate = Object.values(state.groups)
+                .flat()
+                .filter((m) => (m.transport || "Unassigned") === groupKey);
             }
-            missionariesToUpdate.forEach(m => { m[field] = value; });
+            missionariesToUpdate.forEach((m) => {
+              m[field] = value;
+            });
             saveToLS();
             renderAllViews();
-            M.toast({html: T.toast_updated.replace('{field}', field)});
-        };
-        const bulkInstr = table.querySelector('.bulk-instr-input');
-        if(bulkInstr) { bulkInstr.addEventListener('input', () => autoResizeTextarea(bulkInstr)); bulkInstr.addEventListener('change', (e) => bulkUpdate('instructions', e.target.value)); }
-        table.querySelector('.bulk-transport-select').addEventListener('change', (e) => bulkUpdate('transport', e.target.value));
-        table.querySelector('.bulk-date-input').addEventListener('change', (e) => bulkUpdate('date', e.target.value));
-        table.querySelector('.bulk-time-input').addEventListener('change', (e) => bulkUpdate('time', e.target.value));
+            M.toast({ html: T.toast_updated.replace("{field}", field) });
+          };
+          const bulkInstr = table.querySelector(".bulk-instr-input");
+          if (bulkInstr) {
+            bulkInstr.addEventListener("input", () =>
+              autoResizeTextarea(bulkInstr),
+            );
+            bulkInstr.addEventListener("change", (e) =>
+              bulkUpdate("instructions", e.target.value),
+            );
+          }
+          table
+            .querySelector(".bulk-transport-select")
+            .addEventListener("change", (e) =>
+              bulkUpdate("transport", e.target.value),
+            );
+          table
+            .querySelector(".bulk-date-input")
+            .addEventListener("change", (e) =>
+              bulkUpdate("date", e.target.value),
+            );
+          table
+            .querySelector(".bulk-time-input")
+            .addEventListener("change", (e) =>
+              bulkUpdate("time", e.target.value),
+            );
+        }
+        return table;
       }
-      return table;
-    }
-    
-    function populateCityDropdowns() {
-        const cities = new Set(Object.values(state.groups || {}).flat().flatMap(m => [m.originCity, m.destinationCity]));
-        const sortedCities = Array.from(cities).sort(); const lang = state.lang || 'pt';
-        const selects = document.querySelectorAll('#add-origin-select, #add-dest-select, #edit-origin-select, #edit-dest-select');
-        selects.forEach(select => {
-            select.innerHTML = `<option value="" disabled selected>${translations[lang].choose_option}</option>${sortedCities.map(c=>`<option value="${c}">${c}</option>`).join('')}<option value="other">${translations[lang].other_option}</option>`;
+
+      function populateCityDropdowns() {
+        const cities = new Set(
+          Object.values(state.groups || {})
+            .flat()
+            .flatMap((m) => [m.originCity, m.destinationCity]),
+        );
+        const sortedCities = Array.from(cities).sort();
+        const lang = state.lang || "pt";
+        const selects = document.querySelectorAll(
+          "#add-origin-select, #add-dest-select, #edit-origin-select, #edit-dest-select",
+        );
+        selects.forEach((select) => {
+          select.innerHTML = `<option value="" disabled selected>${translations[lang].choose_option}</option>${sortedCities.map((c) => `<option value="${c}">${c}</option>`).join("")}<option value="other">${translations[lang].other_option}</option>`;
         });
-    }
+      }
 
-    function openEditModal(missionaryId) {
-        const { missionary } = findMissionary(missionaryId); if (!missionary) return;
-        document.getElementById('edit-id').value = missionary.id;
-        document.getElementById('edit-name').value = missionary.name; document.getElementById('edit-type').value = missionary.type;
+      function openEditModal(missionaryId) {
+        const { missionary } = findMissionary(missionaryId);
+        if (!missionary) return;
+        document.getElementById("edit-id").value = missionary.id;
+        document.getElementById("edit-name").value = missionary.name;
+        document.getElementById("edit-type").value = missionary.type;
         const setupSelect = (type, city) => {
-            const select = document.getElementById(`edit-${type}-select`), other = document.getElementById(`edit-${type}-other`);
-            if (Array.from(select.options).some(o => o.value === city)) { select.value = city; other.style.display = 'none'; } 
-            else { select.value = 'other'; other.value = city; other.style.display = 'block'; }
+          const select = document.getElementById(`edit-${type}-select`),
+            other = document.getElementById(`edit-${type}-other`);
+          if (Array.from(select.options).some((o) => o.value === city)) {
+            select.value = city;
+            other.style.display = "none";
+          } else {
+            select.value = "other";
+            other.value = city;
+            other.style.display = "block";
+          }
         };
-        setupSelect('origin', missionary.originCity); setupSelect('dest', missionary.destinationCity);
-        document.getElementById('edit-originarea').value = missionary.originArea || ''; document.getElementById('edit-destarea').value = missionary.destinationArea; document.getElementById('edit-transport').value = missionary.transport; document.getElementById('edit-companion').value = missionary.companion;
-        document.getElementById('edit-date').value = missionary.date; document.getElementById('edit-time').value = missionary.time; document.getElementById('edit-instructions').value = missionary.instructions; document.getElementById('edit-leader').checked = missionary.leader;
-        M.Modal.getInstance(document.getElementById('modal-edit')).open();
-    }
-    
-    // -- Column Visibility & Reordering
-    const ALL_COLUMNS = [
-        { key: 'type', labelKey: 'table_header_type' }, { key: 'lastName', labelKey: 'table_header_last_name' }, { key: 'firstName', labelKey: 'table_header_first_name' },
-        { key: 'originCity', labelKey: 'origin_city' }, { key: 'destCity', labelKey: 'dest_city' }, { key: 'originArea', labelKey: 'table_header_origin_area' },
-        { key: 'destArea', labelKey: 'table_header_dest_area' }, { key: 'companion', labelKey: 'table_header_companion' }, { key: 'transport', labelKey: 'table_header_transport' },
-        { key: 'date', labelKey: 'table_header_date' }, { key: 'time', labelKey: 'table_header_time' }, { key: 'instructions', labelKey: 'table_header_instructions' },
-        { key: 'new', labelKey: 'table_header_new' }, { key: 'leader', labelKey: 'table_header_leader' }
-    ];
+        setupSelect("origin", missionary.originCity);
+        setupSelect("dest", missionary.destinationCity);
+        document.getElementById("edit-originarea").value =
+          missionary.originArea || "";
+        document.getElementById("edit-destarea").value =
+          missionary.destinationArea;
+        document.getElementById("edit-transport").value = missionary.transport;
+        document.getElementById("edit-companion").value = missionary.companion;
+        document.getElementById("edit-date").value = missionary.date;
+        document.getElementById("edit-time").value = missionary.time;
+        document.getElementById("edit-instructions").value =
+          missionary.instructions;
+        document.getElementById("edit-leader").checked = missionary.leader;
+        M.Modal.getInstance(document.getElementById("modal-edit")).open();
+      }
 
-    function setupColumnManager() {
+      // -- Column Visibility & Reordering
+      const ALL_COLUMNS = [
+        { key: "type", labelKey: "table_header_type" },
+        { key: "lastName", labelKey: "table_header_last_name" },
+        { key: "firstName", labelKey: "table_header_first_name" },
+        { key: "originCity", labelKey: "origin_city" },
+        { key: "destCity", labelKey: "dest_city" },
+        { key: "originArea", labelKey: "table_header_origin_area" },
+        { key: "destArea", labelKey: "table_header_dest_area" },
+        { key: "companion", labelKey: "table_header_companion" },
+        { key: "transport", labelKey: "table_header_transport" },
+        { key: "date", labelKey: "table_header_date" },
+        { key: "time", labelKey: "table_header_time" },
+        { key: "instructions", labelKey: "table_header_instructions" },
+        { key: "new", labelKey: "table_header_new" },
+        { key: "leader", labelKey: "table_header_leader" },
+      ];
+
+      function setupColumnManager() {
         const view = getActiveView();
         if (!state.columnSettings[view]) {
-            state.columnSettings[view] = [...defaults.columnSettings[view]];
+          state.columnSettings[view] = [...defaults.columnSettings[view]];
         }
-        const visibleContainer = document.getElementById('visible-cols-container');
-        const hiddenContainer = document.getElementById('hidden-cols-container');
-        visibleContainer.innerHTML = ''; hiddenContainer.innerHTML = '';
-        const lang = state.lang || 'pt';
+        const visibleContainer = document.getElementById(
+          "visible-cols-container",
+        );
+        const hiddenContainer = document.getElementById(
+          "hidden-cols-container",
+        );
+        visibleContainer.innerHTML = "";
+        hiddenContainer.innerHTML = "";
+        const lang = state.lang || "pt";
         const visibleKeys = new Set(state.columnSettings[view]);
 
-        state.columnSettings[view].forEach(key => {
-            const col = ALL_COLUMNS.find(c => c.key === key);
-            if(col) visibleContainer.appendChild(createColumnChip(col, true, lang));
+        state.columnSettings[view].forEach((key) => {
+          const col = ALL_COLUMNS.find((c) => c.key === key);
+          if (col)
+            visibleContainer.appendChild(createColumnChip(col, true, lang));
         });
 
-        ALL_COLUMNS.forEach(col => {
-            if (!visibleKeys.has(col.key)) {
-                hiddenContainer.appendChild(createColumnChip(col, false, lang));
-            }
+        ALL_COLUMNS.forEach((col) => {
+          if (!visibleKeys.has(col.key)) {
+            hiddenContainer.appendChild(createColumnChip(col, false, lang));
+          }
         });
-        
-        const sortableOptions = { group: 'columns', animation: 150, onEnd: updateColumnState };
+
+        const sortableOptions = {
+          group: "columns",
+          animation: 150,
+          onEnd: updateColumnState,
+        };
         new Sortable(visibleContainer, sortableOptions);
         new Sortable(hiddenContainer, sortableOptions);
         applyColumnOrderAndVisibility();
-    }
-    
-    function createColumnChip(col, isVisible, lang) {
-        const chip = document.createElement('div');
-        chip.className = 'col-chip';
-        chip.dataset.key = col.key;
-        chip.innerHTML = `${translations[lang][col.labelKey]} <i class="material-icons visibility-toggle">${isVisible ? 'visibility' : 'visibility_off'}</i>`;
-        return chip;
-    }
+      }
 
-    document.getElementById('column-manager-wrapper').addEventListener('click', e => {
-        if (e.target.classList.contains('visibility-toggle')) {
-            const chip = e.target.closest('.col-chip');
-            const targetContainer = chip.parentElement.id === 'visible-cols-container' ? document.getElementById('hidden-cols-container') : document.getElementById('visible-cols-container');
+      function createColumnChip(col, isVisible, lang) {
+        const chip = document.createElement("div");
+        chip.className = "col-chip";
+        chip.dataset.key = col.key;
+        chip.innerHTML = `${translations[lang][col.labelKey]} <i class="material-icons visibility-toggle">${isVisible ? "visibility" : "visibility_off"}</i>`;
+        return chip;
+      }
+
+      document
+        .getElementById("column-manager-wrapper")
+        .addEventListener("click", (e) => {
+          if (e.target.classList.contains("visibility-toggle")) {
+            const chip = e.target.closest(".col-chip");
+            const targetContainer =
+              chip.parentElement.id === "visible-cols-container"
+                ? document.getElementById("hidden-cols-container")
+                : document.getElementById("visible-cols-container");
             targetContainer.appendChild(chip);
             updateColumnState();
-        }
-    });
+          }
+        });
 
-    function updateColumnState() {
+      function updateColumnState() {
         const view = getActiveView();
-        const visibleContainer = document.getElementById('visible-cols-container');
-        state.columnSettings[view] = [...visibleContainer.children].map(chip => chip.dataset.key);
+        const visibleContainer = document.getElementById(
+          "visible-cols-container",
+        );
+        state.columnSettings[view] = [...visibleContainer.children].map(
+          (chip) => chip.dataset.key,
+        );
         saveToLS();
         applyColumnOrderAndVisibility();
         setupColumnManager();
-    }
-    
-    function applyColumnOrderAndVisibility() {
+      }
+
+      function applyColumnOrderAndVisibility() {
         const view = getActiveView();
         const visibleColumns = state.columnSettings[view] || [];
-        ALL_COLUMNS.forEach(col => document.body.classList.toggle(`show-${col.key}`, visibleColumns.includes(col.key)));
-        document.querySelectorAll('.table-col-toggle').forEach(table => {
-            table.querySelectorAll('thead tr, tbody tr').forEach(row => {
-                const cells = new Map([...row.children].map(cell => {
-                    const key = [...cell.classList].find(c => c.startsWith('col-')).replace('col-', '');
-                    return [key, cell];
-                }));
-                visibleColumns.forEach(key => {
-                    if (cells.has(key)) row.appendChild(cells.get(key));
-                });
-                if(cells.has('actions')) row.appendChild(cells.get('actions'));
+        ALL_COLUMNS.forEach((col) =>
+          document.body.classList.toggle(
+            `show-${col.key}`,
+            visibleColumns.includes(col.key),
+          ),
+        );
+        document.querySelectorAll(".table-col-toggle").forEach((table) => {
+          table.querySelectorAll("thead tr, tbody tr").forEach((row) => {
+            const cells = new Map(
+              [...row.children].map((cell) => {
+                const key = [...cell.classList]
+                  .find((c) => c.startsWith("col-"))
+                  .replace("col-", "");
+                return [key, cell];
+              }),
+            );
+            visibleColumns.forEach((key) => {
+              if (cells.has(key)) row.appendChild(cells.get(key));
             });
+            if (cells.has("actions")) row.appendChild(cells.get("actions"));
+          });
         });
-    }
+      }
 
-    // -- Event Listeners
-    ['add', 'edit'].forEach(prefix => {
-        document.getElementById(`${prefix}-origin-select`).addEventListener('change', (e) => { document.getElementById(`${prefix}-origin-other`).style.display = e.target.value === 'other' ? 'block' : 'none'; });
-        document.getElementById(`${prefix}-dest-select`).addEventListener('change', (e) => { document.getElementById(`${prefix}-dest-other`).style.display = e.target.value === 'other' ? 'block' : 'none'; });
-    });
+      // -- Event Listeners
+      ["add", "edit"].forEach((prefix) => {
+        document
+          .getElementById(`${prefix}-origin-select`)
+          .addEventListener("change", (e) => {
+            document.getElementById(`${prefix}-origin-other`).style.display =
+              e.target.value === "other" ? "block" : "none";
+          });
+        document
+          .getElementById(`${prefix}-dest-select`)
+          .addEventListener("change", (e) => {
+            document.getElementById(`${prefix}-dest-other`).style.display =
+              e.target.value === "other" ? "block" : "none";
+          });
+      });
 
-    document.getElementById('btn-add-save').addEventListener('click', ()=>{
-      const originCity = document.getElementById('add-origin-select').value === 'other' ? document.getElementById('add-origin-other').value : document.getElementById('add-origin-select').value;
-      const destCity = document.getElementById('add-dest-select').value === 'other' ? document.getElementById('add-dest-other').value : document.getElementById('add-dest-select').value;
-      const nameVal = document.getElementById('add-name').value.trim();
-      const nameParts = nameVal.split(',').map(p => p.trim());
-      const m = {
-        id: nameVal.toLowerCase(), name: nameVal, lastName: nameParts[0]||'', firstName: nameParts[1]||'', type: document.getElementById('add-type').value, 
-        originCity: normalizeZoneName(originCity), destinationCity: normalizeZoneName(destCity),
-        originArea: document.getElementById('add-originarea').value, destinationArea: document.getElementById('add-destarea').value, 
-        transport: document.getElementById('add-transport').value, companion: document.getElementById('add-companion').value,
-        date: document.getElementById('add-date').value, time: document.getElementById('add-time').value, 
-        instructions: document.getElementById('add-instructions').value, leader: document.getElementById('add-leader').checked, isNew: document.getElementById('add-new').checked
-      };
-      const key = `${m.originCity} -> ${m.destinationCity}`; if(!state.groups[key]) state.groups[key]=[]; state.groups[key].push(m);
-      saveToLS(); M.toast({html: translations[state.lang].toast_added}); location.reload();
-    });
-    
-    document.getElementById('btn-edit-save').addEventListener('click', () => {
-        const id = document.getElementById('edit-id').value;
+      document.getElementById("btn-add-save").addEventListener("click", () => {
+        const originCity =
+          document.getElementById("add-origin-select").value === "other"
+            ? document.getElementById("add-origin-other").value
+            : document.getElementById("add-origin-select").value;
+        const destCity =
+          document.getElementById("add-dest-select").value === "other"
+            ? document.getElementById("add-dest-other").value
+            : document.getElementById("add-dest-select").value;
+        const nameVal = document.getElementById("add-name").value.trim();
+        const nameParts = nameVal.split(",").map((p) => p.trim());
+        const m = {
+          id: nameVal.toLowerCase(),
+          name: nameVal,
+          lastName: nameParts[0] || "",
+          firstName: nameParts[1] || "",
+          type: document.getElementById("add-type").value,
+          originCity: normalizeZoneName(originCity),
+          destinationCity: normalizeZoneName(destCity),
+          originArea: document.getElementById("add-originarea").value,
+          destinationArea: document.getElementById("add-destarea").value,
+          transport: document.getElementById("add-transport").value,
+          companion: document.getElementById("add-companion").value,
+          date: document.getElementById("add-date").value,
+          time: document.getElementById("add-time").value,
+          instructions: document.getElementById("add-instructions").value,
+          leader: document.getElementById("add-leader").checked,
+          isNew: document.getElementById("add-new").checked,
+        };
+        const key = `${m.originCity} -> ${m.destinationCity}`;
+        if (!state.groups[key]) state.groups[key] = [];
+        state.groups[key].push(m);
+        saveToLS();
+        M.toast({ html: translations[state.lang].toast_added });
+        location.reload();
+      });
+
+      document.getElementById("btn-edit-save").addEventListener("click", () => {
+        const id = document.getElementById("edit-id").value;
         const { missionary, groupKey } = findMissionary(id);
         if (!missionary) return;
-        const originCity = document.getElementById('edit-origin-select').value === 'other' ? document.getElementById('edit-origin-other').value : document.getElementById('edit-origin-select').value;
-        const destCity = document.getElementById('edit-dest-select').value === 'other' ? document.getElementById('edit-dest-other').value : document.getElementById('edit-dest-select').value;
-        const nameVal = document.getElementById('edit-name').value.trim();
-        const nameParts = nameVal.split(',').map(p => p.trim());
+        const originCity =
+          document.getElementById("edit-origin-select").value === "other"
+            ? document.getElementById("edit-origin-other").value
+            : document.getElementById("edit-origin-select").value;
+        const destCity =
+          document.getElementById("edit-dest-select").value === "other"
+            ? document.getElementById("edit-dest-other").value
+            : document.getElementById("edit-dest-select").value;
+        const nameVal = document.getElementById("edit-name").value.trim();
+        const nameParts = nameVal.split(",").map((p) => p.trim());
 
         Object.assign(missionary, {
-            id: nameVal.toLowerCase(), name: nameVal, lastName: nameParts[0]||'', firstName: nameParts[1]||'', type: document.getElementById('edit-type').value, 
-            originCity: normalizeZoneName(originCity), destinationCity: normalizeZoneName(destCity),
-            originArea: document.getElementById('edit-originarea').value, destinationArea: document.getElementById('edit-destarea').value, 
-            transport: document.getElementById('edit-transport').value, companion: document.getElementById('edit-companion').value,
-            date: document.getElementById('edit-date').value, time: document.getElementById('edit-time').value, 
-            instructions: document.getElementById('edit-instructions').value, leader: document.getElementById('edit-leader').checked
+          id: nameVal.toLowerCase(),
+          name: nameVal,
+          lastName: nameParts[0] || "",
+          firstName: nameParts[1] || "",
+          type: document.getElementById("edit-type").value,
+          originCity: normalizeZoneName(originCity),
+          destinationCity: normalizeZoneName(destCity),
+          originArea: document.getElementById("edit-originarea").value,
+          destinationArea: document.getElementById("edit-destarea").value,
+          transport: document.getElementById("edit-transport").value,
+          companion: document.getElementById("edit-companion").value,
+          date: document.getElementById("edit-date").value,
+          time: document.getElementById("edit-time").value,
+          instructions: document.getElementById("edit-instructions").value,
+          leader: document.getElementById("edit-leader").checked,
         });
-        
+
         const newGroupKey = `${missionary.originCity} -> ${missionary.destinationCity}`;
         if (newGroupKey !== groupKey) {
-            const index = state.groups[groupKey].findIndex(m => m.id === id);
-            state.groups[groupKey].splice(index, 1);
-            if (state.groups[groupKey].length === 0) delete state.groups[groupKey];
-            if (!state.groups[newGroupKey]) state.groups[newGroupKey] = [];
-            state.groups[newGroupKey].push(missionary);
+          const index = state.groups[groupKey].findIndex((m) => m.id === id);
+          state.groups[groupKey].splice(index, 1);
+          if (state.groups[groupKey].length === 0)
+            delete state.groups[groupKey];
+          if (!state.groups[newGroupKey]) state.groups[newGroupKey] = [];
+          state.groups[newGroupKey].push(missionary);
         }
-        saveToLS(); location.reload();
-    });
-    
-    document.getElementById('btn-save-exception').addEventListener('click', () => {
-      const name = document.getElementById('ex-add-name').value.trim(), city = document.getElementById('ex-add-city').value.trim();
-      if (name && city) { if (!state.exceptions) state.exceptions = {}; state.exceptions[name] = { city }; saveToLS(); renderExceptions(); document.getElementById('ex-add-name').value = ''; document.getElementById('ex-add-city').value = ''; M.updateTextFields(); }
-    });
-
-    document.getElementById('btn-reset-cols').addEventListener('click', () => {
-        const view = getActiveView();
-        state.columnSettings[view] = [...defaults.columnSettings[view]];
         saveToLS();
-        setupColumnManager();
-        applyColumnOrderAndVisibility();
-        M.toast({html: translations[state.lang].toast_columns_reset});
-    });
+        location.reload();
+      });
 
-    function renderExceptions(){ const el = document.getElementById('exceptions-list'); el.innerHTML=''; Object.keys(state.exceptions||{}).forEach(k => { const row = document.createElement('div'); row.className='row'; row.innerHTML = `<div class="col s4">${k}</div><div class="col s4">${state.exceptions[k].city || ''}</div><div class="col s4"><a data-key="${k}" class="btn-small red btn-ex-remove">Remove</a></div>`; el.appendChild(row); row.querySelector('.btn-ex-remove').addEventListener('click', (e)=>{ delete state.exceptions[e.currentTarget.dataset.key]; saveToLS(); renderExceptions(); }); }); }
-    
-    document.getElementById('btn-clear-local').addEventListener('click', ()=>{ if(confirm(translations[state.lang].confirm_clear_local)){ localStorage.removeItem(LS_KEY); location.reload(); } });
-    document.querySelectorAll('.lang-select').forEach(sel => { sel.addEventListener('change', (e)=>{ state.lang = e.target.value; saveToLS(); location.reload(); }); });
-    
-    // -- Export and Update Functions
-    document.getElementById('btn-export-pdf').addEventListener('click', () => {
-        const { jsPDF } = window.jspdf; const doc = new jsPDF({ orientation: 'l', unit: 'mm', format: 'a4' });
-        const lang = state.lang || 'pt'; const T = translations[lang];
-        M.toast({ html: T.toast_pdf_generating });
-        
-        const view = getActiveView();
-        const visibleCols = state.columnSettings[view];
-        const allHeaders = { type: T.table_header_type, lastName: T.table_header_last_name, firstName: T.table_header_first_name, originCity: T.origin_city, destCity: T.dest_city, originArea: T.table_header_origin_area, destArea: T.table_header_dest_area, companion: T.table_header_companion, transport: T.table_header_transport, date: T.table_header_date, time: T.table_header_time, instructions: T.table_header_instructions, new: T.table_header_new, leader: T.table_header_leader };
-        const head = [visibleCols.map(key => allHeaders[key])];
-        
-        const getRowData = m => visibleCols.map(key => {
-            switch(key) {
-                case 'transport': return m.transport ? (T[`transport_${m.transport.toLowerCase().replace('/','_')}`] || m.transport) : '';
-                case 'new': return m.isNew ? '☑' : '☐';
-                case 'leader': return m.leader ? '☑' : '☐';
-                default: return m[key] || '';
-            }
+      document
+        .getElementById("btn-save-exception")
+        .addEventListener("click", () => {
+          const name = document.getElementById("ex-add-name").value.trim(),
+            city = document.getElementById("ex-add-city").value.trim();
+          if (name && city) {
+            if (!state.exceptions) state.exceptions = {};
+            state.exceptions[name] = { city };
+            saveToLS();
+            renderExceptions();
+            document.getElementById("ex-add-name").value = "";
+            document.getElementById("ex-add-city").value = "";
+            M.updateTextFields();
+          }
         });
 
-        let finalY = 15;
-        const autoTableOptions = {
-            head, startY: finalY, theme: 'striped', headStyles: { fillColor: [0, 150, 136] },
-             didDrawCell: (data) => {
-                if ((data.column.dataKey === visibleCols.indexOf('new') || data.column.dataKey === visibleCols.indexOf('leader')) && data.section === 'body') {
-                    const text = data.cell.text[0];
-                    if (text === '☑' || text === '☐') {
-                        doc.setFontSize(12);
-                        doc.text(text, data.cell.x + data.cell.width / 2, data.cell.y + data.cell.height / 2, { align: 'center', baseline: 'middle' });
-                        data.cell.text = ['']; // Clear the original text
-                    }
+      document
+        .getElementById("btn-reset-cols")
+        .addEventListener("click", () => {
+          const view = getActiveView();
+          state.columnSettings[view] = [...defaults.columnSettings[view]];
+          saveToLS();
+          setupColumnManager();
+          applyColumnOrderAndVisibility();
+          M.toast({ html: translations[state.lang].toast_columns_reset });
+        });
+
+      function renderExceptions() {
+        const el = document.getElementById("exceptions-list");
+        el.innerHTML = "";
+        Object.keys(state.exceptions || {}).forEach((k) => {
+          const row = document.createElement("div");
+          row.className = "row";
+          row.innerHTML = `<div class="col s4">${k}</div><div class="col s4">${state.exceptions[k].city || ""}</div><div class="col s4"><a data-key="${k}" class="btn-small red btn-ex-remove">Remove</a></div>`;
+          el.appendChild(row);
+          row.querySelector(".btn-ex-remove").addEventListener("click", (e) => {
+            delete state.exceptions[e.currentTarget.dataset.key];
+            saveToLS();
+            renderExceptions();
+          });
+        });
+      }
+
+      document
+        .getElementById("btn-clear-local")
+        .addEventListener("click", () => {
+          if (confirm(translations[state.lang].confirm_clear_local)) {
+            localStorage.removeItem(LS_KEY);
+            location.reload();
+          }
+        });
+      document.querySelectorAll(".lang-select").forEach((sel) => {
+        sel.addEventListener("change", (e) => {
+          state.lang = e.target.value;
+          saveToLS();
+          location.reload();
+        });
+      });
+
+      // -- Export and Update Functions
+      document
+        .getElementById("btn-export-pdf")
+        .addEventListener("click", () => {
+          const { jsPDF } = window.jspdf;
+          const doc = new jsPDF({ orientation: "l", unit: "mm", format: "a4" });
+          const lang = state.lang || "pt";
+          const T = translations[lang];
+          M.toast({ html: T.toast_pdf_generating });
+
+          const view = getActiveView();
+          const visibleCols = state.columnSettings[view];
+          const allHeaders = {
+            type: T.table_header_type,
+            lastName: T.table_header_last_name,
+            firstName: T.table_header_first_name,
+            originCity: T.origin_city,
+            destCity: T.dest_city,
+            originArea: T.table_header_origin_area,
+            destArea: T.table_header_dest_area,
+            companion: T.table_header_companion,
+            transport: T.table_header_transport,
+            date: T.table_header_date,
+            time: T.table_header_time,
+            instructions: T.table_header_instructions,
+            new: T.table_header_new,
+            leader: T.table_header_leader,
+          };
+          const head = [visibleCols.map((key) => allHeaders[key])];
+
+          const getRowData = (m) =>
+            visibleCols.map((key) => {
+              switch (key) {
+                case "transport":
+                  return m.transport
+                    ? T[
+                        `transport_${m.transport.toLowerCase().replace("/", "_")}`
+                      ] || m.transport
+                    : "";
+                case "new":
+                  return m.isNew ? "☑" : "☐";
+                case "leader":
+                  return m.leader ? "☑" : "☐";
+                default:
+                  return m[key] || "";
+              }
+            });
+
+          let finalY = 15;
+          const autoTableOptions = {
+            head,
+            startY: finalY,
+            theme: "striped",
+            headStyles: { fillColor: [0, 150, 136] },
+            didDrawCell: (data) => {
+              if (
+                (data.column.dataKey === visibleCols.indexOf("new") ||
+                  data.column.dataKey === visibleCols.indexOf("leader")) &&
+                data.section === "body"
+              ) {
+                const text = data.cell.text[0];
+                if (text === "☑" || text === "☐") {
+                  doc.setFontSize(12);
+                  doc.text(
+                    text,
+                    data.cell.x + data.cell.width / 2,
+                    data.cell.y + data.cell.height / 2,
+                    { align: "center", baseline: "middle" },
+                  );
+                  data.cell.text = [""]; // Clear the original text
                 }
-            }
-        };
+              }
+            },
+          };
 
-        if (view === 'city') {
-            Object.keys(state.groups).sort().forEach(groupKey => {
-                if(finalY > 180) { doc.addPage(); finalY = 15; }
-                doc.setFontSize(14); doc.text(groupKey, 14, finalY); finalY += 7;
-                autoTableOptions.body = state.groups[groupKey].sort((a,b) => a.isNew - b.isNew).map(getRowData);
+          if (view === "city") {
+            Object.keys(state.groups)
+              .sort()
+              .forEach((groupKey) => {
+                if (finalY > 180) {
+                  doc.addPage();
+                  finalY = 15;
+                }
+                doc.setFontSize(14);
+                doc.text(groupKey, 14, finalY);
+                finalY += 7;
+                autoTableOptions.body = state.groups[groupKey]
+                  .sort((a, b) => a.isNew - b.isNew)
+                  .map(getRowData);
                 autoTableOptions.startY = finalY;
                 doc.autoTable(autoTableOptions);
                 finalY = doc.previousAutoTable.finalY + 10;
-            });
-        } else {
+              });
+          } else {
             let groupsToPrint = {};
-            if (view === 'transport') {
-                const byTransport = {};
-                Object.values(state.groups).flat().forEach(m => { const t = m.transport || 'Unassigned'; if (!byTransport[t]) byTransport[t] = []; byTransport[t].push(m); });
-                groupsToPrint = byTransport;
-            } else { // Master List
-                const all = Object.values(state.groups).flat().sort((a,b) => (a.isNew - b.isNew) || a.lastName.localeCompare(b.lastName) || a.firstName.localeCompare(b.firstName));
-                groupsToPrint = { [T.tab_master]: all };
+            if (view === "transport") {
+              const byTransport = {};
+              Object.values(state.groups)
+                .flat()
+                .forEach((m) => {
+                  const t = m.transport || "Unassigned";
+                  if (!byTransport[t]) byTransport[t] = [];
+                  byTransport[t].push(m);
+                });
+              groupsToPrint = byTransport;
+            } else {
+              // Master List
+              const all = Object.values(state.groups)
+                .flat()
+                .sort(
+                  (a, b) =>
+                    a.isNew - b.isNew ||
+                    a.lastName.localeCompare(b.lastName) ||
+                    a.firstName.localeCompare(b.firstName),
+                );
+              groupsToPrint = { [T.tab_master]: all };
             }
-            Object.keys(groupsToPrint).sort().forEach(groupKey => {
-                if(finalY > 180 && view !== 'master') { doc.addPage(); finalY = 15; }
-                const groupTitle = T[`transport_${groupKey.toLowerCase().replace('/','_')}`] || groupKey;
-                doc.setFontSize(14); doc.text(groupTitle, 14, finalY); finalY += 7;
-                autoTableOptions.body = groupsToPrint[groupKey].sort((a,b) => a.isNew - b.isNew).map(getRowData);
+            Object.keys(groupsToPrint)
+              .sort()
+              .forEach((groupKey) => {
+                if (finalY > 180 && view !== "master") {
+                  doc.addPage();
+                  finalY = 15;
+                }
+                const groupTitle =
+                  T[`transport_${groupKey.toLowerCase().replace("/", "_")}`] ||
+                  groupKey;
+                doc.setFontSize(14);
+                doc.text(groupTitle, 14, finalY);
+                finalY += 7;
+                autoTableOptions.body = groupsToPrint[groupKey]
+                  .sort((a, b) => a.isNew - b.isNew)
+                  .map(getRowData);
                 autoTableOptions.startY = finalY;
                 doc.autoTable(autoTableOptions);
                 finalY = doc.previousAutoTable.finalY + 10;
-            });
-        }
-        
-        doc.save('transfer_logistics.pdf'); M.toast({ html: T.toast_pdf_generated });
-    });
+              });
+          }
 
-
-    document.getElementById('btn-export-csv').addEventListener('click', () => {
-        const lang = state.lang || 'pt'; const T = translations[lang]; const delimiter = ';';
-        const headers = [T.table_header_last_name, T.table_header_first_name, T.table_header_type, T.origin_city, T.dest_city, T.table_header_origin_area, T.table_header_dest_area, T.table_header_companion, T.table_header_transport, T.table_header_date, T.table_header_time, T.table_header_instructions, T.table_header_new, T.table_header_leader];
-        let csvContent = "data:text/csv;charset=utf-8," + headers.join(delimiter) + "\n";
-        Object.values(state.groups || {}).flat().forEach(m => {
-            const sanitize = (str) => `"${(str || '').replace(/"/g, '""')}"`;
-            const row = [ sanitize(m.lastName), sanitize(m.firstName), m.type, m.originCity, m.destinationCity, sanitize(m.originArea), sanitize(m.destinationArea), sanitize(m.companion), T[`transport_${(m.transport||'').toLowerCase().replace('/','_')}`] || m.transport, m.date, m.time, sanitize(m.instructions), m.isNew ? 'Yes' : 'No', m.leader ? 'Yes' : 'No' ];
-            csvContent += row.join(delimiter) + "\n";
+          doc.save("transfer_logistics.pdf");
+          M.toast({ html: T.toast_pdf_generated });
         });
-        const link = document.createElement("a"); link.setAttribute("href", encodeURI(csvContent)); link.setAttribute("download", "travel_plans.csv");
-        document.body.appendChild(link); link.click(); document.body.removeChild(link);
-    });
 
-    document.getElementById('btn-restore').addEventListener('click', async () => {
-        const file = document.getElementById('file-restore').files[0]; if (!file) { M.toast({ html: translations[state.lang].toast_restore_file }); return; }
-        const data = await file.text(); const rows = data.split('\n').slice(1); const restoredMissionaries = [];
-        for (const row of rows) {
+      document
+        .getElementById("btn-export-csv")
+        .addEventListener("click", () => {
+          const lang = state.lang || "pt";
+          const T = translations[lang];
+          const delimiter = ";";
+          const headers = [
+            T.table_header_last_name,
+            T.table_header_first_name,
+            T.table_header_type,
+            T.origin_city,
+            T.dest_city,
+            T.table_header_origin_area,
+            T.table_header_dest_area,
+            T.table_header_companion,
+            T.table_header_transport,
+            T.table_header_date,
+            T.table_header_time,
+            T.table_header_instructions,
+            T.table_header_new,
+            T.table_header_leader,
+          ];
+          let csvContent =
+            "data:text/csv;charset=utf-8," + headers.join(delimiter) + "\n";
+          Object.values(state.groups || {})
+            .flat()
+            .forEach((m) => {
+              const sanitize = (str) => `"${(str || "").replace(/"/g, '""')}"`;
+              const row = [
+                sanitize(m.lastName),
+                sanitize(m.firstName),
+                m.type,
+                m.originCity,
+                m.destinationCity,
+                sanitize(m.originArea),
+                sanitize(m.destinationArea),
+                sanitize(m.companion),
+                T[
+                  `transport_${(m.transport || "").toLowerCase().replace("/", "_")}`
+                ] || m.transport,
+                m.date,
+                m.time,
+                sanitize(m.instructions),
+                m.isNew ? "Yes" : "No",
+                m.leader ? "Yes" : "No",
+              ];
+              csvContent += row.join(delimiter) + "\n";
+            });
+          const link = document.createElement("a");
+          link.setAttribute("href", encodeURI(csvContent));
+          link.setAttribute("download", "travel_plans.csv");
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        });
+
+      document
+        .getElementById("btn-restore")
+        .addEventListener("click", async () => {
+          const file = document.getElementById("file-restore").files[0];
+          if (!file) {
+            M.toast({ html: translations[state.lang].toast_restore_file });
+            return;
+          }
+          const data = await file.text();
+          const rows = data.split("\n").slice(1);
+          const restoredMissionaries = [];
+          for (const row of rows) {
             if (!row.trim()) continue;
-            const cols = row.split(';').map(col => col.startsWith('"') && col.endsWith('"') ? col.slice(1, -1).replace(/""/g, '"') : col);
-            const transportVal = Object.keys(translations.en).find(k => k.startsWith('transport_') && translations.en[k] === cols[8]) || Object.keys(translations.pt).find(k => k.startsWith('transport_') && translations.pt[k] === cols[8]);
+            const cols = row
+              .split(";")
+              .map((col) =>
+                col.startsWith('"') && col.endsWith('"')
+                  ? col.slice(1, -1).replace(/""/g, '"')
+                  : col,
+              );
+            const transportVal =
+              Object.keys(translations.en).find(
+                (k) =>
+                  k.startsWith("transport_") && translations.en[k] === cols[8],
+              ) ||
+              Object.keys(translations.pt).find(
+                (k) =>
+                  k.startsWith("transport_") && translations.pt[k] === cols[8],
+              );
             const missionary = {
-                lastName: cols[0], firstName: cols[1], type: cols[2], originCity: cols[3], destinationCity: cols[4], originArea: cols[5], destinationArea: cols[6], companion: cols[7],
-                transport: (transportVal || '').replace('transport_', ''), date: cols[9], time: cols[10], instructions: cols[11],
-                isNew: cols[12]?.toLowerCase() === 'yes', leader: cols[13]?.toLowerCase() === 'yes', 
-                name: `${cols[0]}, ${cols[1]}`, id: `${cols[0]}, ${cols[1]}`.toLowerCase()
+              lastName: cols[0],
+              firstName: cols[1],
+              type: cols[2],
+              originCity: cols[3],
+              destinationCity: cols[4],
+              originArea: cols[5],
+              destinationArea: cols[6],
+              companion: cols[7],
+              transport: (transportVal || "").replace("transport_", ""),
+              date: cols[9],
+              time: cols[10],
+              instructions: cols[11],
+              isNew: cols[12]?.toLowerCase() === "yes",
+              leader: cols[13]?.toLowerCase() === "yes",
+              name: `${cols[0]}, ${cols[1]}`,
+              id: `${cols[0]}, ${cols[1]}`.toLowerCase(),
             };
             restoredMissionaries.push(missionary);
-        }
-        state.groups = {};
-        restoredMissionaries.forEach(m => { const key = `${m.originCity} -> ${m.destinationCity}`; if (!state.groups[key]) state.groups[key] = []; state.groups[key].push(m); });
-        saveToLS(); M.toast({ html: translations[state.lang].toast_restored }); location.reload();
-    });
+          }
+          state.groups = {};
+          restoredMissionaries.forEach((m) => {
+            const key = `${m.originCity} -> ${m.destinationCity}`;
+            if (!state.groups[key]) state.groups[key] = [];
+            state.groups[key].push(m);
+          });
+          saveToLS();
+          M.toast({ html: translations[state.lang].toast_restored });
+          location.reload();
+        });
 
-    // -- Initial Load
-    document.addEventListener('DOMContentLoaded', ()=>{
-        const ls = loadFromLS(); if(ls){ state=ls; }
-        state.exceptions = Object.assign({}, defaults.exceptions, state.exceptions||{});
-        if (!state.columnSettings) { state.columnSettings = JSON.parse(JSON.stringify(defaults.columnSettings)); }
-        Object.values(state.groups || {}).flat().forEach(m => delete m.tbd); // Clean up old data
+      // -- Initial Load
+      document.addEventListener("DOMContentLoaded", () => {
+        const ls = loadFromLS();
+        if (ls) {
+          state = ls;
+        }
+        state.exceptions = Object.assign(
+          {},
+          defaults.exceptions,
+          state.exceptions || {},
+        );
+        if (!state.columnSettings) {
+          state.columnSettings = JSON.parse(
+            JSON.stringify(defaults.columnSettings),
+          );
+        }
+        Object.values(state.groups || {})
+          .flat()
+          .forEach((m) => delete m.tbd); // Clean up old data
         saveToLS();
         M.AutoInit();
         loadState();
-    });
-  </script>
-</body>
+      });
+    </script>
+  </body>
 </html>

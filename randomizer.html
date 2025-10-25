@@ -1,331 +1,357 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Missionary Transfer Tool (Excel)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            background-color: #f0f2f5;
-            color: #333;
-        }
-        .container {
-            background: #fff;
-            padding: 2rem 3rem;
-            border-radius: 12px;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
-            text-align: center;
-            max-width: 500px;
-            width: 90%;
-        }
-        h1 {
-            color: #1a73e8;
-            margin-bottom: 0.5rem;
-        }
-        p {
-            color: #5f6368;
-            margin-bottom: 2rem;
-        }
-        .control-group {
-            margin-bottom: 1.5rem;
-        }
-        label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-            color: #3c4043;
-        }
-        input[type="file"] {
-            display: none;
-        }
-        .file-upload-label {
-            display: inline-block;
-            padding: 10px 20px;
-            background: #e8f0fe;
-            color: #1967d2;
-            border: 1px solid #d2e3fc;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 500;
-            transition: background-color 0.2s;
-        }
-        .file-upload-label:hover {
-            background: #d2e3fc;
-        }
-        #fileName {
-            margin-top: 10px;
-            font-style: italic;
-            color: #5f6368;
-        }
-        .slider-container {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 1rem;
-        }
-        input[type="range"] {
-            -webkit-appearance: none;
-            width: 70%;
-            height: 8px;
-            background: #d3d3d3;
-            outline: none;
-            border-radius: 4px;
-            opacity: 0.7;
-            transition: opacity .2s;
-        }
-        input[type="range"]:hover {
-            opacity: 1;
-        }
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 20px;
-            height: 20px;
-            background: #1a73e8;
-            cursor: pointer;
-            border-radius: 50%;
-        }
-        input[type="range"]::-moz-range-thumb {
-            width: 20px;
-            height: 20px;
-            background: #1a73e8;
-            cursor: pointer;
-            border-radius: 50%;
-        }
-        #sliderValue {
-            font-weight: bold;
-            color: #1a73e8;
-            min-width: 50px;
-        }
-        .btn {
-            background-color: #1a73e8;
-            color: white;
-            padding: 12px 24px;
-            border: none;
-            border-radius: 6px;
-            font-size: 1rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: background-color 0.2s, box-shadow 0.2s;
-            display: block;
-            width: 100%;
-            margin-top: 1rem;
-        }
-        .btn:disabled {
-            background-color: #d3d3d3;
-            cursor: not-allowed;
-        }
-        .btn:not(:disabled):hover {
-            background-color: #185abc;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        }
-        #downloadLink {
-            display: none;
-            margin-top: 1.5rem;
-            padding: 12px 24px;
-            background-color: #34a853;
-            color: white;
-            text-decoration: none;
-            border-radius: 6px;
-            font-weight: 500;
-            transition: background-color 0.2s;
-        }
-        #downloadLink:hover {
-            background-color: #2c9348;
-        }
-        #status {
-            margin-top: 1rem;
-            color: #d93025;
-            min-height: 20px;
-        }
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+          Arial, sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        margin: 0;
+        background-color: #f0f2f5;
+        color: #333;
+      }
+      .container {
+        background: #fff;
+        padding: 2rem 3rem;
+        border-radius: 12px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+        text-align: center;
+        max-width: 500px;
+        width: 90%;
+      }
+      h1 {
+        color: #1a73e8;
+        margin-bottom: 0.5rem;
+      }
+      p {
+        color: #5f6368;
+        margin-bottom: 2rem;
+      }
+      .control-group {
+        margin-bottom: 1.5rem;
+      }
+      label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+        color: #3c4043;
+      }
+      input[type="file"] {
+        display: none;
+      }
+      .file-upload-label {
+        display: inline-block;
+        padding: 10px 20px;
+        background: #e8f0fe;
+        color: #1967d2;
+        border: 1px solid #d2e3fc;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: background-color 0.2s;
+      }
+      .file-upload-label:hover {
+        background: #d2e3fc;
+      }
+      #fileName {
+        margin-top: 10px;
+        font-style: italic;
+        color: #5f6368;
+      }
+      .slider-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+      }
+      input[type="range"] {
+        -webkit-appearance: none;
+        width: 70%;
+        height: 8px;
+        background: #d3d3d3;
+        outline: none;
+        border-radius: 4px;
+        opacity: 0.7;
+        transition: opacity 0.2s;
+      }
+      input[type="range"]:hover {
+        opacity: 1;
+      }
+      input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 20px;
+        height: 20px;
+        background: #1a73e8;
+        cursor: pointer;
+        border-radius: 50%;
+      }
+      input[type="range"]::-moz-range-thumb {
+        width: 20px;
+        height: 20px;
+        background: #1a73e8;
+        cursor: pointer;
+        border-radius: 50%;
+      }
+      #sliderValue {
+        font-weight: bold;
+        color: #1a73e8;
+        min-width: 50px;
+      }
+      .btn {
+        background-color: #1a73e8;
+        color: white;
+        padding: 12px 24px;
+        border: none;
+        border-radius: 6px;
+        font-size: 1rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition:
+          background-color 0.2s,
+          box-shadow 0.2s;
+        display: block;
+        width: 100%;
+        margin-top: 1rem;
+      }
+      .btn:disabled {
+        background-color: #d3d3d3;
+        cursor: not-allowed;
+      }
+      .btn:not(:disabled):hover {
+        background-color: #185abc;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      }
+      #downloadLink {
+        display: none;
+        margin-top: 1.5rem;
+        padding: 12px 24px;
+        background-color: #34a853;
+        color: white;
+        text-decoration: none;
+        border-radius: 6px;
+        font-weight: 500;
+        transition: background-color 0.2s;
+      }
+      #downloadLink:hover {
+        background-color: #2c9348;
+      }
+      #status {
+        margin-top: 1rem;
+        color: #d93025;
+        min-height: 20px;
+      }
     </style>
-</head>
-<body>
-
+  </head>
+  <body>
     <div class="container">
-        <h1>Missionary Transfer Tool 🔄</h1>
-        <p>Upload your Excel roster, choose a transfer percentage, and get a new randomized assignment list.</p>
+      <h1>Missionary Transfer Tool 🔄</h1>
+      <p>
+        Upload your Excel roster, choose a transfer percentage, and get a new
+        randomized assignment list.
+      </p>
 
-        <div class="control-group">
-            <label for="excelFileInput">1. Upload Roster (.xlsx)</label>
-            <label for="excelFileInput" class="file-upload-label">
-                Choose File
-            </label>
-            <input type="file" id="excelFileInput" accept=".xlsx, .xls">
-            <div id="fileName">No file selected</div>
-        </div>
+      <div class="control-group">
+        <label for="excelFileInput">1. Upload Roster (.xlsx)</label>
+        <label for="excelFileInput" class="file-upload-label">
+          Choose File
+        </label>
+        <input type="file" id="excelFileInput" accept=".xlsx, .xls" />
+        <div id="fileName">No file selected</div>
+      </div>
 
-        <div class="control-group">
-            <label for="transferSlider">2. Select Transfer Percentage</label>
-            <div class="slider-container">
-                <input type="range" id="transferSlider" min="0" max="100" value="20">
-                <span id="sliderValue">20%</span>
-            </div>
+      <div class="control-group">
+        <label for="transferSlider">2. Select Transfer Percentage</label>
+        <div class="slider-container">
+          <input
+            type="range"
+            id="transferSlider"
+            min="0"
+            max="100"
+            value="20"
+          />
+          <span id="sliderValue">20%</span>
         </div>
-        
-        <button id="processButton" class="btn" disabled>Generate Transfers</button>
-        
-        <div id="status"></div>
-        
-        <a id="downloadLink" href="#" download="transferred_roster.xlsx">Download New Roster</a>
+      </div>
+
+      <button id="processButton" class="btn" disabled>
+        Generate Transfers
+      </button>
+
+      <div id="status"></div>
+
+      <a id="downloadLink" href="#" download="transferred_roster.xlsx"
+        >Download New Roster</a
+      >
     </div>
 
     <script>
-        const fileInput = document.getElementById('excelFileInput');
-        const fileNameDisplay = document.getElementById('fileName');
-        const slider = document.getElementById('transferSlider');
-        const sliderValue = document.getElementById('sliderValue');
-        const processButton = document.getElementById('processButton');
-        const downloadLink = document.getElementById('downloadLink');
-        const statusDisplay = document.getElementById('status');
-        
-        let parsedData = [];
-        let originalHeaders = [];
+      const fileInput = document.getElementById("excelFileInput");
+      const fileNameDisplay = document.getElementById("fileName");
+      const slider = document.getElementById("transferSlider");
+      const sliderValue = document.getElementById("sliderValue");
+      const processButton = document.getElementById("processButton");
+      const downloadLink = document.getElementById("downloadLink");
+      const statusDisplay = document.getElementById("status");
 
-        // Update slider value display
-        slider.addEventListener('input', (event) => {
-            sliderValue.textContent = `${event.target.value}%`;
+      let parsedData = [];
+      let originalHeaders = [];
+
+      // Update slider value display
+      slider.addEventListener("input", (event) => {
+        sliderValue.textContent = `${event.target.value}%`;
+      });
+
+      // Handle file selection
+      fileInput.addEventListener("change", (event) => {
+        const file = event.target.files[0];
+        if (!file) {
+          fileNameDisplay.textContent = "No file selected";
+          processButton.disabled = true;
+          return;
+        }
+
+        fileNameDisplay.textContent = file.name;
+        statusDisplay.textContent = "";
+        downloadLink.style.display = "none";
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          try {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: "array" });
+            const sheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[sheetName];
+            parsedData = XLSX.utils.sheet_to_json(worksheet, { defval: "" }); // Use defval to handle empty cells gracefully
+
+            if (parsedData.length > 0) {
+              originalHeaders = Object.keys(parsedData[0]);
+              processButton.disabled = false;
+            } else {
+              statusDisplay.textContent = "Excel file is empty or invalid.";
+              processButton.disabled = true;
+            }
+          } catch (err) {
+            statusDisplay.textContent = `Error reading file: ${err.message}`;
+            processButton.disabled = true;
+          }
+        };
+        reader.readAsArrayBuffer(file);
+      });
+
+      // Handle button click
+      processButton.addEventListener("click", () => {
+        if (parsedData.length === 0) {
+          statusDisplay.textContent =
+            "No data to process. Please upload a valid Excel file.";
+          return;
+        }
+        try {
+          const percentage = parseInt(slider.value, 10);
+          const companionships = groupIntoCompanionships(parsedData);
+          const newAssignments = performTransfers(companionships, percentage);
+
+          const finalData = unwindAssignments(newAssignments);
+          const excelBuffer = createExcelFile(finalData, originalHeaders);
+
+          generateDownload(excelBuffer);
+          statusDisplay.textContent = `✅ Success! Your file is ready for download.`;
+        } catch (error) {
+          statusDisplay.textContent = `An error occurred: ${error.message}`;
+          console.error(error);
+        }
+      });
+
+      function groupIntoCompanionships(rows) {
+        const groups = new Map();
+        const locationKeys = [
+          "Zone",
+          "District",
+          "Area",
+          "Area Phone",
+          "Area Address",
+        ];
+
+        rows.forEach((row) => {
+          // Create a consistent key for grouping
+          const key =
+            `${row.Zone || ""}-${row.District || ""}-${row.Area || ""}`.trim();
+
+          if (!groups.has(key)) {
+            const location = {};
+            locationKeys.forEach((k) => {
+              if (row.hasOwnProperty(k)) location[k] = row[k];
+            });
+            groups.set(key, { location, missionaries: [] });
+          }
+          groups.get(key).missionaries.push(row);
+        });
+        return Array.from(groups.values());
+      }
+
+      function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+      }
+
+      function performTransfers(allCompanionships, percentage) {
+        shuffleArray(allCompanionships);
+        const numToTransfer = Math.round(
+          allCompanionships.length * (percentage / 100),
+        );
+
+        if (numToTransfer < 2) return allCompanionships;
+
+        const transferring = allCompanionships.slice(0, numToTransfer);
+        const staying = allCompanionships.slice(numToTransfer);
+
+        const locationsToShuffle = transferring.map((comp) => comp.location);
+        shuffleArray(locationsToShuffle);
+
+        transferring.forEach((comp, index) => {
+          comp.location = locationsToShuffle[index];
         });
 
-        // Handle file selection
-        fileInput.addEventListener('change', (event) => {
-            const file = event.target.files[0];
-            if (!file) {
-                fileNameDisplay.textContent = 'No file selected';
-                processButton.disabled = true;
-                return;
-            }
+        return staying.concat(transferring);
+      }
 
-            fileNameDisplay.textContent = file.name;
-            statusDisplay.textContent = '';
-            downloadLink.style.display = 'none';
-
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                try {
-                    const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    const sheetName = workbook.SheetNames[0];
-                    const worksheet = workbook.Sheets[sheetName];
-                    parsedData = XLSX.utils.sheet_to_json(worksheet, { defval: "" }); // Use defval to handle empty cells gracefully
-                    
-                    if (parsedData.length > 0) {
-                        originalHeaders = Object.keys(parsedData[0]);
-                        processButton.disabled = false;
-                    } else {
-                        statusDisplay.textContent = 'Excel file is empty or invalid.';
-                        processButton.disabled = true;
-                    }
-                } catch (err) {
-                    statusDisplay.textContent = `Error reading file: ${err.message}`;
-                    processButton.disabled = true;
-                }
-            };
-            reader.readAsArrayBuffer(file);
+      function unwindAssignments(finalCompanionships) {
+        const newRows = [];
+        finalCompanionships.forEach((comp) => {
+          comp.missionaries.forEach((missionary) => {
+            const newRow = { ...missionary };
+            Object.assign(newRow, comp.location);
+            newRows.push(newRow);
+          });
         });
+        return newRows;
+      }
 
-        // Handle button click
-        processButton.addEventListener('click', () => {
-            if (parsedData.length === 0) {
-                statusDisplay.textContent = 'No data to process. Please upload a valid Excel file.';
-                return;
-            }
-            try {
-                const percentage = parseInt(slider.value, 10);
-                const companionships = groupIntoCompanionships(parsedData);
-                const newAssignments = performTransfers(companionships, percentage);
-                
-                const finalData = unwindAssignments(newAssignments);
-                const excelBuffer = createExcelFile(finalData, originalHeaders);
+      function createExcelFile(data, headers) {
+        const worksheet = XLSX.utils.json_to_sheet(data, { header: headers });
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Transferred Roster");
+        return XLSX.write(workbook, { bookType: "xlsx", type: "array" });
+      }
 
-                generateDownload(excelBuffer);
-                statusDisplay.textContent = `✅ Success! Your file is ready for download.`;
-            } catch (error) {
-                statusDisplay.textContent = `An error occurred: ${error.message}`;
-                console.error(error);
-            }
+      function generateDownload(excelBuffer) {
+        const blob = new Blob([excelBuffer], {
+          type: "application/vnd.openxmlformats-officedocument.spreadsheet.sheet",
         });
-        
-        function groupIntoCompanionships(rows) {
-            const groups = new Map();
-            const locationKeys = ['Zone', 'District', 'Area', 'Area Phone', 'Area Address'];
-
-            rows.forEach(row => {
-                // Create a consistent key for grouping
-                const key = `${row.Zone || ''}-${row.District || ''}-${row.Area || ''}`.trim();
-                
-                if (!groups.has(key)) {
-                    const location = {};
-                    locationKeys.forEach(k => {
-                        if (row.hasOwnProperty(k)) location[k] = row[k];
-                    });
-                    groups.set(key, { location, missionaries: [] });
-                }
-                groups.get(key).missionaries.push(row);
-            });
-            return Array.from(groups.values());
-        }
-
-        function shuffleArray(array) {
-            for (let i = array.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [array[i], array[j]] = [array[j], array[i]];
-            }
-        }
-        
-        function performTransfers(allCompanionships, percentage) {
-            shuffleArray(allCompanionships);
-            const numToTransfer = Math.round(allCompanionships.length * (percentage / 100));
-            
-            if (numToTransfer < 2) return allCompanionships;
-
-            const transferring = allCompanionships.slice(0, numToTransfer);
-            const staying = allCompanionships.slice(numToTransfer);
-            
-            const locationsToShuffle = transferring.map(comp => comp.location);
-            shuffleArray(locationsToShuffle);
-            
-            transferring.forEach((comp, index) => {
-                comp.location = locationsToShuffle[index];
-            });
-
-            return staying.concat(transferring);
-        }
-
-        function unwindAssignments(finalCompanionships) {
-            const newRows = [];
-            finalCompanionships.forEach(comp => {
-                comp.missionaries.forEach(missionary => {
-                    const newRow = { ...missionary };
-                    Object.assign(newRow, comp.location);
-                    newRows.push(newRow);
-                });
-            });
-            return newRows;
-        }
-
-        function createExcelFile(data, headers) {
-            const worksheet = XLSX.utils.json_to_sheet(data, { header: headers });
-            const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, 'Transferred Roster');
-            return XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-        }
-
-        function generateDownload(excelBuffer) {
-            const blob = new Blob([excelBuffer], { 
-                type: 'application/vnd.openxmlformats-officedocument.spreadsheet.sheet' 
-            });
-            const url = URL.createObjectURL(blob);
-            downloadLink.href = url;
-            downloadLink.style.display = 'inline-block';
-        }
+        const url = URL.createObjectURL(blob);
+        downloadLink.href = url;
+        downloadLink.style.display = "inline-block";
+      }
     </script>
-</body>
+  </body>
 </html>
