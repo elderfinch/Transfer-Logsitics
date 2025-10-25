@@ -30,6 +30,12 @@ document.getElementById("btn-export-pdf").addEventListener("click", () => {
 
   const head = [visibleCols.map((key) => allHeaders[key] || key)];
 
+  // determine which visible columns are checkboxes so we can center them and give fixed width
+  const checkboxColIndices = visibleCols.reduce((acc, k, i) => {
+    if (k === 'new' || k === 'leader') acc.push(i);
+    return acc;
+  }, []);
+
   const resolveFieldValue = (m, key) => {
     // normalize known aliases
     if (key === "destCity" || key === "destinationCity")
@@ -60,18 +66,79 @@ document.getElementById("btn-export-pdf").addEventListener("click", () => {
     return String(val || "");
   };
 
-  const getRowData = (m) =>
-    visibleCols.map((key) => {
-      const raw = resolveFieldValue(m, key);
-      return renderCell(raw, key);
+  // we'll build rows and a parallel checkbox matrix so we can draw pretty boxes with jsPDF
+  const buildRowsAndCheckboxMatrix = (list) => {
+    const rows = [];
+    const checkboxMatrix = [];
+    list.forEach((m) => {
+      const row = [];
+      const cbRow = [];
+      visibleCols.forEach((key) => {
+        const raw = resolveFieldValue(m, key);
+        const isCheckbox = key === 'new' || key === 'leader';
+        if (isCheckbox) {
+          // leave text empty; will draw box in didDrawCell
+          row.push('');
+          cbRow.push(Boolean(raw));
+        } else {
+          row.push(renderCell(raw, key));
+          cbRow.push(null);
+        }
+      });
+      rows.push(row);
+      checkboxMatrix.push(cbRow);
     });
+    return { rows, checkboxMatrix };
+  };
 
   let finalY = 15;
+  // currentCheckboxMatrix will be set before each autoTable call so didDrawCell can read it
+  let currentCheckboxMatrix = [];
   const autoTableOptions = {
     head,
     startY: finalY,
     theme: "striped",
-    headStyles: { fillColor: [0, 150, 136] },
+    styles: { fontSize: 10 },
+  headStyles: { fillColor: [0, 150, 136], textColor: 255, fontStyle: 'bold', fontSize: 10 },
+    columnStyles: (function(){
+      const cs = {};
+      checkboxColIndices.forEach(i => { cs[i] = { halign: 'center', cellWidth: 14 }; });
+      return cs;
+    })(),
+    didDrawCell: function (data) {
+      // draw checkbox box + check for boolean checkboxMatrix entries
+      if (data.section !== 'body') return;
+      const r = data.row.index;
+      const c = data.column.index;
+      const val = currentCheckboxMatrix[r] && currentCheckboxMatrix[r][c];
+      if (val === null || val === undefined) return;
+
+      // compute a small square centered in the cell
+  // make checkbox larger (proportional to cell size), but cap to a reasonable size
+  let boxSize = Math.min(data.cell.width, data.cell.height) * 0.6; // relative
+  boxSize = Math.min(boxSize, 18); // max 18mm
+      const x = data.cell.x + (data.cell.width - boxSize) / 2;
+      const y = data.cell.y + (data.cell.height - boxSize) / 2;
+
+      // draw square
+      data.doc.setDrawColor(0);
+      data.doc.setLineWidth(0.5);
+      data.doc.rect(x, y, boxSize, boxSize);
+
+      if (val) {
+        // draw a thicker checkmark scaled to the boxSize
+        const pad = boxSize * 0.18;
+        const x1 = x + pad;
+        const y1 = y + boxSize * 0.55;
+        const x2 = x + boxSize * 0.44;
+        const y2 = y + boxSize - pad;
+        const x3 = x + boxSize - pad;
+        const y3 = y + pad;
+        data.doc.setLineWidth(Math.max(0.8, boxSize * 0.09));
+        data.doc.line(x1, y1, x2, y2);
+        data.doc.line(x2, y2, x3, y3);
+      }
+    }
   };
 
   if (view === "city") {
@@ -82,12 +149,17 @@ document.getElementById("btn-export-pdf").addEventListener("click", () => {
           doc.addPage();
           finalY = 15;
         }
-        doc.setFontSize(14);
-        doc.text(groupKey, 14, finalY);
-        finalY += 7;
-        autoTableOptions.body = state.groups[groupKey]
-          .sort((a, b) => a.isNew - b.isNew)
-          .map(getRowData);
+  const pageWidth = doc.internal.pageSize.getWidth();
+  // render group title using same font and size as table header for a matching look
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.text(groupKey, pageWidth / 2, finalY, { align: 'center' });
+  doc.setFont('helvetica', 'normal');
+  finalY += 8;
+        const list = state.groups[groupKey].sort((a, b) => a.isNew - b.isNew);
+        const built = buildRowsAndCheckboxMatrix(list);
+        autoTableOptions.body = built.rows;
+        currentCheckboxMatrix = built.checkboxMatrix;
         autoTableOptions.startY = finalY;
         doc.autoTable(autoTableOptions);
         finalY = doc.previousAutoTable.finalY + 10;
@@ -126,12 +198,16 @@ document.getElementById("btn-export-pdf").addEventListener("click", () => {
         const groupTitle =
           T[`transport_${groupKey.toLowerCase().replace("/", "_")}`] ||
           groupKey;
-        doc.setFontSize(14);
-        doc.text(groupTitle, 14, finalY);
-        finalY += 7;
-        autoTableOptions.body = groupsToPrint[groupKey]
-          .sort((a, b) => a.isNew - b.isNew)
-          .map(getRowData);
+  const pageWidth = doc.internal.pageSize.getWidth();
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.text(groupTitle, pageWidth / 2, finalY, { align: 'center' });
+  doc.setFont('helvetica', 'normal');
+  finalY += 8;
+        const list = groupsToPrint[groupKey].sort((a, b) => a.isNew - b.isNew);
+        const built = buildRowsAndCheckboxMatrix(list);
+        autoTableOptions.body = built.rows;
+        currentCheckboxMatrix = built.checkboxMatrix;
         autoTableOptions.startY = finalY;
         doc.autoTable(autoTableOptions);
         finalY = doc.previousAutoTable.finalY + 10;

@@ -347,7 +347,7 @@ function prepareAndShowTransportModal() {
     }
   });
   const uniqueRoutes = new Set(
-    pendingMissionaries.map((m) => `${m.originCity} -> ${m.destinationCity}`),
+    pendingMissionaries.map((m) => `${m.originCity} → ${m.destinationCity}`),
   );
   const container = document.getElementById("transport-defaults-list");
   container.innerHTML = "";
@@ -357,7 +357,7 @@ function prepareAndShowTransportModal() {
   Array.from(uniqueRoutes)
     .sort()
     .forEach((route) => {
-      const [origin, destination] = route.split(" -> ");
+  const [origin, destination] = route.split(" → ");
       const row = document.createElement("div");
       row.className = "row valign-wrapper";
       row.innerHTML = `<div class="col s6"><h6>${route}</h6></div><div class="col s6"><select class="browser-default transport-default-select" data-route="${route}">${transportOptions}</select></div>`;
@@ -379,12 +379,12 @@ document.getElementById("btn-transport-apply").addEventListener("click", () => {
   });
   pendingMissionaries.forEach((m) => {
     m.transport =
-      transportDefaults[`${m.originCity} -> ${m.destinationCity}`] ||
+      transportDefaults[`${m.originCity} → ${m.destinationCity}`] ||
       defaultTransportForPair(m.originCity, m.destinationCity);
   });
   state.groups = {};
   pendingMissionaries.forEach((m) => {
-    const key = `${m.originCity} -> ${m.destinationCity}`;
+  const key = `${m.originCity} → ${m.destinationCity}`;
     if (!state.groups[key]) state.groups[key] = [];
     state.groups[key].push(m);
   });
@@ -844,7 +844,7 @@ document.getElementById("btn-add-save").addEventListener("click", () => {
     leader: document.getElementById("add-leader").checked,
     isNew: document.getElementById("add-new").checked,
   };
-  const key = `${m.originCity} -> ${m.destinationCity}`;
+  const key = `${m.originCity} → ${m.destinationCity}`;
   if (!state.groups[key]) state.groups[key] = [];
   state.groups[key].push(m);
   saveToLS();
@@ -885,7 +885,7 @@ document.getElementById("btn-edit-save").addEventListener("click", () => {
     leader: document.getElementById("edit-leader").checked,
   });
 
-  const newGroupKey = `${missionary.originCity} -> ${missionary.destinationCity}`;
+  const newGroupKey = `${missionary.originCity} → ${missionary.destinationCity}`;
   if (newGroupKey !== groupKey) {
     const index = state.groups[groupKey].findIndex((m) => m.id === id);
     state.groups[groupKey].splice(index, 1);
@@ -997,7 +997,7 @@ document.getElementById("btn-restore").addEventListener("click", async () => {
   }
   state.groups = {};
   restoredMissionaries.forEach((m) => {
-    const key = `${m.originCity} -> ${m.destinationCity}`;
+  const key = `${m.originCity} → ${m.destinationCity}`;
     if (!state.groups[key]) state.groups[key] = [];
     state.groups[key].push(m);
   });
@@ -1036,7 +1036,9 @@ function createCalendarDescription() {
       ),
     ).map((chk) => chk.value),
   );
-  const selectedMissionaries = currentMissionaryGroup.filter((m) =>
+  // We populated the modal with ALL missionaries; find selected from all groups
+  const allMissionaries = Object.values(state.groups || {}).flat();
+  const selectedMissionaries = allMissionaries.filter((m) =>
     selectedIds.has(m.id),
   );
 
@@ -1053,19 +1055,17 @@ function createCalendarDescription() {
   description += `${T.missionaries_names}:\n`;
 
   selectedMissionaries.forEach((m) => {
-    const transportName = m.transport
-      ? T[`transport_${m.transport.toLowerCase().replace("/", "_")}`] ||
-        m.transport
-      : "";
-    description += `- ${m.name} (${m.type}, ${transportName}, ${m.companion || ""})\n`;
+    const shortName = `${(m.firstName || "")[0] || ""}. ${m.lastName || ""}`.trim();
+    description += `- ${shortName}\n`;
   });
 
   return description.trim();
 }
 
 function updateDescriptionPreview() {
-  document.getElementById("calendar-description-preview").textContent =
-    createCalendarDescription();
+  // update editable description textarea with generated default from selections
+  const el = document.getElementById("calendar-description");
+  if (el) el.value = createCalendarDescription();
 }
 
 document.querySelector("body").addEventListener("click", (e) => {
@@ -1106,31 +1106,34 @@ document.querySelector("body").addEventListener("click", (e) => {
       currentMissionaryGroup.find((m) => m.date) || currentMissionaryGroup[0];
 
     // Set modal values
-    const formattedDateTime = refMissionary
-      ? formatCalendarDate(refMissionary.date, refMissionary.time)
-      : translations[state.lang].choose_option;
-    document.getElementById("calendar-time-date").textContent =
-      formattedDateTime;
+    // Prepare editable title/date/time/description fields
+    document.getElementById("calendar-event-title").value = document.getElementById("calendar-event-title").value || "Missionary Travel";
+    document.getElementById("calendar-event-date").value = refMissionary ? (refMissionary.date || "") : "";
+    document.getElementById("calendar-event-time").value = refMissionary ? (refMissionary.time || "") : "";
 
-    // Populate checkbox list
+    // Populate checkbox list with ALL missionaries (short names by default)
+    const allMissionaries = Object.values(state.groups || {}).flat();
     const checkboxList = document.getElementById("missionaries-checkbox-list");
     checkboxList.innerHTML = "";
-
-    currentMissionaryGroup
-      .sort((a, b) => a.lastName.localeCompare(b.lastName))
+    allMissionaries
+      .sort((a, b) => (a.lastName || "").localeCompare(b.lastName || ""))
       .forEach((m) => {
+        const shortName = `${(m.firstName || "")[0] || ""}. ${m.lastName || ""}`.trim();
         const p = document.createElement("p");
         p.innerHTML = `<label>
-                    <input type="checkbox" class="missionary-checkbox" value="${m.id}" checked />
-                    <span>${m.name} (${m.originCity} &rarr; ${m.destinationCity})</span>
+                    <input type="checkbox" class="missionary-checkbox" value="${m.id}" />
+                    <span>${shortName} (${m.originCity || ''} → ${m.destinationCity || ''})</span>
                 </label>`;
         checkboxList.appendChild(p);
       });
 
-    // Initial description and event listeners for updates
-    updateDescriptionPreview();
+    // Set default description into editable textarea
+    document.getElementById("calendar-description").value = createCalendarDescription();
+    // attach listeners to update description when selection changes
     checkboxList.querySelectorAll(".missionary-checkbox").forEach((chk) => {
-      chk.addEventListener("change", updateDescriptionPreview);
+      chk.addEventListener("change", () => {
+        document.getElementById("calendar-description").value = createCalendarDescription();
+      });
     });
 
     M.Modal.getInstance(document.getElementById("modal-calendar")).open();
@@ -1140,19 +1143,14 @@ document.querySelector("body").addEventListener("click", (e) => {
 // Calendar Export Buttons
 document.getElementById("btn-export-google").addEventListener("click", () => {
   const title = document.getElementById("calendar-event-title").value;
-  const description = createCalendarDescription();
-  const firstMissionary =
-    currentMissionaryGroup.find((m) => m.date) || currentMissionaryGroup[0];
+  const description = document.getElementById("calendar-description").value || createCalendarDescription();
+  const date = document.getElementById("calendar-event-date").value;
+  const time = document.getElementById("calendar-event-time").value || "00:00";
 
-  if (!firstMissionary || !firstMissionary.date) {
-    M.toast({
-      html: "Please set a date and time for at least one missionary in the group.",
-    });
+  if (!date) {
+    M.toast({ html: "Please set a date for the event." });
     return;
   }
-
-  const date = firstMissionary.date;
-  const time = firstMissionary.time || "00:00";
 
   // Helper to convert YYYY-MM-DD and HH:MM to Google Calendar format YYYYMMDDTHHMMSSZ (UTC or local with no Z)
   function formatDateTimeForGoogle(dateStr, timeStr) {
@@ -1171,9 +1169,11 @@ document.getElementById("btn-export-google").addEventListener("click", () => {
     dtEnd.toTimeString().substring(0, 5),
   );
 
-  const cityInfo = [
-    ...new Set(currentMissionaryGroup.map((m) => m.originCity)),
-  ].join(", ");
+  // Location: use selected missionaries' origin cities
+  const selectedIds = new Set(Array.from(document.querySelectorAll('#missionaries-checkbox-list input[type="checkbox"]:checked')).map(chk => chk.value));
+  const allMissionaries = Object.values(state.groups || {}).flat();
+  const selectedMissionaries = allMissionaries.filter(m => selectedIds.has(m.id));
+  const cityInfo = [...new Set(selectedMissionaries.map((m) => m.originCity))].join(", ");
 
   const googleUrl = new URL("https://calendar.google.com/calendar/render");
   googleUrl.searchParams.set("action", "TEMPLATE");
@@ -1187,19 +1187,11 @@ document.getElementById("btn-export-google").addEventListener("click", () => {
 
 document.getElementById("btn-export-outlook").addEventListener("click", () => {
   const title = document.getElementById("calendar-event-title").value;
-  const description = createCalendarDescription();
-  const firstMissionary =
-    currentMissionaryGroup.find((m) => m.date) || currentMissionaryGroup[0];
+  const description = document.getElementById("calendar-description").value || createCalendarDescription();
+  const date = document.getElementById("calendar-event-date").value;
+  const time = document.getElementById("calendar-event-time").value || "00:00";
 
-  if (!firstMissionary || !firstMissionary.date) {
-    M.toast({
-      html: "Please set a date and time for at least one missionary in the group.",
-    });
-    return;
-  }
-
-  const date = firstMissionary.date;
-  const time = firstMissionary.time || "00:00";
+  if (!date) { M.toast({ html: "Please set a date for the event." }); return; }
 
   // Helper to convert YYYY-MM-DD and HH:MM to iCalendar format (UTC or local with no Z)
   function formatDateTimeForOutlook(dateStr, timeStr) {
@@ -1221,9 +1213,7 @@ document.getElementById("btn-export-outlook").addEventListener("click", () => {
     dtEnd.toTimeString().substring(0, 5),
   );
 
-  const cityInfo = [
-    ...new Set(currentMissionaryGroup.map((m) => m.originCity)),
-  ].join(", ");
+  const cityInfo = [...new Set(selectedMissionaries.map((m) => m.originCity))].join(", ");
 
   // Outlook/Office 365 URL uses slightly different parameters
   const outlookUrl = new URL(
